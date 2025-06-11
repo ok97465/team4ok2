@@ -50,7 +50,7 @@
 namespace DMS
 {
   //static const char *DEG_SIM = "\u00B0";
-  static const char *DEG_SIM = "°";
+  static const char *DEG_SIM = "Â°";
 //
 //  Convert decimal degrees to degrees, minutes and seconds
 //
@@ -74,7 +74,7 @@ namespace DMS
     frac = frac - (double)min ;
 
     // fix the DDD MM 60 case
-    // TODO: nearbyint isn’t alway available (Visual C++,
+    // TODO: nearbyint isnï¿½t alway available (Visual C++,
     //       for example)
     double sec = nearbyint(frac * 600000.0) ;
     sec /= 10000.0 ;
