@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <filesystem>
 #include <fileapi.h>
+#include <vector>
 
 #pragma hdrstop
 
@@ -91,19 +92,19 @@ uint32_t PopularColors[] = {
  //---------------------------------------------------------------------------
  typedef struct
 {
-   union{ 
-     struct{ 
+   union{
+     struct{
 	 System::Byte Red;
 	 System::Byte Green;
 	 System::Byte Blue;
 	 System::Byte Alpha;
-     }; 
-     struct{ 
-     TColor Cl; 
-     }; 
-     struct{ 
-     COLORREF Rgb; 
-     }; 
+     };
+     struct{
+     TColor Cl;
+     };
+     struct{
+     COLORREF Rgb;
+     };
    };
 
 }TMultiColor;
@@ -270,8 +271,9 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 	MakeAirTrackHostile();
 	MakeAirTrackUnknown();
 	MakePoint();
-	MakeTrackHook();
-	g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+        MakeTrackHook();
+        InitAirplaneInstancing();
+        g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
 	glPushAttrib (GL_LINE_BIT);
 	glPopAttrib ();
     printf("OpenGL Version %s\n",glGetString(GL_VERSION));
@@ -309,8 +311,15 @@ void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 
  xf=Mw1/Mw2;
  yf=Mh1/Mh2;
-
+ #ifdef MEASURE_PERFORMANCE
+ auto start = std::chrono::steady_clock::now();
+ #endif
  DrawObjects();
+ #ifdef MEASURE_PERFORMANCE
+ auto end = std::chrono::steady_clock::now();
+ auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+ std::cout << "DrawObjects execution time: " << duration << " ms" << std::endl;
+ #endif
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
@@ -431,26 +440,41 @@ void __fastcall TForm1::DrawObjects(void)
 	 }
 
     AircraftCountLabel->Caption=IntToStr((int)ght_size(HashTable));
-	for(Data = (TADS_B_Aircraft *)ght_first(HashTable, &iterator,(const void **) &Key);
-			  Data; Data = (TADS_B_Aircraft *)ght_next(HashTable, &iterator, (const void **)&Key))
-	{
-	  if (Data->HaveLatLon)
-	  {
-		ViewableAircraft++;
-	   glColor4f(1.0, 1.0, 1.0, 1.0);
+        std::vector<AirplaneInstance> planeBatch;
+        for(Data = (TADS_B_Aircraft *)ght_first(HashTable, &iterator,(const void **) &Key);
+                          Data; Data = (TADS_B_Aircraft *)ght_next(HashTable, &iterator, (const void **)&Key))
+        {
+          if (Data->HaveLatLon)
+          {
+                ViewableAircraft++;
 
-	   LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
-	   //DrawPoint(ScrX,ScrY);
-	   if (Data->HaveSpeedAndHeading)   glColor4f(1.0, 0.0, 1.0, 1.0);
-	   else
-		{
-		 Data->Heading=0.0;
-		 glColor4f(1.0, 0.0, 0.0, 1.0);
-		}
+           LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
+           //DrawPoint(ScrX,ScrY);
+           float color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+           if (Data->HaveSpeedAndHeading)
+           {
+                 color[0]=1.0f; color[1]=0.0f; color[2]=1.0f; color[3]=1.0f;
+           }
+           else
+                {
+                 Data->Heading=0.0;
+                 color[0]=1.0f; color[1]=0.0f; color[2]=0.0f; color[3]=1.0f;
+                }
 
-	   DrawAirplaneImage(ScrX,ScrY,1.5,Data->Heading,Data->SpriteImage);
-	   glRasterPos2i(ScrX+30,ScrY-10);
-	   ObjectDisplay->Draw2DText(Data->HexAddr);
+           AirplaneInstance inst;
+           inst.x=ScrX;
+           inst.y=ScrY;
+           inst.scale=1.5f;
+           inst.heading=Data->Heading;
+           inst.imageNum=Data->SpriteImage;
+           inst.color[0]=color[0];
+           inst.color[1]=color[1];
+           inst.color[2]=color[2];
+           inst.color[3]=color[3];
+           planeBatch.push_back(inst);
+
+           glRasterPos2i(ScrX+30,ScrY-10);
+           ObjectDisplay->Draw2DText(Data->HexAddr);
 
 	   if ((Data->HaveSpeedAndHeading) && (TimeToGoCheckBox->State==cbChecked))
 	   {
@@ -467,8 +491,9 @@ void __fastcall TForm1::DrawObjects(void)
 			 glEnd();
 		  }
 	   }
-	 }
-	}
+        }
+       }
+        DrawAirplaneImagesInstanced(planeBatch);
  ViewableAircraftCountLabel->Caption=ViewableAircraft;
  if (TrackHook.Valid_CC)
  {
@@ -1073,7 +1098,7 @@ void __fastcall TForm1::FormMouseWheel(TObject *Sender, TShiftState Shift,
 	  g_EarthView->SingleMovement(NAV_ZOOM_IN);
  else g_EarthView->SingleMovement(NAV_ZOOM_OUT);
   ObjectDisplay->Repaint();
-}                                  
+}
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 void __fastcall TTCPClientRawHandleThread::HandleInput(void)
@@ -1588,8 +1613,8 @@ void __fastcall TForm1::LoadMap(int Type)
 
     // 2. 캐시 디렉터리는  생성
     std::string cachedir = provider->GetCacheDir();
-    if (mkdir(cachedir.c_str()) != 0 && errno != EEXIST)
-        throw Sysutils::Exception("Can not create cache directory");
+     if (mkdir(cachedir.c_str()) != 0 && errno != EEXIST)
+	    throw Sysutils::Exception("Can not create cache directory");
 
     // 3. FilesystemStorage 생성 및 TileManager, Layer, View 연결
     //    (provider가 storage를 직접 관리하지 않고, 외부에서 생성/공유)
@@ -2045,4 +2070,5 @@ static int FinshARTCCBoundary(void)
  return 0 ;
 }
 //---------------------------------------------------------------------------
+
 
