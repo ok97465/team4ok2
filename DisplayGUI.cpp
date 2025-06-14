@@ -9,13 +9,12 @@
 #include <stdlib.h>
 #include <filesystem>
 #include <fileapi.h>
-#include <vector>
+
 
 #pragma hdrstop
 
 #include "DisplayGUI.h"
 #include "AreaDialog.h"
-#include "ntds2d.h"
 #include "LatLonConv.h"
 #include "PointInPolygon.h"
 #include "DecodeRawADS_B.h"
@@ -231,6 +230,8 @@ __fastcall TForm1::TForm1(TComponent* Owner)
  BigQueryRowCount=0;
  BigQueryFileCount=0;
  InitAircraftDB(AircraftDBPathFileName);
+ m_planeBatch.reserve(5000);
+ m_lineBatch.reserve(5000);
  printf("init complete\n");
 }
 //---------------------------------------------------------------------------
@@ -273,6 +274,7 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 	MakePoint();
         MakeTrackHook();
         InitAirplaneInstancing();
+		InitAirplaneLinesInstancing();
         g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
 	glPushAttrib (GL_LINE_BIT);
 	glPopAttrib ();
@@ -334,7 +336,7 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::DrawObjects(void)
 {
-  double ScrX, ScrY;
+  double ScrX, ScrY, ScrX2, ScrY2;
   int    ViewableAircraft=0;
 
   glEnable( GL_LINE_SMOOTH );
@@ -439,8 +441,9 @@ void __fastcall TForm1::DrawObjects(void)
 	  }
 	 }
 
-    AircraftCountLabel->Caption=IntToStr((int)ght_size(HashTable));
-        std::vector<AirplaneInstance> planeBatch;
+	AircraftCountLabel->Caption=IntToStr((int)ght_size(HashTable));
+	m_planeBatch.clear();
+	m_lineBatch.clear();
         for(Data = (TADS_B_Aircraft *)ght_first(HashTable, &iterator,(const void **) &Key);
                           Data; Data = (TADS_B_Aircraft *)ght_next(HashTable, &iterator, (const void **)&Key))
         {
@@ -449,51 +452,54 @@ void __fastcall TForm1::DrawObjects(void)
                 ViewableAircraft++;
 
            LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
+		   ScrX2 = ScrX;
+		   ScrY2 = ScrY;
            //DrawPoint(ScrX,ScrY);
            float color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
            if (Data->HaveSpeedAndHeading)
            {
                  color[0]=1.0f; color[1]=0.0f; color[2]=1.0f; color[3]=1.0f;
-           }
-           else
-                {
-                 Data->Heading=0.0;
-                 color[0]=1.0f; color[1]=0.0f; color[2]=0.0f; color[3]=1.0f;
-                }
+				 if (TimeToGoCheckBox->State==cbChecked)
+				 {
+					double lat2,lon2,az2;
+					VDirect(Data->Latitude,Data->Longitude,
+							Data->Heading,Data->Speed*(double)TimeToGoTrackBar->Position/3600.0,&lat2,&lon2,&az2);
+					LatLon2XY(lat2,lon2, ScrX2, ScrY2);
+					}
+			}
+			else
+				{
+					Data->Heading=0.0;
+					color[0]=1.0f; color[1]=0.0f; color[2]=0.0f; color[3]=1.0f;
+				}
 
-           AirplaneInstance inst;
-           inst.x=ScrX;
-           inst.y=ScrY;
-           inst.scale=1.5f;
-           inst.heading=Data->Heading;
-           inst.imageNum=Data->SpriteImage;
-           inst.color[0]=color[0];
-           inst.color[1]=color[1];
-           inst.color[2]=color[2];
-           inst.color[3]=color[3];
-           planeBatch.push_back(inst);
 
-           glRasterPos2i(ScrX+30,ScrY-10);
-           ObjectDisplay->Draw2DText(Data->HexAddr);
+				AirplaneInstance inst;
+				inst.x = ScrX;
+				inst.y = ScrY;
+				inst.scale = 1.5f;
+				inst.heading = Data->Heading;
+				inst.imageNum = Data->SpriteImage;
+				inst.color[0] = color[0];
+				inst.color[1] = color[1];
+				inst.color[2] = color[2];
+				inst.color[3] = color[3];
+				m_planeBatch.push_back(inst);
 
-	   if ((Data->HaveSpeedAndHeading) && (TimeToGoCheckBox->State==cbChecked))
-	   {
-		double lat,lon,az;
-		if (VDirect(Data->Latitude,Data->Longitude,
-					Data->Heading,Data->Speed*(double)TimeToGoTrackBar->Position/3600.0,&lat,&lon,&az)==OKNOERROR)
-		  {
-			 double ScrX2, ScrY2;
-			 LatLon2XY(lat,lon, ScrX2, ScrY2);
-             glColor4f(1.0, 1.0, 0.0, 1.0);
-			 glBegin(GL_LINE_STRIP);
-			 glVertex2f(ScrX,ScrY);
-			 glVertex2f(ScrX2,ScrY2);
-			 glEnd();
-		  }
-	   }
+				AirplaneLineInstance line;
+				line.x1 = ScrX;
+				line.y1 = ScrY;
+				line.x2 = ScrX2;
+				line.y2 = ScrY2;
+				m_lineBatch.push_back(line);
+
+				glRasterPos2i(ScrX+30,ScrY-10);
+				ObjectDisplay->Draw2DText(Data->HexAddr);
         }
-       }
-        DrawAirplaneImagesInstanced(planeBatch);
+	   }
+		DrawAirplaneLinesInstanced(m_lineBatch);
+		DrawAirplaneImagesInstanced(m_planeBatch);
+
  ViewableAircraftCountLabel->Caption=ViewableAircraft;
  if (TrackHook.Valid_CC)
  {

@@ -22,8 +22,17 @@ struct AirplaneInstance {
     int   imageNum;
     float color[4];
 };
+
+struct AirplaneLineInstance {
+    float x1;
+    float y1;
+    float x2;
+    float y2;
+};
 void InitAirplaneInstancing();
 void DrawAirplaneImagesInstanced(const std::vector<AirplaneInstance>& instances);
+void InitAirplaneLinesInstancing();
+void DrawAirplaneLinesInstanced(const std::vector<AirplaneLineInstance>& instances);
 void DrawTrackHook(float x, float y);
 void DrawRadarCoverage(float xc, float yc, float major, float minor);
 void DrawLeader(float x1, float y1, float x2, float y2);

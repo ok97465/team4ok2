@@ -37,7 +37,7 @@ static GLuint TextureSpites[NUM_SPRITES];
 static GLuint TextureSpriteArray = 0;
 static int NumSprites=0;
 
-struct InstancingResources {
+struct AirPlaneInstancingResources {
     bool initialized;
     GLuint vao;
     GLuint quadVBO;
@@ -45,7 +45,16 @@ struct InstancingResources {
     GLuint program;
 };
 
-static InstancingResources gInstancing = {false};
+struct LineInstancingResources {
+    bool initialized;
+    GLuint vao;
+    GLuint vertexVBO;
+    GLuint instanceVBO;
+    GLuint program;
+};
+
+static AirPlaneInstancingResources gInstancing = {false,0,0,0,0};
+static LineInstancingResources gLineInstancing = {false,0,0,0,0};
 
 // OpenGL extension function pointers for systems with only GL 1.1 headers
 static bool gExtensionsLoaded = false;
@@ -484,6 +493,57 @@ void InitAirplaneInstancing()
     gInstancing.initialized = true;
 }
 
+void InitAirplaneLinesInstancing()
+{
+    LoadGLExtensions();
+    if(gLineInstancing.initialized) return;
+    const char* vsSrc =
+        "#version 330 core\n"
+        "layout(location=0) in float t;\n"
+        "layout(location=1) in vec2 start;\n"
+        "layout(location=2) in vec2 end;\n"
+        "uniform vec2 Viewport;\n"
+        "void main(){\n"
+        "  vec2 p = mix(start, end, t);\n"
+        "  vec2 ndc = vec2((p.x/Viewport.x)*2.0 - 1.0, (p.y/Viewport.y)*2.0 - 1.0);\n"
+        "  gl_Position = vec4(ndc,0.0,1.0);\n"
+        "}\n";
+
+    const char* fsSrc =
+        "#version 330 core\n"
+        "out vec4 Frag;\n"
+        "void main(){ Frag = vec4(1.0,1.0,0.0,1.0); }\n";
+
+    gLineInstancing.program = CreateProgram(vsSrc, fsSrc);
+
+    float verts[] = {0.0f, 1.0f};
+    pglGenVertexArrays(1, &gLineInstancing.vao);
+    pglBindVertexArray(gLineInstancing.vao);
+
+    pglGenBuffers(1, &gLineInstancing.vertexVBO);
+    pglBindBuffer(GL_ARRAY_BUFFER, gLineInstancing.vertexVBO);
+    pglBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+    pglEnableVertexAttribArray(0);
+    pglVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+
+    pglGenBuffers(1, &gLineInstancing.instanceVBO);
+    pglBindBuffer(GL_ARRAY_BUFFER, gLineInstancing.instanceVBO);
+    pglBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_STREAM_DRAW);
+
+    size_t stride = sizeof(AirplaneLineInstance);
+    pglEnableVertexAttribArray(1);
+    pglVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(AirplaneLineInstance, x1));
+    pglVertexAttribDivisor(1,1);
+    pglEnableVertexAttribArray(2);
+    pglVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(AirplaneLineInstance, x2));
+    pglVertexAttribDivisor(2,1);
+
+    pglBindBuffer(GL_ARRAY_BUFFER, 0);
+    pglBindVertexArray(0);
+
+    gLineInstancing.initialized = true;
+}
+
 void DrawAirplaneImagesInstanced(const std::vector<AirplaneInstance>& instances)
 {
     if(instances.empty()) return;
@@ -492,6 +552,7 @@ void DrawAirplaneImagesInstanced(const std::vector<AirplaneInstance>& instances)
 
     pglBindVertexArray(gInstancing.vao);
     pglBindBuffer(GL_ARRAY_BUFFER, gInstancing.instanceVBO);
+    // TODO : 재할당 제거?
     pglBufferData(GL_ARRAY_BUFFER, instances.size()*sizeof(AirplaneInstance), instances.data(), GL_STREAM_DRAW);
 
     pglUseProgram(gInstancing.program);
@@ -505,6 +566,28 @@ void DrawAirplaneImagesInstanced(const std::vector<AirplaneInstance>& instances)
     pglDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, instances.size());
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    pglBindVertexArray(0);
+    pglUseProgram(0);
+}
+
+void DrawAirplaneLinesInstanced(const std::vector<AirplaneLineInstance>& instances)
+{
+    if(instances.empty()) return;
+    if(!gLineInstancing.initialized)
+        InitAirplaneLinesInstancing();
+
+    pglBindVertexArray(gLineInstancing.vao);
+    pglBindBuffer(GL_ARRAY_BUFFER, gLineInstancing.instanceVBO);
+    // TODO : 재할당 제거?
+    pglBufferData(GL_ARRAY_BUFFER, instances.size()*sizeof(AirplaneLineInstance), instances.data(), GL_STREAM_DRAW);
+
+    pglUseProgram(gLineInstancing.program);
+    GLint vp[4];
+    glGetIntegerv(GL_VIEWPORT, vp);
+    pglUniform2f(pglGetUniformLocation(gLineInstancing.program, "Viewport"), (float)vp[2], (float)vp[3]);
+    glLineWidth(3.0f);
+    pglDrawArraysInstanced(GL_LINES, 0, 2, instances.size());
+
     pglBindVertexArray(0);
     pglUseProgram(0);
 }

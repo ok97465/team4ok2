@@ -24,6 +24,8 @@
 #include <IdTCPClient.hpp>
 #include <IdTCPConnection.hpp>
 #include "cspin.h"
+#include <vector>
+#include "ntds2d.h"
 
 typedef float T_GL_Color[4];
 
@@ -277,7 +279,10 @@ public:		// User declarations
 	int                        NumSpriteImages;
 	int                        CurrentSpriteImage;
     AnsiString                 AircraftDBPathFileName;
-    AnsiString                 ARTCCBoundaryDataPathFileName;
+	AnsiString                 ARTCCBoundaryDataPathFileName;
+
+	std::vector<AirplaneInstance> m_planeBatch;
+	std::vector<AirplaneLineInstance> m_lineBatch;
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TForm1 *Form1;
