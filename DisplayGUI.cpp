@@ -455,7 +455,7 @@ void __fastcall TForm1::DrawObjects(void)
 	   {
 		double lat,lon,az;
 		if (VDirect(Data->Latitude,Data->Longitude,
-					Data->Heading,Data->Speed/3060.0*TimeToGoTrackBar->Position ,&lat,&lon,&az)==OKNOERROR)
+					Data->Heading,Data->Speed*(double)TimeToGoTrackBar->Position/3600.0,&lat,&lon,&az)==OKNOERROR)
 		  {
 			 double ScrX2, ScrY2;
 			 LatLon2XY(lat,lon, ScrX2, ScrY2);
