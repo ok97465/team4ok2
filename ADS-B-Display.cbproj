@@ -186,6 +186,7 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DynamicRTL>false</DynamicRTL>
+        <BCC_Defines>MEASURE_PERFORMANCE;$(BCC_Defines)</BCC_Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64x)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
@@ -232,6 +233,12 @@
         </CppCompile>
         <None Include="dms.h">
             <BuildOrder>36</BuildOrder>
+        </None>
+        <CppCompile Include="hex_font.cpp">
+            <BuildOrder>50</BuildOrder>
+        </CppCompile>
+        <None Include="hex_font.h">
+            <BuildOrder>51</BuildOrder>
         </None>
         <CppCompile Include="LatLonConv.cpp">
             <DependentOn>LatLonConv.h</DependentOn>
