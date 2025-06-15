@@ -281,8 +281,9 @@ public:		// User declarations
     AnsiString                 AircraftDBPathFileName;
 	AnsiString                 ARTCCBoundaryDataPathFileName;
 
-	std::vector<AirplaneInstance> m_planeBatch;
-	std::vector<AirplaneLineInstance> m_lineBatch;
+        std::vector<AirplaneInstance> m_planeBatch;
+        std::vector<AirplaneLineInstance> m_lineBatch;
+        std::vector<HexCharInstance> m_textBatch;
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TForm1 *Form1;
