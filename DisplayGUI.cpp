@@ -51,7 +51,6 @@
 #pragma link "Map\zlib\Win64\Release\zlib.a"
 #pragma link "Map\jpeg\Win64\Release\jpeg.a"
 #pragma link "Map\png\Win64\Release\png.a"
-#pragma link "HashTable\Lib\Win64\Release\HashTableLib.a"
 #pragma link "cspin"
 #pragma resource "*.dfm"
 TForm1 *Form1;
@@ -199,14 +198,6 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   TrackHook.Valid_CC=false;
   TrackHook.Valid_CPA=false;
 
-  HashTable = ght_create(50000);
-
-  if ( !HashTable)
-	{
-	  throw Sysutils::Exception("Create Hash Failed");
-	}
-  ght_set_rehash(HashTable, TRUE);
-
   AreaTemp=NULL;
   Areas= new TList;
 
@@ -247,6 +238,8 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 	FSBSDataHandler->OnDataReceived = [this](const String& data){ this->HandleSBSData(data); };
 	FSBSDataHandler->OnConnected = [this](){ this->HandleSBSConnected(); };
 	FSBSDataHandler->OnDisconnected = [this](const String& reason){ this->HandleSBSDisconnected(reason); };
+
+  FAircraftModel = new AircraftDataModel();
 }
 //---------------------------------------------------------------------------
 __fastcall TForm1::~TForm1()
@@ -262,19 +255,8 @@ __fastcall TForm1::~TForm1()
     if (g_Keyhole) delete g_Keyhole;
   }
 
-  uint32_t *Key;
-  ght_iterator_t iterator;
-  TADS_B_Aircraft* Data;
-
-  for(Data = (TADS_B_Aircraft *)ght_first(HashTable, &iterator,(const void **) &Key);
-                      Data; Data = (TADS_B_Aircraft *)ght_next(HashTable, &iterator, (const void **)&Key))
-  {
-    delete Data;
-  }
-
   delete FRawDataHandler;
   delete FSBSDataHandler;
-
 }
 //---------------------------------------------------------------------------
 void __fastcall  TForm1::SetMapCenter(double &x, double &y)
@@ -389,7 +371,7 @@ void __fastcall TForm1::DrawObjects(void)
   glEnd();
 
 
-  uint32_t *Key;
+  const void *Key;
   ght_iterator_t iterator;
   TADS_B_Aircraft* Data,*DataCPA;
 
@@ -469,12 +451,12 @@ void __fastcall TForm1::DrawObjects(void)
 	  }
 	 }
 
-	AircraftCountLabel->Caption=IntToStr((int)ght_size(HashTable));
+	AircraftCountLabel->Caption= IntToStr(FAircraftModel->GetAircraftCount());
         m_planeBatch.clear();
         m_lineBatch.clear();
         m_textBatch.clear();
-        for(Data = (TADS_B_Aircraft *)ght_first(HashTable, &iterator,(const void **) &Key);
-                          Data; Data = (TADS_B_Aircraft *)ght_next(HashTable, &iterator, (const void **)&Key))
+        for(Data = FAircraftModel->GetFirstAircraft(&iterator, &Key);
+                          Data; Data = FAircraftModel->GetNextAircraft(&iterator, &Key))
         {
           if (Data->HaveLatLon)
           {
@@ -545,7 +527,7 @@ void __fastcall TForm1::DrawObjects(void)
  ViewableAircraftCountLabel->Caption=ViewableAircraft;
  if (TrackHook.Valid_CC)
  {
-		Data= (TADS_B_Aircraft *)ght_get(HashTable, sizeof(TrackHook.ICAO_CC), (void *)&TrackHook.ICAO_CC);
+		Data= FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
 		if (Data)
 		{
 		ICAOLabel->Caption=Data->HexAddr;
@@ -601,7 +583,7 @@ void __fastcall TForm1::DrawObjects(void)
  if (TrackHook.Valid_CPA)
  {
   bool CpaDataIsValid=false;
-  DataCPA= (TADS_B_Aircraft *)ght_get(HashTable, sizeof(TrackHook.ICAO_CPA), (void *)&TrackHook.ICAO_CPA);
+  DataCPA= FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CPA);
   if ((DataCPA) && (TrackHook.Valid_CC))
 	{
 
@@ -771,7 +753,7 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
  {
   double VLat,VLon, dlat,dlon,Range;
   int X1,Y1;
-   uint32_t *Key;
+   const void *Key;
 
    uint32_t Current_ICAO;
    double MinRange;
@@ -789,8 +771,8 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
 
   MinRange=16.0;
 
-  for(Data = (TADS_B_Aircraft *)ght_first(HashTable, &iterator,(const void **) &Key);
-			  Data; Data = (TADS_B_Aircraft *)ght_next(HashTable, &iterator, (const void **)&Key))
+  for(Data = FAircraftModel->GetFirstAircraft(&iterator, &Key);
+			  Data; Data = FAircraftModel->GetNextAircraft(&iterator, &Key))
 	{
 	  if (Data->HaveLatLon)
 	  {
@@ -806,9 +788,7 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
 	}
 	if (MinRange< 0.2)
 	{
-	  TADS_B_Aircraft * ADS_B_Aircraft =(TADS_B_Aircraft *)
-			ght_get(HashTable,sizeof(Current_ICAO),
-					&Current_ICAO);
+	  TADS_B_Aircraft * ADS_B_Aircraft = FAircraftModel->FindAircraftByICAO(Current_ICAO);
 	  if (ADS_B_Aircraft)
 	  {
 		if (!CPA_Hook)
@@ -888,55 +868,21 @@ void __fastcall TForm1::ZoomOutClick(TObject *Sender)
  ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
-void __fastcall TForm1::Purge(void)
-{
-  uint32_t *Key;
-  ght_iterator_t iterator;
-  TADS_B_Aircraft* Data;
-  void *p;
-  __int64 CurrentTime=GetCurrentTimeInMsec();
-  __int64  StaleTimeInMs=CSpinStaleTime->Value*1000;
-
-  if (PurgeStale->Checked==false) return;
-
-  for(Data = (TADS_B_Aircraft *)ght_first(HashTable, &iterator,(const void **) &Key);
-			  Data; Data = (TADS_B_Aircraft *)ght_next(HashTable, &iterator, (const void **)&Key))
-	{
-          if ((CurrentTime-Data->LastSeen)>=StaleTimeInMs)
-          {
-          p = ght_remove(HashTable,sizeof(*Key), Key);;
-          if (!p)
-                ShowMessage("Removing the current iterated entry failed! This is a BUG\n");
-
-          delete Data;
-
-          }
-        }
-}
-//---------------------------------------------------------------------------
 void __fastcall TForm1::Timer2Timer(TObject *Sender)
 {
- Purge();
+    if (PurgeStale->Checked == false) return;
+
+    // Model에게 "오래된 항공기 삭제" 작업을 위임
+    FAircraftModel->PurgeStaleAircraft(CSpinStaleTime->Value);
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::PurgeButtonClick(TObject *Sender)
 {
-  uint32_t *Key;
-  ght_iterator_t iterator;
-  TADS_B_Aircraft* Data;
-  void *p;
+    // 1. Model에게 "모든 항공기 삭제" 작업을 위임
+    FAircraftModel->PurgeAllAircraft();
 
-  for(Data = (TADS_B_Aircraft *)ght_first(HashTable, &iterator,(const void **) &Key);
-			  Data; Data = (TADS_B_Aircraft *)ght_next(HashTable, &iterator, (const void **)&Key))
-	{
-
-          p = ght_remove(HashTable,sizeof(*Key), Key);
-          if (!p)
-                ShowMessage("Removing the current iterated entry failed! This is a BUG\n");
-
-          delete Data;
-
-        }
+    // 2. 화면에서 모든 항공기가 사라졌으므로, 즉시 화면을 새로고침
+    ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::InsertClick(TObject *Sender)
@@ -1152,47 +1098,7 @@ void __fastcall TForm1::FormMouseWheel(TObject *Sender, TShiftState Shift,
 // Raw 데이터 수신 처리 (기존 TTCPClientRawHandleThread::HandleInput의 내용)
 void __fastcall TForm1::HandleRawData(const String& data)
 {
-    modeS_message mm;
-    // 1. decode_RAW_message 호출
-    TDecodeStatus Status = decode_RAW_message(data, &mm);
-
-    if (Status == HaveMsg)
-    {
-        // 2. 항공기 객체 찾기
-        uint32_t addr = (mm.AA[0] << 16) | (mm.AA[1] << 8) | mm.AA[2];
-        TADS_B_Aircraft *ADS_B_Aircraft = (TADS_B_Aircraft *) ght_get(this->HashTable, sizeof(addr), &addr);
-
-        // 3. 항공기 객체가 없으면 새로 생성 및 초기화
-        if (!ADS_B_Aircraft)
-        {
-            ADS_B_Aircraft = new TADS_B_Aircraft;
-            ADS_B_Aircraft->ICAO = addr;
-            snprintf(ADS_B_Aircraft->HexAddr, sizeof(ADS_B_Aircraft->HexAddr), "%06X", (int)addr);
-            ADS_B_Aircraft->NumMessagesSBS = 0;
-            ADS_B_Aircraft->NumMessagesRaw = 0;
-            ADS_B_Aircraft->VerticalRate = 0;
-            ADS_B_Aircraft->HaveAltitude = false;
-            ADS_B_Aircraft->HaveLatLon = false;
-            ADS_B_Aircraft->HaveSpeedAndHeading = false;
-            ADS_B_Aircraft->HaveFlightNum = false;
-            ADS_B_Aircraft->SpriteImage = this->CurrentSpriteImage;
-            if (this->CycleImages->Checked)
-                this->CurrentSpriteImage = (this->CurrentSpriteImage + 1) % this->NumSpriteImages;
-
-            if (ght_insert(this->HashTable, ADS_B_Aircraft, sizeof(addr), &addr) < 0)
-            {
-                printf("ght_insert Error - Should Not Happen\n");
-            }
-        }
-
-        // 4. 항공기 정보 업데이트
-        RawToAircraft(&mm, ADS_B_Aircraft);
-    }
-    else
-    {
-        // 5. 디코드 에러 로그
-        printf("Raw Decode Error:%d\n", Status);
-    }
+    FAircraftModel->ProcessRawMessage(data, CycleImages->Checked, NumSpriteImages);
 }
 
 //---------------------------------------------------------------------------
