@@ -93,8 +93,8 @@
         <Icon_MainIcon>$(BDS)\bin\cbuilder_PROJECTICON.ico</Icon_MainIcon>
         <UWP_CppLogo44>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_44.png</UWP_CppLogo44>
         <UWP_CppLogo150>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_150.png</UWP_CppLogo150>
-        <IncludePath>Controller\;Map\MapSrc\MapProvider\;Map\MapSrc\;..\..\..\..\..\Desktop\ADS-B-2025\ADS-B-Display\;$(IncludePath)</IncludePath>
-        <ILINK_LibraryPath>Controller\;Map\MapSrc\MapProvider\;Map\MapSrc\;..\..\..\..\..\Desktop\ADS-B-2025\ADS-B-Display\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <IncludePath>Model\;Controller\;Map\MapSrc\MapProvider\;Map\MapSrc\;..\..\..\..\..\Desktop\ADS-B-2025\ADS-B-Display\;$(IncludePath)</IncludePath>
+        <ILINK_LibraryPath>Model\;Controller\;Map\MapSrc\MapProvider\;Map\MapSrc\;..\..\..\..\..\Desktop\ADS-B-2025\ADS-B-Display\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <SanitizedProjectName>ADS-B-Display</SanitizedProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
@@ -237,6 +237,12 @@
         <None Include="dms.h">
             <BuildOrder>36</BuildOrder>
         </None>
+        <CppCompile Include="hex_font.cpp">
+            <BuildOrder>55</BuildOrder>
+        </CppCompile>
+        <None Include="hex_font.h">
+            <BuildOrder>54</BuildOrder>
+        </None>
         <CppCompile Include="LatLonConv.cpp">
             <DependentOn>LatLonConv.h</DependentOn>
             <BuildOrder>33</BuildOrder>
@@ -363,6 +369,10 @@
         <None Include="Map\MapSrc\VMath.h">
             <BuildOrder>29</BuildOrder>
         </None>
+        <CppCompile Include="Model\AircraftDataModel.cpp">
+            <DependentOn>Model\AircraftDataModel.h</DependentOn>
+            <BuildOrder>53</BuildOrder>
+        </CppCompile>
         <CppCompile Include="ntds2d.cpp">
             <DependentOn>ntds2d.h</DependentOn>
             <BuildOrder>30</BuildOrder>
