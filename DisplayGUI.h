@@ -27,6 +27,7 @@
 #include <vector>
 #include "ntds2d.h"
 #include "TCPDataHandler.h"
+#include "AircraftDataModel.h"
 
 typedef float T_GL_Color[4];
 
@@ -185,6 +186,7 @@ __published:	// IDE-managed Components
 private:	// User declarations
 	TCPDataHandler *FRawDataHandler;
     TCPDataHandler *FSBSDataHandler;
+	AircraftDataModel *FAircraftModel;
 
     // 콜백에 의해 호출될 함수들
     void __fastcall HandleRawData(const String& data);
