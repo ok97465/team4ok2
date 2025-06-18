@@ -235,6 +235,18 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   SetHexTextScale(1.0f);
   SetHexTextBold(true);
   printf("init complete\n");
+
+  	// Raw 데이터 핸들러 생성 및 콜백 연결
+	FRawDataHandler = new TCPDataHandler(this);
+	FRawDataHandler->OnDataReceived = [this](const String& data){ this->HandleRawData(data); };
+	FRawDataHandler->OnConnected = [this](){ this->HandleRawConnected(); };
+	FRawDataHandler->OnDisconnected = [this](const String& reason){ this->HandleRawDisconnected(reason); };
+
+	// SBS 데이터 핸들러 생성 및 콜백 연결
+	FSBSDataHandler = new TCPDataHandler(this);
+	FSBSDataHandler->OnDataReceived = [this](const String& data){ this->HandleSBSData(data); };
+	FSBSDataHandler->OnConnected = [this](){ this->HandleSBSConnected(); };
+	FSBSDataHandler->OnDisconnected = [this](const String& reason){ this->HandleSBSDisconnected(reason); };
 }
 //---------------------------------------------------------------------------
 __fastcall TForm1::~TForm1()
@@ -259,6 +271,9 @@ __fastcall TForm1::~TForm1()
   {
     delete Data;
   }
+
+  delete FRawDataHandler;
+  delete FSBSDataHandler;
 
 }
 //---------------------------------------------------------------------------
@@ -1134,257 +1149,118 @@ void __fastcall TForm1::FormMouseWheel(TObject *Sender, TShiftState Shift,
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-void __fastcall TTCPClientRawHandleThread::HandleInput(void)
+// Raw 데이터 수신 처리 (기존 TTCPClientRawHandleThread::HandleInput의 내용)
+void __fastcall TForm1::HandleRawData(const String& data)
 {
-  modeS_message mm;
-  TDecodeStatus Status;
+    modeS_message mm;
+    // 1. decode_RAW_message 호출
+    TDecodeStatus Status = decode_RAW_message(data, &mm);
 
- // Form1->MsgLog->Lines->Add(StringMsgBuffer);
-  if (Form1->RecordRawStream)
-  {
-   __int64 CurrentTime;
-   CurrentTime=GetCurrentTimeInMsec();
-   Form1->RecordRawStream->WriteLine(IntToStr(CurrentTime));
-   Form1->RecordRawStream->WriteLine(StringMsgBuffer);
-  }
+    if (Status == HaveMsg)
+    {
+        // 2. 항공기 객체 찾기
+        uint32_t addr = (mm.AA[0] << 16) | (mm.AA[1] << 8) | mm.AA[2];
+        TADS_B_Aircraft *ADS_B_Aircraft = (TADS_B_Aircraft *) ght_get(this->HashTable, sizeof(addr), &addr);
 
-  Status=decode_RAW_message(StringMsgBuffer, &mm);
-  if (Status==HaveMsg)
-  {
-   TADS_B_Aircraft *ADS_B_Aircraft;
-   uint32_t addr;
+        // 3. 항공기 객체가 없으면 새로 생성 및 초기화
+        if (!ADS_B_Aircraft)
+        {
+            ADS_B_Aircraft = new TADS_B_Aircraft;
+            ADS_B_Aircraft->ICAO = addr;
+            snprintf(ADS_B_Aircraft->HexAddr, sizeof(ADS_B_Aircraft->HexAddr), "%06X", (int)addr);
+            ADS_B_Aircraft->NumMessagesSBS = 0;
+            ADS_B_Aircraft->NumMessagesRaw = 0;
+            ADS_B_Aircraft->VerticalRate = 0;
+            ADS_B_Aircraft->HaveAltitude = false;
+            ADS_B_Aircraft->HaveLatLon = false;
+            ADS_B_Aircraft->HaveSpeedAndHeading = false;
+            ADS_B_Aircraft->HaveFlightNum = false;
+            ADS_B_Aircraft->SpriteImage = this->CurrentSpriteImage;
+            if (this->CycleImages->Checked)
+                this->CurrentSpriteImage = (this->CurrentSpriteImage + 1) % this->NumSpriteImages;
 
-	addr = (mm.AA[0] << 16) | (mm.AA[1] << 8) | mm.AA[2];
+            if (ght_insert(this->HashTable, ADS_B_Aircraft, sizeof(addr), &addr) < 0)
+            {
+                printf("ght_insert Error - Should Not Happen\n");
+            }
+        }
 
-
-	ADS_B_Aircraft =(TADS_B_Aircraft *) ght_get(Form1->HashTable,sizeof(addr),&addr);
-	if (ADS_B_Aircraft)
-	  {
-      	//Form1->MsgLog->Lines->Add("Retrived");
-      }
+        // 4. 항공기 정보 업데이트
+        RawToAircraft(&mm, ADS_B_Aircraft);
+    }
     else
-	  {
-  	   ADS_B_Aircraft= new TADS_B_Aircraft;
-	   ADS_B_Aircraft->ICAO=addr;
-	   snprintf(ADS_B_Aircraft->HexAddr,sizeof(ADS_B_Aircraft->HexAddr),"%06X",(int)addr);
-	   ADS_B_Aircraft->NumMessagesSBS=0;
-       ADS_B_Aircraft->NumMessagesRaw=0;
-       ADS_B_Aircraft->VerticalRate=0;
-	   ADS_B_Aircraft->HaveAltitude=false;
-       ADS_B_Aircraft->HaveLatLon=false;
-	   ADS_B_Aircraft->HaveSpeedAndHeading=false;
-	   ADS_B_Aircraft->HaveFlightNum=false;
-          ADS_B_Aircraft->SpriteImage=Form1->CurrentSpriteImage;
-	   if (Form1->CycleImages->Checked)
-		 Form1->CurrentSpriteImage=(Form1->CurrentSpriteImage+1)%Form1->NumSpriteImages;
-	   if (ght_insert(Form1->HashTable,ADS_B_Aircraft,sizeof(addr), &addr) < 0)
-		  {
-			printf("ght_insert Error - Should Not Happen\n");
-		  }
-	  }
+    {
+        // 5. 디코드 에러 로그
+        printf("Raw Decode Error:%d\n", Status);
+    }
+}
 
-	  RawToAircraft(&mm,ADS_B_Aircraft);
-  }
-  else  printf("Raw Decode Error:%d\n",Status);
+//---------------------------------------------------------------------------
+// Raw 연결 성공 시
+void __fastcall TForm1::HandleRawConnected()
+{
+    RawConnectButton->Caption = "Raw Disconnect";
+    RawPlaybackButton->Enabled = false;
+}
+
+//---------------------------------------------------------------------------
+// Raw 연결 종료 시
+void __fastcall TForm1::HandleRawDisconnected(const String& reason)
+{
+    RawConnectButton->Caption = "Raw Connect";
+    RawPlaybackButton->Enabled = true;
+
+    // 파일 재생 중이었다면 관련 상태도 초기화
+    if (PlayBackRawStream) {
+        delete PlayBackRawStream;
+        PlayBackRawStream = NULL;
+    }
+    RawPlaybackButton->Caption = "Raw Playback";
+    RawConnectButton->Enabled = true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::RawConnectButtonClick(TObject *Sender)
 {
- IdTCPClientRaw->Host=RawIpAddress->Text;
- IdTCPClientRaw->Port=30002;
-
- if ((RawConnectButton->Caption=="Raw Connect") && (Sender!=NULL))
- {
-  try
-   {
-   IdTCPClientRaw->Connect();
-   TCPClientRawHandleThread = new TTCPClientRawHandleThread(true);
-   TCPClientRawHandleThread->UseFileInsteadOfNetwork=false;
-   TCPClientRawHandleThread->FreeOnTerminate=TRUE;
-   TCPClientRawHandleThread->Resume();
-   }
-   catch (const EIdException& e)
-   {
-    ShowMessage("Error while connecting: "+e.Message);
-   }
- }
- else
-  {
-	TCPClientRawHandleThread->Terminate();
-	IdTCPClientRaw->Disconnect();
-	IdTCPClientRaw->IOHandler->InputBuffer->Clear();
-	RawConnectButton->Caption="Raw Connect";
-	RawPlaybackButton->Enabled=true;
-  }
- }
-//---------------------------------------------------------------------------
-void __fastcall TForm1::IdTCPClientRawConnected(TObject *Sender)
-{
-   //SetKeepAliveValues(const AEnabled: Boolean; const ATimeMS, AInterval: Integer);
-   IdTCPClientRaw->Socket->Binding->SetKeepAliveValues(true,60*1000,15*1000);
-   RawConnectButton->Caption="Raw Disconnect";
-   RawPlaybackButton->Enabled=false;
-}
-//---------------------------------------------------------------------------
-void __fastcall TForm1::IdTCPClientRawDisconnected(TObject *Sender)
-{
-  TCPClientRawHandleThread->Terminate();
+	if (!FRawDataHandler->IsActive())
+    {
+        FRawDataHandler->Connect(RawIpAddress->Text, 30002);
+    }
+    else
+    {
+        FRawDataHandler->Disconnect();
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::RawRecordButtonClick(TObject *Sender)
 {
- if (RawRecordButton->Caption=="Raw Record")
- {
-  if (RecordRawSaveDialog->Execute())
-   {
-	// First, check if the file exists.
-	if (FileExists(RecordRawSaveDialog->FileName))
-	  ShowMessage("File "+RecordRawSaveDialog->FileName+"already exists. Cannot overwrite.");
-	else
-	{
-		// Open a file for writing. Creates the file if it doesn't exist, or overwrites it if it does.
-	RecordRawStream= new TStreamWriter(RecordRawSaveDialog->FileName, false);
-	if (RecordRawStream==NULL)
-	  {
-		ShowMessage("Cannot Open File "+RecordRawSaveDialog->FileName);
-	  }
-	 else RawRecordButton->Caption="Stop Raw Recording";
-	}
-  }
- }
- else
- {
-   delete RecordRawStream;
-   RecordRawStream=NULL;
-   RawRecordButton->Caption="Raw Record";
- }
+    if (RawRecordButton->Caption == "Raw Record")
+    {
+        if (RecordRawSaveDialog->Execute())
+        {
+            FRawDataHandler->StartRecording(RecordRawSaveDialog->FileName);
+            RawRecordButton->Caption = "Stop Raw Recording";
+        }
+    }
+    else
+    {
+        FRawDataHandler->StopRecording();
+        RawRecordButton->Caption = "Raw Record";
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::RawPlaybackButtonClick(TObject *Sender)
 {
-  if ((RawPlaybackButton->Caption=="Raw Playback") && (Sender!=NULL))
- {
-  if (PlaybackRawDialog->Execute())
-   {
-	// First, check if the file exists.
-	if (!FileExists(PlaybackRawDialog->FileName))
-	  ShowMessage("File "+PlaybackRawDialog->FileName+" does not exist");
-	else
-	{
-		// Open a file for writing. Creates the file if it doesn't exist, or overwrites it if it does.
-	PlayBackRawStream= new TStreamReader(PlaybackRawDialog->FileName);
-	if (PlayBackRawStream==NULL)
-	  {
-		ShowMessage("Cannot Open File "+PlaybackRawDialog->FileName);
-	  }
-	 else {
-		   TCPClientRawHandleThread = new TTCPClientRawHandleThread(true);
-		   TCPClientRawHandleThread->UseFileInsteadOfNetwork=true;
-		   TCPClientRawHandleThread->First=true;
-		   TCPClientRawHandleThread->FreeOnTerminate=TRUE;
-		   TCPClientRawHandleThread->Resume();
-		   RawPlaybackButton->Caption="Stop Raw Playback";
-           RawConnectButton->Enabled=false;
-		  }
-	}
-  }
- }
- else
- {
-   TCPClientRawHandleThread->Terminate();
-   delete PlayBackRawStream;
-   PlayBackRawStream=NULL;
-   RawPlaybackButton->Caption="Raw Playback";
-   RawConnectButton->Enabled=true;
- }
-}
-//---------------------------------------------------------------------------
-// Constructor for the thread class
-__fastcall TTCPClientRawHandleThread::TTCPClientRawHandleThread(bool value) : TThread(value)
-{
-	FreeOnTerminate = true; // Automatically free the thread object after execution
-}
-//---------------------------------------------------------------------------
-// Destructor for the thread class
-__fastcall TTCPClientRawHandleThread::~TTCPClientRawHandleThread()
-{
-	// Clean up resources if needed
-}
-//---------------------------------------------------------------------------
-// Execute method where the thread's logic resides
-void __fastcall TTCPClientRawHandleThread::Execute(void)
-{
-  __int64 Time,SleepTime;
-  while (!Terminated)
-  {
-	if (!UseFileInsteadOfNetwork)
-	 {
-	  try {
-		   if (!Form1->IdTCPClientRaw->Connected()) Terminate();
-	       StringMsgBuffer=Form1->IdTCPClientRaw->IOHandler->ReadLn();
-		  }
-       catch (...)
-		{
-		 TThread::Synchronize(StopTCPClient);
-		 break;
-		}
-
-	 }
-	 else
-	 {
-	  try
+	if (!FRawDataHandler->IsActive())
+    {
+        if (PlaybackRawDialog->Execute())
         {
-         if (Form1->PlayBackRawStream->EndOfStream)
-           {
-            printf("End Raw Playback 1\n");
-            TThread::Synchronize(StopPlayback);
-            break;
-           }
-		 StringMsgBuffer= Form1->PlayBackRawStream->ReadLine();
-         Time=StrToInt64(StringMsgBuffer);
-		 if (First)
-	      {
-		   First=false;
-		   LastTime=Time;
-		  }
-		 SleepTime=Time-LastTime;
-		 LastTime=Time;
-		 if (SleepTime>0) Sleep(SleepTime);
-         if (Form1->PlayBackRawStream->EndOfStream)
-           {
-            printf("End Raw Playback 2\n");
-            TThread::Synchronize(StopPlayback);
-            break;
-           }
-		 StringMsgBuffer= Form1->PlayBackRawStream->ReadLine();
-		}
-        catch (...)
-		{
-         printf("Raw Playback Exception\n");
-		 TThread::Synchronize(StopPlayback);
-		 break;
-		}
-	   }
-     try
-      {
-	   // Synchronize method to safely access UI components
-	   TThread::Synchronize(HandleInput);
-      }
-	 catch (...)
-     {
-      ShowMessage("TTCPClientRawHandleThread::Execute Exception 3");
-	 }
-  }
-}
-//---------------------------------------------------------------------------
-void __fastcall TTCPClientRawHandleThread::StopPlayback(void)
-{
- Form1->RawPlaybackButtonClick(NULL);
-}
-//---------------------------------------------------------------------------
-void __fastcall TTCPClientRawHandleThread::StopTCPClient(void)
-{
- Form1->RawConnectButtonClick(NULL);
+            FRawDataHandler->StartPlayback(PlaybackRawDialog->FileName);
+        }
+    }
+    else
+    {
+        FRawDataHandler->Disconnect();
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::CycleImagesClick(TObject *Sender)
@@ -1394,236 +1270,92 @@ void __fastcall TForm1::CycleImagesClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SBSConnectButtonClick(TObject *Sender)
 {
- IdTCPClientSBS->Host=SBSIpAddress->Text;
- IdTCPClientSBS->Port=5002;
-
- if ((SBSConnectButton->Caption=="SBS Connect") && (Sender!=NULL))
- {
-  try
-   {
-   IdTCPClientSBS->Connect();
-   TCPClientSBSHandleThread = new TTCPClientSBSHandleThread(true);
-   TCPClientSBSHandleThread->UseFileInsteadOfNetwork=false;
-   TCPClientSBSHandleThread->FreeOnTerminate=TRUE;
-   TCPClientSBSHandleThread->Resume();
-   }
-   catch (const EIdException& e)
-   {
-	ShowMessage("Error while connecting: "+e.Message);
-   }
- }
- else
-  {
-	TCPClientSBSHandleThread->Terminate();
-	IdTCPClientSBS->Disconnect();
-    IdTCPClientSBS->IOHandler->InputBuffer->Clear();
-	SBSConnectButton->Caption="SBS Connect";
-	SBSPlaybackButton->Enabled=true;
-  }
-
+	if (!FSBSDataHandler->IsActive())
+    {
+        FSBSDataHandler->Connect(SBSIpAddress->Text, 5002);
+    }
+    else
+    {
+        FSBSDataHandler->Disconnect();
+    }
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-void __fastcall TTCPClientSBSHandleThread::HandleInput(void)
+void __fastcall TForm1::HandleSBSData(const String& data)
 {
-  modeS_message mm;
-  TDecodeStatus Status;
-
- // Form1->MsgLog->Lines->Add(StringMsgBuffer);
-  if (Form1->RecordSBSStream)
-  {
-   __int64 CurrentTime;
-   CurrentTime=GetCurrentTimeInMsec();
-   Form1->RecordSBSStream->WriteLine(IntToStr(CurrentTime));
-   Form1->RecordSBSStream->WriteLine(StringMsgBuffer);
-  }
-
-  if (Form1->BigQueryCSV)
-  {
-    Form1->BigQueryCSV->WriteLine(StringMsgBuffer);
-    Form1->BigQueryRowCount++;
-	if (Form1->BigQueryRowCount>=BIG_QUERY_UPLOAD_COUNT)
-	{
-	 Form1->CloseBigQueryCSV();
-	 //printf("string is:%s\n", Form1->BigQueryPythonScript.c_str());
-	 RunPythonScript(Form1->BigQueryPythonScript,Form1->BigQueryPath+" "+Form1->BigQueryCSVFileName);
-	 Form1->CreateBigQueryCSV();
-	}
-  }
-  SBS_Message_Decode( StringMsgBuffer.c_str());
-
-}
-//---------------------------------------------------------------------------
-// Constructor for the thread class
-__fastcall TTCPClientSBSHandleThread::TTCPClientSBSHandleThread(bool value) : TThread(value)
-{
-	FreeOnTerminate = true; // Automatically free the thread object after execution
-}
-//---------------------------------------------------------------------------
-// Destructor for the thread class
-__fastcall TTCPClientSBSHandleThread::~TTCPClientSBSHandleThread()
-{
-	// Clean up resources if needed
-}
-//---------------------------------------------------------------------------
-// Execute method where the thread's logic resides
-void __fastcall TTCPClientSBSHandleThread::Execute(void)
-{
-  __int64 Time,SleepTime;
-  while (!Terminated)
-  {
-	if (!UseFileInsteadOfNetwork)
-	 {
-	  try {
-		   if (!Form1->IdTCPClientSBS->Connected()) Terminate();
-	       StringMsgBuffer=Form1->IdTCPClientSBS->IOHandler->ReadLn();
-		  }
-       catch (...)
-		{
-		 TThread::Synchronize(StopTCPClient);
-		 break;
-		}
-
-	 }
-	 else
-	 {
-	  try
+    if (BigQueryCSV)
+    {
+        // BigQuery 로그는 원본 Unicode 데이터를 그대로 기록해도 무방합니다.
+        BigQueryCSV->WriteLine(data);
+        BigQueryRowCount++;
+        if (BigQueryRowCount >= BIG_QUERY_UPLOAD_COUNT)
         {
-         if (Form1->PlayBackSBSStream->EndOfStream)
-           {
-            printf("End SBS Playback 1\n");
-            TThread::Synchronize(StopPlayback);
-            break;
-           }
-		 StringMsgBuffer= Form1->PlayBackSBSStream->ReadLine();
-         Time=StrToInt64(StringMsgBuffer);
-		 if (First)
-	      {
-		   First=false;
-		   LastTime=Time;
-		  }
-		 SleepTime=Time-LastTime;
-		 LastTime=Time;
-		 if (SleepTime>0) Sleep(SleepTime);
-         if (Form1->PlayBackSBSStream->EndOfStream)
-           {
-            printf("End SBS Playback 2\n");
-            TThread::Synchronize(StopPlayback);
-            break;
-           }
-		 StringMsgBuffer= Form1->PlayBackSBSStream->ReadLine();
-		}
-        catch (...)
-		{
-         printf("SBS Playback Exception\n");
-		 TThread::Synchronize(StopPlayback);
-		 break;
-		}
-	   }
-     try
-      {
-	   // Synchronize method to safely access UI components
-	   TThread::Synchronize(HandleInput);
-      }
-	 catch (...)
-     {
-      ShowMessage("TTCPClientSBSHandleThread::Execute Exception 3");
-	 }
-  }
+            CloseBigQueryCSV();
+            RunPythonScript(this->BigQueryPythonScript, this->BigQueryPath + " " + this->BigQueryCSVFileName);
+            CreateBigQueryCSV();
+        }
+    }
+
+    AnsiString ansiData = data;
+    SBS_Message_Decode(ansiData.c_str());
 }
-//---------------------------------------------------------------------------
-void __fastcall TTCPClientSBSHandleThread::StopPlayback(void)
+
+void __fastcall TForm1::HandleSBSConnected()
 {
- Form1->SBSPlaybackButtonClick(NULL);
+    SBSConnectButton->Caption = "SBS Disconnect";
+    SBSPlaybackButton->Enabled = false;
 }
-//---------------------------------------------------------------------------
-void __fastcall TTCPClientSBSHandleThread::StopTCPClient(void)
+
+void __fastcall TForm1::HandleSBSDisconnected(const String& reason)
 {
- Form1->SBSConnectButtonClick(NULL);
+    SBSConnectButton->Caption = "SBS Connect";
+    SBSPlaybackButton->Enabled = true;
+     if (PlayBackSBSStream) {
+        delete PlayBackSBSStream;
+        PlayBackSBSStream = NULL;
+        SBSPlaybackButton->Caption = "SBS Playback";
+        SBSConnectButton->Enabled = true;
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SBSRecordButtonClick(TObject *Sender)
 {
- if (SBSRecordButton->Caption=="SBS Record")
- {
-  if (RecordSBSSaveDialog->Execute())
-   {
-	// First, check if the file exists.
-	if (FileExists(RecordSBSSaveDialog->FileName))
-	  ShowMessage("File "+RecordSBSSaveDialog->FileName+"already exists. Cannot overwrite.");
-	else
-	{
-		// Open a file for writing. Creates the file if it doesn't exist, or overwrites it if it does.
-	RecordSBSStream= new TStreamWriter(RecordSBSSaveDialog->FileName, false);
-	if (RecordSBSStream==NULL)
-	  {
-		ShowMessage("Cannot Open File "+RecordSBSSaveDialog->FileName);
-	  }
-	 else SBSRecordButton->Caption="Stop SBS Recording";
-	}
-  }
- }
- else
- {
-   delete RecordSBSStream;
-   RecordSBSStream=NULL;
-   SBSRecordButton->Caption="SBS Record";
- }
-
+    if (SBSRecordButton->Caption == "SBS Record")
+    {
+        if (RecordSBSSaveDialog->Execute())
+        {
+            if (FileExists(RecordSBSSaveDialog->FileName))
+            {
+                ShowMessage("File " + RecordSBSSaveDialog->FileName + "already exists. Cannot overwrite.");
+            }
+            else
+            {
+                FSBSDataHandler->StartRecording(RecordSBSSaveDialog->FileName);
+                SBSRecordButton->Caption = "Stop SBS Recording";
+            }
+        }
+    }
+    else
+    {
+        FSBSDataHandler->StopRecording();
+        SBSRecordButton->Caption = "SBS Record";
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SBSPlaybackButtonClick(TObject *Sender)
 {
-  if ((SBSPlaybackButton->Caption=="SBS Playback") && (Sender!=NULL))
- {
-  if (PlaybackSBSDialog->Execute())
-   {
-	// First, check if the file exists.
-	if (!FileExists(PlaybackSBSDialog->FileName))
-	  ShowMessage("File "+PlaybackSBSDialog->FileName+" does not exist");
-	else
-	{
-		// Open a file for writing. Creates the file if it doesn't exist, or overwrites it if it does.
-	PlayBackSBSStream= new TStreamReader(PlaybackSBSDialog->FileName);
-	if (PlayBackSBSStream==NULL)
-	  {
-		ShowMessage("Cannot Open File "+PlaybackSBSDialog->FileName);
-	  }
-	 else {
-		   TCPClientSBSHandleThread = new TTCPClientSBSHandleThread(true);
-		   TCPClientSBSHandleThread->UseFileInsteadOfNetwork=true;
-		   TCPClientSBSHandleThread->First=true;
-		   TCPClientSBSHandleThread->FreeOnTerminate=TRUE;
-		   TCPClientSBSHandleThread->Resume();
-		   SBSPlaybackButton->Caption="Stop SBS Playback";
-           SBSConnectButton->Enabled=false;
-		  }
-	}
-  }
- }
- else
- {
-   TCPClientSBSHandleThread->Terminate();
-   delete PlayBackSBSStream;
-   PlayBackSBSStream=NULL;
-   SBSPlaybackButton->Caption="SBS Playback";
-   SBSConnectButton->Enabled=true;
- }
+	if (!FSBSDataHandler->IsActive())
+    {
+        if (PlaybackSBSDialog->Execute())
+        {
+            FSBSDataHandler->StartPlayback(PlaybackSBSDialog->FileName);
+        }
+    }
+    else
+    {
+        FSBSDataHandler->Disconnect();
+    }
 
-}
-//---------------------------------------------------------------------------
-
-void __fastcall TForm1::IdTCPClientSBSConnected(TObject *Sender)
-{
-   //SetKeepAliveValues(const AEnabled: Boolean; const ATimeMS, AInterval: Integer);
-   IdTCPClientSBS->Socket->Binding->SetKeepAliveValues(true,60*1000,15*1000);
-   SBSConnectButton->Caption="SBS Disconnect";
-   SBSPlaybackButton->Enabled=false;
-}
-//---------------------------------------------------------------------------
-void __fastcall TForm1::IdTCPClientSBSDisconnected(TObject *Sender)
-{
-  TCPClientSBSHandleThread->Terminate();
 }
 //---------------------------------------------------------------------------
 
