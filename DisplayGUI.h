@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef DisplayGUIH
 #define DisplayGUIH
@@ -26,6 +26,7 @@
 #include "cspin.h"
 #include <vector>
 #include "ntds2d.h"
+#include "TCPDataHandler.h"
 
 typedef float T_GL_Color[4];
 
@@ -58,41 +59,6 @@ typedef struct
  bool        Selected;
 }TArea;
 //---------------------------------------------------------------------------
-class  TTCPClientRawHandleThread : public TThread
-{
-private:
-	AnsiString StringMsgBuffer;
-	void __fastcall HandleInput(void);
-	void __fastcall StopPlayback(void);
-	void __fastcall StopTCPClient(void);
-protected:
-	void __fastcall Execute(void);
-public:
-	 bool UseFileInsteadOfNetwork;
-	 bool First;
-	 __int64 LastTime;
-	__fastcall TTCPClientRawHandleThread(bool value);
-	~TTCPClientRawHandleThread();
-};
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-class  TTCPClientSBSHandleThread : public TThread
-{
-private:
-	AnsiString StringMsgBuffer;
-	void __fastcall HandleInput(void);
-	void __fastcall StopPlayback(void);
-	void __fastcall StopTCPClient(void);
-protected:
-	void __fastcall Execute(void);
-public:
-	 bool UseFileInsteadOfNetwork;
-	 bool First;
-	 __int64 LastTime;
-	__fastcall TTCPClientSBSHandleThread(bool value);
-	~TTCPClientSBSHandleThread();
-};
-//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
 {
@@ -119,9 +85,6 @@ __published:	// IDE-managed Components
 	TButton *Cancel;
 	TButton *RawConnectButton;
 	TLabel *Label16;
-	TLabel *Label17;
-	TEdit *RawIpAddress;
-	TIdTCPClient *IdTCPClientRaw;
 	TSaveDialog *RecordRawSaveDialog;
 	TOpenDialog *PlaybackRawDialog;
 	TCheckBox *CycleImages;
@@ -156,9 +119,9 @@ __published:	// IDE-managed Components
 	TLabel *AircraftCountLabel;
 	TLabel *Label11;
 	TLabel *Label1;
+	TEdit *RawIpAddress;
 	TButton *RawPlaybackButton;
 	TButton *RawRecordButton;
-	TIdTCPClient *IdTCPClientSBS;
 	TButton *SBSConnectButton;
 	TEdit *SBSIpAddress;
 	TButton *SBSRecordButton;
@@ -206,16 +169,12 @@ __published:	// IDE-managed Components
 	void __fastcall FormMouseWheel(TObject *Sender, TShiftState Shift,
           int WheelDelta, TPoint &MousePos, bool &Handled);
 	void __fastcall RawConnectButtonClick(TObject *Sender);
-	void __fastcall IdTCPClientRawConnected(TObject *Sender);
 	void __fastcall RawRecordButtonClick(TObject *Sender);
 	void __fastcall RawPlaybackButtonClick(TObject *Sender);
-	void __fastcall IdTCPClientRawDisconnected(TObject *Sender);
 	void __fastcall CycleImagesClick(TObject *Sender);
 	void __fastcall SBSConnectButtonClick(TObject *Sender);
 	void __fastcall SBSRecordButtonClick(TObject *Sender);
 	void __fastcall SBSPlaybackButtonClick(TObject *Sender);
-	void __fastcall IdTCPClientSBSConnected(TObject *Sender);
-	void __fastcall IdTCPClientSBSDisconnected(TObject *Sender);
 	void __fastcall TimeToGoTrackBarChange(TObject *Sender);
 	void __fastcall MapComboBoxChange(TObject *Sender);
 	void __fastcall BigQueryCheckBoxClick(TObject *Sender);
@@ -224,6 +183,17 @@ __published:	// IDE-managed Components
 	void __fastcall LoadARTCCBoundaries1Click(TObject *Sender);
 
 private:	// User declarations
+	TCPDataHandler *FRawDataHandler;
+    TCPDataHandler *FSBSDataHandler;
+
+    // 콜백에 의해 호출될 함수들
+    void __fastcall HandleRawData(const String& data);
+    void __fastcall HandleRawConnected();
+    void __fastcall HandleRawDisconnected(const String& reason);
+
+    void __fastcall HandleSBSData(const String& data);
+    void __fastcall HandleSBSConnected();
+    void __fastcall HandleSBSDisconnected(const String& reason);
 
 
 public:		// User declarations
@@ -263,8 +233,6 @@ public:		// User declarations
 	TList                     *Areas;
 	TArea                     *AreaTemp;
 	ght_hash_table_t          *HashTable;
-	TTCPClientRawHandleThread *TCPClientRawHandleThread;
-    TTCPClientSBSHandleThread *TCPClientSBSHandleThread;
 	TStreamWriter              *RecordRawStream;
 	TStreamReader              *PlayBackRawStream;
     TStreamWriter              *RecordSBSStream;
