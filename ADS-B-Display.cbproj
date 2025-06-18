@@ -93,8 +93,8 @@
         <Icon_MainIcon>$(BDS)\bin\cbuilder_PROJECTICON.ico</Icon_MainIcon>
         <UWP_CppLogo44>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_44.png</UWP_CppLogo44>
         <UWP_CppLogo150>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_150.png</UWP_CppLogo150>
-        <IncludePath>Map\MapSrc\MapProvider\;Map\MapSrc\;..\..\..\..\..\Desktop\ADS-B-2025\ADS-B-Display\;$(IncludePath)</IncludePath>
-        <ILINK_LibraryPath>Map\MapSrc\MapProvider\;Map\MapSrc\;..\..\..\..\..\Desktop\ADS-B-2025\ADS-B-Display\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <IncludePath>Controller\;Map\MapSrc\MapProvider\;Map\MapSrc\;..\..\..\..\..\Desktop\ADS-B-2025\ADS-B-Display\;$(IncludePath)</IncludePath>
+        <ILINK_LibraryPath>Controller\;Map\MapSrc\MapProvider\;Map\MapSrc\;..\..\..\..\..\Desktop\ADS-B-2025\ADS-B-Display\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <SanitizedProjectName>ADS-B-Display</SanitizedProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
@@ -186,7 +186,6 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DynamicRTL>false</DynamicRTL>
-        <BCC_Defines>MEASURE_PERFORMANCE;$(BCC_Defines)</BCC_Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64x)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
@@ -213,6 +212,10 @@
             <DependentOn>AreaDialog.h</DependentOn>
             <BuildOrder>34</BuildOrder>
         </CppCompile>
+        <CppCompile Include="Controller\TCPDataHandler.cpp">
+            <DependentOn>Controller\TCPDataHandler.h</DependentOn>
+            <BuildOrder>52</BuildOrder>
+        </CppCompile>
         <CppCompile Include="CPA.cpp">
             <DependentOn>CPA.h</DependentOn>
             <BuildOrder>37</BuildOrder>
@@ -233,12 +236,6 @@
         </CppCompile>
         <None Include="dms.h">
             <BuildOrder>36</BuildOrder>
-        </None>
-        <CppCompile Include="hex_font.cpp">
-            <BuildOrder>50</BuildOrder>
-        </CppCompile>
-        <None Include="hex_font.h">
-            <BuildOrder>51</BuildOrder>
         </None>
         <CppCompile Include="LatLonConv.cpp">
             <DependentOn>LatLonConv.h</DependentOn>
@@ -289,6 +286,12 @@
         </None>
         <None Include="Map\MapSrc\MapProvider\MAPFactory.h">
             <BuildOrder>43</BuildOrder>
+        </None>
+        <CppCompile Include="Map\MapSrc\MapProvider\OpenStreetMapProvider.cpp">
+            <BuildOrder>51</BuildOrder>
+        </CppCompile>
+        <None Include="Map\MapSrc\MapProvider\OpenStreetMapProvider.h">
+            <BuildOrder>51</BuildOrder>
         </None>
         <CppCompile Include="Map\MapSrc\MapProvider\SkyVectorIFRHighProvider.cpp">
             <BuildOrder>44</BuildOrder>

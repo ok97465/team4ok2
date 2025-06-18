@@ -25,6 +25,7 @@ gefetch_error gefetch_fetch_image_googlemaps(gefetch *handle, int x, int y, int 
 
 	if (_snprintf(urlbuf, sizeof(urlbuf),"%s/vt/lyrs=y&x=%d&y=%d&z=%d", handle->url,x,y,level) >= sizeof(urlbuf))
 		return GEFETCH_SMALL_BUFFER;
+	printf("%s\n",urlbuf);		
 	/* fetch */
 	return gefetch_fetch(handle, urlbuf);
 }
@@ -40,7 +41,7 @@ gefetch_error gefetch_fetch_image_skyvector(gefetch *handle,const char *key,cons
 
 	newlevel = 23 + 301-ichart - (2 * level);
 
-	//printf("new level %d Level %d Ichart %d\n",newlevel,level,ichart);
+	printf("[%s] new level %d Level %d Ichart %d\n",__func__, newlevel,level,ichart);
 
 	if (ichart==301)
 	 {
@@ -62,7 +63,20 @@ gefetch_error gefetch_fetch_image_skyvector(gefetch *handle,const char *key,cons
         printf("error\n");
 		return GEFETCH_SMALL_BUFFER;
 	}
-	//printf("%s\n",urlbuf);
+	printf("[%s] %s\n",__func__, urlbuf);
+	/* fetch */
+	return gefetch_fetch(handle, urlbuf);
+}
+
+gefetch_error gefetch_fetch_image_openstreetmap(gefetch *handle, int x, int y, int level) {
+	/* form full url */
+	char urlbuf[1024];
+	int correct = int_pow(2,level)-1;
+	y=correct-y;
+
+	if (_snprintf(urlbuf, sizeof(urlbuf),"%s/%d/%d/%d.jpeg", handle->url,level,x,y) >= sizeof(urlbuf))
+		return GEFETCH_SMALL_BUFFER;
+	printf("%s\n",urlbuf);		
 	/* fetch */
 	return gefetch_fetch(handle, urlbuf);
 }

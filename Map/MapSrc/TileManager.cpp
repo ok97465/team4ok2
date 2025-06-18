@@ -18,7 +18,7 @@ TileManager::~TileManager() {
 
 TextureTilePtr TileManager::GetTexture(int x, int y, int level) {
 	TextureTilePtr cur = m_TextureRoot;
-
+//printf("[%s] ----> 1\n", __func__);
 	for (int curlevel = 0; curlevel <= level; curlevel++) {
 		int cx = (x >> (level - curlevel));
 		int cy = (y >> (level - curlevel));

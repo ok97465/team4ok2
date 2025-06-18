@@ -1,5 +1,5 @@
 .\Win64\Release\Request.o: Request.cpp \
-  D:\2025_architect\team_project\architect_project\ADS-B-DisplayV42\ADS-B-Display\Map\libgefetch/Request.h \
+  D:\Architect\team4\Map\libgefetch/Request.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\stdio.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_stddef.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_defs.h \

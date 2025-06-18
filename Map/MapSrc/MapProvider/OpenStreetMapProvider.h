@@ -4,12 +4,12 @@
 #include "KeyholeConnection.h"
 #include "FilesystemStorage.h"
 
-class GoogleMapsProvider : public IMAPProvider {
+class OpenStreetMapProvider : public IMAPProvider {
     std::string cacheDir;
     bool inet; // 인터넷에서 가져오는지 여부
 public:
-    GoogleMapsProvider(const std::string& dir, bool inet = true);
-    ~GoogleMapsProvider() override;
+    OpenStreetMapProvider(const std::string& dir, bool inet = true);
+    ~OpenStreetMapProvider() override;
     void FetchTile(TilePtr tile, KeyholeConnection* conn) override;
     std::string GetCacheDir() const override;
     std::string GetURI() const override;

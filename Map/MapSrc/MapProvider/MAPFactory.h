@@ -7,12 +7,14 @@
 #include "SkyVectorVFRProvider.h"
 #include "SkyVectorIFRLowProvider.h"
 #include "SkyVectorIFRHighProvider.h"
+#include "OpenStreetMapProvider.h"
 
 enum MapType {
     GoogleMaps,
     SkyVector_VFR,
     SkyVector_IFR_Low,
-    SkyVector_IFR_High
+    SkyVector_IFR_High,
+    OpenStreetMap
 };
 
 class MAPFactory {
@@ -21,21 +23,15 @@ public:
         std::string dir = baseDir;
         switch (type) {
             case GoogleMaps:
-                dir += "..\\GoogleMap";
-                dir += fromInternet ? "_Live\\" : "\\";
                 return std::make_unique<GoogleMapsProvider>(dir, fromInternet);
             case SkyVector_VFR:
-                dir += "..\\VFR_Map";
-                dir += fromInternet ? "_Live\\" : "\\";
                 return std::make_unique<SkyVectorVFRProvider>(dir, fromInternet);
             case SkyVector_IFR_Low:
-                dir += "..\\IFR_Low_Map";
-                dir += fromInternet ? "_Live\\" : "\\";
                 return std::make_unique<SkyVectorIFRLowProvider>(dir, fromInternet);
             case SkyVector_IFR_High:
-                dir += "..\\IFR_High_Map";
-                dir += fromInternet ? "_Live\\" : "\\";
                 return std::make_unique<SkyVectorIFRHighProvider>(dir, fromInternet);
+            case OpenStreetMap:
+                return std::make_unique<OpenStreetMapProvider>(dir, fromInternet);
             default:
                 return nullptr;
         }

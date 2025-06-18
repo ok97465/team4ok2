@@ -92,6 +92,7 @@ int Tile::IsNull() {
 
 /* load/save */
 void Tile::Load(RawBuffer *data, int keep) {
+	printf("[%s]\n",__func__);
 	if (keep)
 		m_RawData = data;
 	else 

@@ -57,7 +57,9 @@ void TextureTile::Load(RawBuffer *data, int keep) {
 	Texture *tex = new Texture;
 
 	try {
+		printf("[%s] tile->LoadJPEG\n", __func__);		
 		tex->LoadJPEG(TEXTURE_SOURCE_MEM, data->Data(), data->Size());
+		//tex->LoadPNG(TEXTURE_SOURCE_MEM, data->Data(), data->Size());
 	} catch (...) {
 		delete tex;
 		delete data;

@@ -75,6 +75,7 @@ DWORD WINAPI SimpleTileStorage::ThreadEntryPoint(LPVOID pthis) {
 
 void SimpleTileStorage::Enqueue(TilePtr tile) {
 	/* insert requested item in queue */
+	//printf("[%s] ----> tile x(%d), y(%d), level(%d) \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
     WaitForSingleObject(m_QueueMutex,INFINITE); 
 	m_Queue.push(tile);
 	ReleaseMutex(m_QueueMutex);
@@ -116,12 +117,16 @@ void SimpleTileStorage::ThreadRun() {
 						throw;
 					*/
 				}
-
+					//printf("[%s] current->IsLoaded()(%d) \n", __func__, current->IsLoaded());
 				/* pass it down the chain */
-				if (current->IsLoaded() && current->IsSaveable() && m_pSaveStorage)
+				if (current->IsLoaded() && current->IsSaveable() && m_pSaveStorage){
+					//printf("[%s] m_pSaveStorage->Enqueue----> tile x(%d), y(%d), level(%d) \n", __func__, current->GetX(), current->GetY(), current->GetLevel());
 					m_pSaveStorage->Enqueue(current);
-				else if (!current->IsLoaded() && m_pNextLoadStorage)
+                }
+				else if (!current->IsLoaded() && m_pNextLoadStorage){
+					//printf("[%s] m_pNextLoadStorage->Enqueue----> tile x(%d), y(%d), level(%d) \n", __func__, current->GetX(), current->GetY(), current->GetLevel());
 					m_pNextLoadStorage->Enqueue(current);
+                }
 			} catch (std::exception &e) {
 				/* fatal error in enqueue?! */
 				warning("SimpleTileStorage: fatal error (%s) (%d %d %d)\n", e.what(), current->GetX(), current->GetY(), current->GetLevel());
@@ -131,10 +136,12 @@ void SimpleTileStorage::ThreadRun() {
 }
 
 void SimpleTileStorage::SetNextLoadStorage(TileStorage *ts) {
+	printf("[%s]\n", __func__);
 	m_pNextLoadStorage = ts;
 }
 
 void SimpleTileStorage::SetSaveStorage(TileStorage *ts) {
+	printf("[%s]\n", __func__);
 	m_pSaveStorage = ts;
 }
 
