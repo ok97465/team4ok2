@@ -111,8 +111,8 @@ void TCPDataHandler::Connect(const String& host, int port)
 
     // new TThread(false) -> new TWorkerThread(this) 로 변경
     FWorkerThread = new TWorkerThread(this);
-    // OnExecute 할당 삭제
-    FWorkerThread->Start(); // Resume() 대신 Start()가 표준
+    FWorkerThread->FreeOnTerminate=true;
+	FWorkerThread->Resume(); // Resume() 대신 Start()가 표준
 }
 //---------------------------------------------------------------------------
 void TCPDataHandler::StartPlayback(const String& fileName)
@@ -124,8 +124,8 @@ void TCPDataHandler::StartPlayback(const String& fileName)
 
     // new TThread(false) -> new TWorkerThread(this) 로 변경
     FWorkerThread = new TWorkerThread(this);
-    // OnExecute 할당 삭제
-    FWorkerThread->Start();
+    FWorkerThread->FreeOnTerminate=true;
+    FWorkerThread->Resume();
 }
 //---------------------------------------------------------------------------
 void TCPDataHandler::Disconnect()
