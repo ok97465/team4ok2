@@ -13,63 +13,8 @@
 #define sleep(sec) Sleep(1000*(sec))
 #endif
 
-// https://skyvector.com/api/chartDataFPL
-
-/*
-#define GOOGLE_URL               "http://mt1.google.com"
-#define SKYVECTOR_URL            "http://t.skyvector.com"
-#define SKYVECTOR_CHART_VPS      "301"
-#define SKYVECTOR_CHART_IFR_LOW  "302"
-#define SKYVECTOR_CHART_IFR_HIGH "304"
-#define SKYVECTOR_KEY             "V7pMh4xRihf1nr61"
-#define SKYVECTOR_EDITION         "2504"
-
-
-KeyholeConnection::KeyholeConnection(int type)
-{
-  const char * url;
-	if (type== GoogleMaps)
-	{
-	 ServerType= GoogleMaps;
-	 url=GOOGLE_URL;
-    }
-	else if (type== SkyVector_VFR)
-	{
-	  ServerType= SkyVector;
-	  url=SKYVECTOR_URL;
-	  Key=SKYVECTOR_KEY;
-	  Chart=SKYVECTOR_CHART_VPS;
-	  Edition=SKYVECTOR_EDITION;
-	}
-	else if (type== SkyVector_IFR_Low)
-	{
-	  ServerType= SkyVector;
-	  url=SKYVECTOR_URL;
-	  Key=SKYVECTOR_KEY;
-	  Chart=SKYVECTOR_CHART_IFR_LOW;
-	  Edition=SKYVECTOR_EDITION;
-	}
-	else if (type== SkyVector_IFR_High)
-	{
-	  ServerType= SkyVector;
-	  url=SKYVECTOR_URL;
-	  Key=SKYVECTOR_KEY;
-	  Chart=SKYVECTOR_CHART_IFR_HIGH;
-	  Edition=SKYVECTOR_EDITION;
-	}
-	if ((m_GEFetch = gefetch_init(url)) == 0)
-		throw Exception("gefetch_init() failed");
-}
-*/
-KeyholeConnection::KeyholeConnection(const std::string& url, IMAPProvider* provider)
-    : url(url), m_GEFetch(nullptr), provider(provider) {
-    m_GEFetch = gefetch_init(url.c_str());
-    if (!m_GEFetch)
-        throw Exception("gefetch_init() failed");
-}
-
-KeyholeConnection::KeyholeConnection(const std::string& url, const std::string& key, const std::string& chart, const std::string& edition, IMAPProvider* provider)
-    : url(url), key(key), chart(chart), edition(edition), m_GEFetch(nullptr), provider(provider) {
+KeyholeConnection::KeyholeConnection(const std::string& url)
+    : url(url), m_GEFetch(nullptr) {
     m_GEFetch = gefetch_init(url.c_str());
     if (!m_GEFetch)
         throw Exception("gefetch_init() failed");
@@ -80,42 +25,17 @@ KeyholeConnection::~KeyholeConnection() noexcept {
         gefetch_cleanup(m_GEFetch);
 }
 
+void KeyholeConnection::SetFetchTileCallback(std::function<void(TilePtr, KeyholeConnection*)> cb) {
+	printf("[KeyholeConnection][%s]\n", __func__);
+	fetchTileCallback = cb;
+}    
+
 void KeyholeConnection::Process(TilePtr tile) {
-    if (provider) {
-        provider->FetchTile(tile);
+     if (fetchTileCallback) {
+		printf("[KeyholeConnection][%s] ----> tile x(%d), y(%d), level(%d) \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
+		fetchTileCallback(tile, this); 
     } else {
-        // 예외 처리 또는 기본 동작
+		printf("[KeyholeConnection][%s] null \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());		
         tile->Null();
     }
 }
-/*
-void KeyholeConnection::Process(TilePtr tile) {
-	gefetch_error res;
-    if (ServerType== GoogleMaps)
-    {
-      res = gefetch_fetch_image_googlemaps(m_GEFetch, tile->GetX(), tile->GetY(), tile->GetLevel());
-    }
-    else if (ServerType== SkyVector)
-	{
-	  res = gefetch_fetch_image_skyvector(m_GEFetch,Key,Chart,Edition, tile->GetX(), tile->GetY(), tile->GetLevel());
-    }
-
-	if ((res == GEFETCH_NOT_FOUND) ||  (res == GEFETCH_INVALID_ZOOM))
-	{
-		tile->Null();
-		return;
-	}
-	else if (res != GEFETCH_OK) {
-		sleep(1);	
-		throw Exception("gefetch_fetch_image() failed");
-	}
-
-	RawBuffer *buf = new RawBuffer(gefetch_get_data_ptr(m_GEFetch), gefetch_get_data_size(m_GEFetch));
-
-	try {
-		tile->Load(buf, m_pSaveStorage != 0);
-	} catch (...) {
-		delete buf;
-		throw;
-	}
-}*/

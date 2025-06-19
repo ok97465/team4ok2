@@ -27,7 +27,12 @@ gefetch_error gefetch_do_http_request(gefetch *handle, int method, const char *u
  {
   handle->currentdata=(unsigned char *)ret.message;
   handle->currentsize=ret.messageLength;
+  printf("[%s] GEFETCH_OK\n",__func__);		
   return GEFETCH_OK;
  }
- else  return GEFETCH_FETCH_FAILED;
+ else
+ {
+	printf("[%s] GEFETCH_FETCH_FAILED\n",__func__);		
+	return GEFETCH_FETCH_FAILED;
+ }  
 }

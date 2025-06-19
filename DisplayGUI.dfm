@@ -776,7 +776,8 @@ object Form1: TForm1
           'Google Maps'
           'VFR'
           'IFS Low'
-          'IFS High')
+          'IFS High'
+          'OpenStreetMap')
       end
       object BigQueryCheckBox: TCheckBox
         Left = 5

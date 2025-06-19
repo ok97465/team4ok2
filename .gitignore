@@ -5,10 +5,10 @@ __recovery/
 Win64/
 Recorded/
 AircraftDB/
-VFR_Map/
-GoogleMap/
-IFR_High_Map/
-IFR_Low_Map/
+VFR_Map*
+GoogleMap*
+IFR_High_Map*
+IFR_Low_Map*
 .vscode/
 .spyproject/
 __pycache__/

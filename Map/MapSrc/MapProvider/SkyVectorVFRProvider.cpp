@@ -9,31 +9,26 @@
 #define SKYVECTOR_URL            "http://t.skyvector.com"
 #define SKYVECTOR_CHART_VPS      "301"
 #define SKYVECTOR_KEY             "V7pMh4xRihf1nr61"
-#define SKYVECTOR_EDITION         "2504"
+#define SKYVECTOR_EDITION         "2506"
 
 SkyVectorVFRProvider::SkyVectorVFRProvider(const std::string& dir, bool fromInternet)
-    : cacheDir(dir), inet(fromInternet), conn(nullptr), storage(nullptr) {} 
+    : inet(fromInternet) {
+    std::string baseDir = dir;
+    baseDir += "..\\VFR_Map";
+    baseDir += fromInternet ? "_Live\\" : "\\";
+    cacheDir = baseDir;
+}
 
 SkyVectorVFRProvider::~SkyVectorVFRProvider() {
-    delete conn;
+
 }
 
-void SkyVectorVFRProvider::SetStorage(FilesystemStorage* s) { storage = s; }
+void SkyVectorVFRProvider::FetchTile(TilePtr tile, KeyholeConnection* conn) {
+    printf("[SkyVectorVRFProvider][%s] ----> tile x(%d), y(%d), level(%d) \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());    
 
-void SkyVectorVFRProvider::Init() {
-    if(!inet) return;    
-    
-    conn = new KeyholeConnection(SKYVECTOR_URL, SKYVECTOR_KEY, SKYVECTOR_CHART_VPS, SKYVECTOR_EDITION, this);
-    if (storage && conn) {
-        conn->SetSaveStorage(storage);
-        storage->SetNextLoadStorage(conn);
-    }
-}
-
-void SkyVectorVFRProvider::FetchTile(TilePtr tile) {
     gefetch_error res = gefetch_fetch_image_skyvector(
         conn->GetGEFetch(),
-        conn->GetKey().c_str(), conn->GetChart().c_str(), conn->GetEdition().c_str(),
+        SKYVECTOR_KEY, SKYVECTOR_CHART_VPS, SKYVECTOR_EDITION,
         tile->GetX(), tile->GetY(), tile->GetLevel()
     );
     if ((res == GEFETCH_NOT_FOUND) || (res == GEFETCH_INVALID_ZOOM)) {
@@ -46,7 +41,7 @@ void SkyVectorVFRProvider::FetchTile(TilePtr tile) {
     }
     RawBuffer* buf = new RawBuffer(gefetch_get_data_ptr(conn->GetGEFetch()), gefetch_get_data_size(conn->GetGEFetch()));
     try {
-        tile->Load(buf, conn->HasSaveStorage());
+        tile->Load(buf, 1);
     } catch (...) {
         delete buf;
         throw;
@@ -55,4 +50,9 @@ void SkyVectorVFRProvider::FetchTile(TilePtr tile) {
 
 std::string SkyVectorVFRProvider::GetCacheDir() const {
     return cacheDir;
+}
+
+std::string SkyVectorVFRProvider::GetURI() const {
+    printf("[SkyVectorIFRHighProvider][%s]\n", __func__);
+    return SKYVECTOR_URL;
 }

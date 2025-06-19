@@ -28,7 +28,7 @@
 #include "ntds2d.h"
 #include "TCPDataHandler.h"
 #include "AircraftDataModel.h"
-
+#include "IMAPProvider.h"
 typedef float T_GL_Color[4];
 
 
@@ -224,6 +224,7 @@ public:		// User declarations
 	double                     Mw1,Mw2,Mh1,Mh2,xf,yf;
 	KeyholeConnection	      *g_Keyhole;
 	FilesystemStorage	      *g_Storage;
+	std::unique_ptr<IMAPProvider> provider;
 	MasterLayer	      	      *g_MasterLayer;
 	TileManager		          *g_GETileManager;
 	EarthView		          *g_EarthView;

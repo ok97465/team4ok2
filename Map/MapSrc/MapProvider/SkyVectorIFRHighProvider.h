@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "IMAPProvider.h"
 #include "KeyholeConnection.h"
@@ -6,15 +6,11 @@
 
 class SkyVectorIFRHighProvider : public IMAPProvider {
     std::string cacheDir;
-    KeyholeConnection* conn;
-    FilesystemStorage* storage; // 외부에서 주입
     bool inet; // 인터넷에서 가져오는지 여부    
 public:
     SkyVectorIFRHighProvider(const std::string& dir, bool inet = true);
     ~SkyVectorIFRHighProvider() override;
-    void Init() override;
-    void FetchTile(TilePtr tile) override;
+    void FetchTile(TilePtr tile, KeyholeConnection* conn) override;
     std::string GetCacheDir() const override;
-    void SetStorage(FilesystemStorage* s); // 추가
-    KeyholeConnection* GetKeyholeConnection() const { return conn; }    
+    std::string GetURI() const override; 
 };
