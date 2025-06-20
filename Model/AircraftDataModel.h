@@ -1,4 +1,4 @@
-// -- Model/AircraftDataModel.h --
+﻿// -- Model/AircraftDataModel.h --
 
 #ifndef AircraftDataModelH
 #define AircraftDataModelH
@@ -14,15 +14,16 @@ private:
     int FCurrentSpriteImage;
 
     // 내부에서만 사용될 헬퍼 함수
-    TADS_B_Aircraft* FindOrCreateAircraft(unsigned int Addr, bool ACycleImages, int ANumSpriteImages);
+    
 
 public:
     __fastcall AircraftDataModel();
     __fastcall ~AircraftDataModel();
 
     // --- 데이터 처리 인터페이스 ---
-    void ProcessRawMessage(const String& data, bool ACycleImages, int ANumSpriteImages);
-    void ProcessSbsMessage(const String& data);
+    void ProcessRawMessage(const AnsiString& data, bool ACycleImages, int ANumSpriteImages);
+    void ProcessSbsMessage(const AnsiString& data, bool ACycleImages, int ANumSpriteImages);
+    TADS_B_Aircraft* FindOrCreateAircraft(unsigned int Addr, bool ACycleImages, int ANumSpriteImages);
 
     // --- 데이터 관리 인터페이스 ---
     void PurgeStaleAircraft(int AStaleTimeSec);

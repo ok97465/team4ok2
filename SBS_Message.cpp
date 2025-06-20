@@ -1,11 +1,13 @@
 //---------------------------------------------------------------------------
 
 #pragma hdrstop
-#include "DisplayGUI.h"
+#include "AircraftDataModel.h"
 #include "Aircraft.h"
 #include "SBS_Message.h"
 #include "TimeFunctions.h"
 #include <math.h>
+#include <System.Classes.hpp> // TStringList 사용
+#include <System.SysUtils.hpp> // StrToIntDef, StrToFloatDef 등 사용
 
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
@@ -217,186 +219,160 @@ bool ModeS_Build_SBS_Message (const modeS_message *mm, TADS_B_Aircraft *a, char 
 //---------------------------------------------------------------------------
 #define DELIMITER ","
 //---------------------------------------------------------------------------
-bool SBS_Message_Decode( char *msg)
+bool SBS_Message_Decode(char *msg, AircraftDataModel* model, bool cycleImages, int numSpriteImages)
 {
-   bool  HaveSpeed=false;
-   bool  HaveHeading=false;
-   bool  HaveLat=false;
-   bool  HaveLon=false;
-   TADS_B_Aircraft *ADS_B_Aircraft;
-   int FieldNumber=0;
-   uint32_t addr=0;
-   __int64 CurrentTime=GetCurrentTimeInMsec();
+    TADS_B_Aircraft *ADS_B_Aircraft;
+    uint32_t addr = 0;
+    __int64 CurrentTime = GetCurrentTimeInMsec();
 
-   char *SBS_Fields[22];
-   char FixHex[7];
+    char *SBS_Fields[22];
+    char FixHex[7];
 
-   for (int i = 0; i < 22; i++)
-	 {
-		SBS_Fields[i] = strsep(&msg, DELIMITER);
-		if (!msg && i < 21)
-		  {
-			return(false);
-		  }
-	 }
+    for (int i = 0; i < 22; i++)
+    {
+        SBS_Fields[i] = strsep(&msg, DELIMITER);
+        if (!msg && i < 21)
+        {
+            return false;
+        }
+    }
 
-   if ((SBS_Fields[SBS_MESSAGE_TYPE]==0) || (stricmp(SBS_Fields[SBS_MESSAGE_TYPE],"MSG")!=0))
-	{
-	  printf("not a SBS MSG\n");
-	  return(false);
-	}
+    if ((SBS_Fields[SBS_MESSAGE_TYPE] == 0) || (stricmp(SBS_Fields[SBS_MESSAGE_TYPE], "MSG") != 0))
+    {
+        printf("not a SBS MSG\n");
+        return false;
+    }
 
-	if ((SBS_Fields[SBS_HEX_INDENT]==0) || (strlen(SBS_Fields[SBS_HEX_INDENT]) < 6) || (strlen(SBS_Fields[SBS_HEX_INDENT]) > 7))  // icao must be 6 characters
-	   {
-		if ((SBS_Fields[SBS_HEX_INDENT]==0) || (strlen(SBS_Fields[SBS_HEX_INDENT]) > 7))
-		{
-		 printf("invalid ICAO 1 Field is %s\n",SBS_Fields[SBS_HEX_INDENT]);
-		 return(false);
-		}
-		else
-		{
-		 int current_length=strlen(SBS_Fields[SBS_HEX_INDENT]);
-		 int padding_length = 6 - current_length;
-		 memset(FixHex, '0', padding_length);
-		 strcpy(FixHex +padding_length, SBS_Fields[SBS_HEX_INDENT]);
-		 //printf("Fixed Hex Was %s now %s\n", SBS_Fields[SBS_HEX_INDENT],FixHex);
-		 SBS_Fields[SBS_HEX_INDENT]=FixHex;
-		}
-       }
-	char *icao = SBS_Fields[SBS_HEX_INDENT];
+    if ((SBS_Fields[SBS_HEX_INDENT] == 0) || (strlen(SBS_Fields[SBS_HEX_INDENT]) < 6) || (strlen(SBS_Fields[SBS_HEX_INDENT]) > 7))
+    {
+        if ((SBS_Fields[SBS_HEX_INDENT] == 0) || (strlen(SBS_Fields[SBS_HEX_INDENT]) > 7))
+        {
+            printf("invalid ICAO 1 Field is %s\n", SBS_Fields[SBS_HEX_INDENT]);
+            return false;
+        }
+        else
+        {
+            int current_length = strlen(SBS_Fields[SBS_HEX_INDENT]);
+            int padding_length = 6 - current_length;
+            memset(FixHex, '0', padding_length);
+            strcpy(FixHex + padding_length, SBS_Fields[SBS_HEX_INDENT]);
+            SBS_Fields[SBS_HEX_INDENT] = FixHex;
+        }
+    }
+
+    char *icao = SBS_Fields[SBS_HEX_INDENT];
     int non_icao = 0;
     if (icao[0] == '~')
-     {
-      icao++;
-      non_icao = 1;
-     }
-    unsigned char *chars = (unsigned char *)(unsigned char *) &addr;
+    {
+        icao++;
+        non_icao = 1;
+    }
+
+    unsigned char *chars = (unsigned char *)&addr;
     for (int j = 0; j < 6; j += 2)
-       {
-	   	int high = hexDigitVal(icao[j]);
+    {
+        int high = hexDigitVal(icao[j]);
         int low = hexDigitVal(icao[j + 1]);
-
         if (high == -1 || low == -1)
-		  {
-           printf("invalid ICAO 2\n");
-           return(false);
-          }
-
-         chars[2 - j / 2] = (high << 4) | low;
-       }
-     //printf("%06X\n",(int)addr);
-     if (non_icao) addr |= MODES_NON_ICAO_ADDRESS;
-
-     ADS_B_Aircraft =(TADS_B_Aircraft *) ght_get(Form1->HashTable,sizeof(addr),&addr);
-     if (ADS_B_Aircraft==NULL)
         {
-         ADS_B_Aircraft= new TADS_B_Aircraft;
-         ADS_B_Aircraft->ICAO=addr;
-         snprintf(ADS_B_Aircraft->HexAddr,sizeof(ADS_B_Aircraft->HexAddr),"%06X",(int)addr);
-         ADS_B_Aircraft->NumMessagesSBS=0;
-         ADS_B_Aircraft->NumMessagesRaw=0;
-         ADS_B_Aircraft->VerticalRate=0;
-         ADS_B_Aircraft->HaveAltitude=false;
-         ADS_B_Aircraft->HaveLatLon=false;
-         ADS_B_Aircraft->HaveSpeedAndHeading=false;
-         ADS_B_Aircraft->HaveFlightNum=false;
-         ADS_B_Aircraft->SpriteImage=Form1->CurrentSpriteImage;
-         if (Form1->CycleImages->Checked)
-              Form1->CurrentSpriteImage=(Form1->CurrentSpriteImage+1)%Form1->NumSpriteImages;
-		 if (ght_insert(Form1->HashTable,ADS_B_Aircraft,sizeof(addr), &addr) < 0)
-             {
-			  printf("ght_insert Error-Should Not Happen");
-             }
+            printf("invalid ICAO 2\n");
+            return false;
         }
+        chars[2 - j / 2] = (high << 4) | low;
+    }
 
-      ADS_B_Aircraft->LastSeen =CurrentTime;
-      ADS_B_Aircraft->NumMessagesSBS++;
+    if (non_icao) addr |= MODES_NON_ICAO_ADDRESS;
 
-	  if ((SBS_Fields[SBS_CALLSIGN]) && strlen(SBS_Fields[SBS_CALLSIGN]) > 0)
-		 {
-		   strncpy(ADS_B_Aircraft->FlightNum, SBS_Fields[SBS_CALLSIGN], 9);
-		   ADS_B_Aircraft->FlightNum[8] = '\0';
-		   ADS_B_Aircraft->HaveFlightNum = true;
-		   for (unsigned i = 0; i < 8; ++i)
-              {
-			   if (ADS_B_Aircraft->FlightNum[i] == '\0')
-				 {
-				  ADS_B_Aircraft->FlightNum[i] = ' ';
-				 }
-				if (!(ADS_B_Aircraft->FlightNum[i] >= 'A' && ADS_B_Aircraft->FlightNum[i] <= 'Z') &&
-					!(ADS_B_Aircraft->FlightNum[i] >= '0' && ADS_B_Aircraft->FlightNum[i] <= '9') &&
-					  ADS_B_Aircraft->FlightNum[i] != ' ')
-					{
-					  // Bad callsign, ignore it
-					  ADS_B_Aircraft->HaveFlightNum = false;
-					  break;
-					}
-              }
-         }
-	  if ((SBS_Fields[SBS_ALTITUDE]) && strlen(SBS_Fields[SBS_ALTITUDE]) > 0)
-		 {
-		   char *endptr = NULL;
-		   double tmp=strtod(SBS_Fields[SBS_ALTITUDE], &endptr);
-		   if (endptr != SBS_Fields[SBS_ALTITUDE] && isfinite(tmp))
-			  {
-			   ADS_B_Aircraft->HaveAltitude=true;
-			   ADS_B_Aircraft->Altitude=tmp;
-			  }
-		 }
-	  if ((SBS_Fields[SBS_GROUND_SPEED]) && strlen(SBS_Fields[SBS_GROUND_SPEED]) > 0)
-		 {
-		  char *endptr = NULL;
+    ADS_B_Aircraft = model->FindOrCreateAircraft(addr, cycleImages, numSpriteImages);
+    if (ADS_B_Aircraft == NULL)
+    {
+        return false;
+    }
 
-		  double tmp=strtod(SBS_Fields[SBS_GROUND_SPEED], &endptr);
-		  if (endptr != SBS_Fields[SBS_GROUND_SPEED] && isfinite(tmp))
-			  {
-			   ADS_B_Aircraft->Speed=tmp;
-			  }
-		 }
-	  if ((SBS_Fields[SBS_TRACK_HEADING]) && strlen(SBS_Fields[SBS_TRACK_HEADING]) > 0)
-		 {
-		  char *endptr = NULL;
+    ADS_B_Aircraft->LastSeen = CurrentTime;
+    ADS_B_Aircraft->NumMessagesSBS++;
 
-		  double tmp=strtod(SBS_Fields[SBS_TRACK_HEADING], &endptr);
-		  if (endptr != SBS_Fields[SBS_TRACK_HEADING] && isfinite(tmp))
-			  {
-			   ADS_B_Aircraft->Heading=tmp;
-			   ADS_B_Aircraft->HaveSpeedAndHeading=true;
-			  }
-		 }
-	  if (SBS_Fields[SBS_LATITUDE]  && (strlen(SBS_Fields[SBS_LATITUDE]) > 0) &&
-          SBS_Fields[SBS_LONGITUDE] && (strlen(SBS_Fields[SBS_LONGITUDE]) > 0))
-		 {
-		   char *endptr = NULL;
-           double TempLat,TempLon;
-		   TempLat=strtod(SBS_Fields[SBS_LATITUDE], &endptr);
-		   if (endptr != SBS_Fields[SBS_LATITUDE] && isfinite(TempLat))
-			  {
-                TempLon=strtod(SBS_Fields[SBS_LONGITUDE], &endptr);
-                if (endptr != SBS_Fields[SBS_LONGITUDE] && isfinite(TempLon))
+    if ((SBS_Fields[SBS_CALLSIGN]) && strlen(SBS_Fields[SBS_CALLSIGN]) > 0)
+    {
+        strncpy(ADS_B_Aircraft->FlightNum, SBS_Fields[SBS_CALLSIGN], 9);
+        ADS_B_Aircraft->FlightNum[8] = '\0';
+        ADS_B_Aircraft->HaveFlightNum = true;
+        for (unsigned i = 0; i < 8; ++i)
+        {
+            if (ADS_B_Aircraft->FlightNum[i] == '\0')
+            {
+                ADS_B_Aircraft->FlightNum[i] = ' ';
+            }
+            if (!(ADS_B_Aircraft->FlightNum[i] >= 'A' && ADS_B_Aircraft->FlightNum[i] <= 'Z') &&
+                !(ADS_B_Aircraft->FlightNum[i] >= '0' && ADS_B_Aircraft->FlightNum[i] <= '9') &&
+                ADS_B_Aircraft->FlightNum[i] != ' ')
+            {
+                ADS_B_Aircraft->HaveFlightNum = false;
+                break;
+            }
+        }
+    }
+
+    if ((SBS_Fields[SBS_ALTITUDE]) && strlen(SBS_Fields[SBS_ALTITUDE]) > 0)
+    {
+        char *endptr = NULL;
+        double tmp = strtod(SBS_Fields[SBS_ALTITUDE], &endptr);
+        if (endptr != SBS_Fields[SBS_ALTITUDE] && isfinite(tmp))
+        {
+            ADS_B_Aircraft->HaveAltitude = true;
+            ADS_B_Aircraft->Altitude = tmp;
+        }
+    }
+    if ((SBS_Fields[SBS_GROUND_SPEED]) && strlen(SBS_Fields[SBS_GROUND_SPEED]) > 0)
+    {
+        char *endptr = NULL;
+        double tmp = strtod(SBS_Fields[SBS_GROUND_SPEED], &endptr);
+        if (endptr != SBS_Fields[SBS_GROUND_SPEED] && isfinite(tmp))
+        {
+            ADS_B_Aircraft->Speed = tmp;
+        }
+    }
+    if ((SBS_Fields[SBS_TRACK_HEADING]) && strlen(SBS_Fields[SBS_TRACK_HEADING]) > 0)
+    {
+        char *endptr = NULL;
+        double tmp = strtod(SBS_Fields[SBS_TRACK_HEADING], &endptr);
+        if (endptr != SBS_Fields[SBS_TRACK_HEADING] && isfinite(tmp))
+        {
+            ADS_B_Aircraft->Heading = tmp;
+            ADS_B_Aircraft->HaveSpeedAndHeading = true;
+        }
+    }
+    if (SBS_Fields[SBS_LATITUDE] && (strlen(SBS_Fields[SBS_LATITUDE]) > 0) &&
+        SBS_Fields[SBS_LONGITUDE] && (strlen(SBS_Fields[SBS_LONGITUDE]) > 0))
+    {
+        char *endptr = NULL;
+        double TempLat, TempLon;
+        TempLat = strtod(SBS_Fields[SBS_LATITUDE], &endptr);
+        if (endptr != SBS_Fields[SBS_LATITUDE] && isfinite(TempLat))
+        {
+            TempLon = strtod(SBS_Fields[SBS_LONGITUDE], &endptr);
+            if (endptr != SBS_Fields[SBS_LONGITUDE] && isfinite(TempLon))
+            {
+                // 위도/경도 유효 범위 체크 개선
+                if ((TempLat <= 90.0) && (TempLat >= -90.0) &&
+                    (TempLon >= -180.0) && (TempLon <= 180.0))
                 {
-                  if ((ADS_B_Aircraft->Latitude< 90.0) && (ADS_B_Aircraft->Latitude>=-90.0) &&
-                      (ADS_B_Aircraft->Longitude>= -180.0) && (ADS_B_Aircraft->Longitude<=180.0))
-                  {
-                   ADS_B_Aircraft->Latitude=TempLat;
-                   ADS_B_Aircraft->Longitude=TempLon;
-                   ADS_B_Aircraft->HaveLatLon=true;
-                  }
-
+                    ADS_B_Aircraft->Latitude = TempLat;
+                    ADS_B_Aircraft->Longitude = TempLon;
+                    ADS_B_Aircraft->HaveLatLon = true;
                 }
-              }
-		 }
+            }
+        }
+    }
+    if ((SBS_Fields[SBS_VERTICAL_RATE]) && strlen(SBS_Fields[SBS_VERTICAL_RATE]) > 0)
+    {
+        char *endptr = NULL;
+        double tmp = strtod(SBS_Fields[SBS_VERTICAL_RATE], &endptr);
+        if (endptr != SBS_Fields[SBS_VERTICAL_RATE] && isfinite(tmp))
+        {
+            ADS_B_Aircraft->VerticalRate = tmp;
+        }
+    }
 
-		if ((SBS_Fields[SBS_VERTICAL_RATE]) && strlen(SBS_Fields[SBS_VERTICAL_RATE]) > 0)
-		  {
-			  char *endptr = NULL;
-
-			  double tmp=strtod(SBS_Fields[SBS_VERTICAL_RATE], &endptr);
-			  if (endptr != SBS_Fields[SBS_VERTICAL_RATE] && isfinite(tmp))
-			  {
-			   ADS_B_Aircraft->VerticalRate=tmp;
-			  }
-		  }
-  return(true);
+    return true;
 }
-//---------------------------------------------------------------------------

@@ -43,7 +43,7 @@ private:
     bool FIsActive;
 
     // 동기화 메소드 (변경 없음)
-    void __fastcall SyncNotifyData(String data);
+    void __fastcall SyncNotifyData(AnsiString data);
     void __fastcall SyncNotifyConnected();
     void __fastcall SyncNotifyDisconnected(String reason);
 

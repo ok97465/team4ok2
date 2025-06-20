@@ -229,13 +229,13 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 
   	// Raw 데이터 핸들러 생성 및 콜백 연결
 	FRawDataHandler = new TCPDataHandler(this);
-	FRawDataHandler->OnDataReceived = [this](const String& data){ this->HandleRawData(data); };
+	FRawDataHandler->OnDataReceived = [this](const AnsiString& data){ this->HandleRawData(data); };
 	FRawDataHandler->OnConnected = [this](){ this->HandleRawConnected(); };
 	FRawDataHandler->OnDisconnected = [this](const String& reason){ this->HandleRawDisconnected(reason); };
 
 	// SBS 데이터 핸들러 생성 및 콜백 연결
 	FSBSDataHandler = new TCPDataHandler(this);
-	FSBSDataHandler->OnDataReceived = [this](const String& data){ this->HandleSBSData(data); };
+	FSBSDataHandler->OnDataReceived = [this](const AnsiString& data){ this->HandleSBSData(data); };
 	FSBSDataHandler->OnConnected = [this](){ this->HandleSBSConnected(); };
 	FSBSDataHandler->OnDisconnected = [this](const String& reason){ this->HandleSBSDisconnected(reason); };
 
@@ -1097,7 +1097,7 @@ void __fastcall TForm1::FormMouseWheel(TObject *Sender, TShiftState Shift,
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Raw 데이터 수신 처리 (기존 TTCPClientRawHandleThread::HandleInput의 내용)
-void __fastcall TForm1::HandleRawData(const String& data)
+void __fastcall TForm1::HandleRawData(const AnsiString& data)
 {
     FAircraftModel->ProcessRawMessage(data, CycleImages->Checked, NumSpriteImages);
 }
@@ -1188,11 +1188,10 @@ void __fastcall TForm1::SBSConnectButtonClick(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-void __fastcall TForm1::HandleSBSData(const String& data)
+void __fastcall TForm1::HandleSBSData(const AnsiString& data)
 {
     if (BigQueryCSV)
     {
-        // BigQuery 로그는 원본 Unicode 데이터를 그대로 기록해도 무방합니다.
         BigQueryCSV->WriteLine(data);
         BigQueryRowCount++;
         if (BigQueryRowCount >= BIG_QUERY_UPLOAD_COUNT)
@@ -1203,8 +1202,7 @@ void __fastcall TForm1::HandleSBSData(const String& data)
         }
     }
 
-    AnsiString ansiData = data;
-    SBS_Message_Decode(ansiData.c_str());
+	FAircraftModel->ProcessSbsMessage(data, CycleImages->Checked, NumSpriteImages);
 }
 
 void __fastcall TForm1::HandleSBSConnected()
