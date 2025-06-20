@@ -1,4 +1,4 @@
-// -- Model/AircraftDataModel.cpp --
+﻿// -- Model/AircraftDataModel.cpp --
 
 #pragma hdrstop
 
@@ -61,7 +61,7 @@ TADS_B_Aircraft* AircraftDataModel::FindOrCreateAircraft(unsigned int Addr, bool
     return aircraft;
 }
 //---------------------------------------------------------------------------
-void AircraftDataModel::ProcessRawMessage(const String& data, bool ACycleImages, int ANumSpriteImages)
+void AircraftDataModel::ProcessRawMessage(const AnsiString& data, bool ACycleImages, int ANumSpriteImages)
 {
     modeS_message mm;
     AnsiString ansiData = data; // Unicode -> Ansi 변환
@@ -79,13 +79,9 @@ void AircraftDataModel::ProcessRawMessage(const String& data, bool ACycleImages,
     }
 }
 //---------------------------------------------------------------------------
-void AircraftDataModel::ProcessSbsMessage(const String& data)
+void AircraftDataModel::ProcessSbsMessage(const AnsiString& data, bool ACycleImages, int ANumSpriteImages)
 {
-    // 참고: SBS_Message_Decode 함수가 전역변수(Form1->HashTable)에 직접 접근하지 않고,
-    // 이 클래스의 FHashTable을 사용할 수 있도록 수정이 필요할 수 있습니다.
-    // 예: SBS_Message_Decode(data.c_str(), FHashTable);
-    AnsiString ansiData = data;
-    SBS_Message_Decode(ansiData.c_str());
+    SBS_Message_Decode(const_cast<char*>(data.c_str()), this, ACycleImages, ANumSpriteImages);
 }
 //---------------------------------------------------------------------------
 void AircraftDataModel::PurgeStaleAircraft(int AStaleTimeSec)

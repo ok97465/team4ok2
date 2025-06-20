@@ -189,11 +189,11 @@ private:	// User declarations
 	AircraftDataModel *FAircraftModel;
 
     // 콜백에 의해 호출될 함수들
-    void __fastcall HandleRawData(const String& data);
+    void __fastcall HandleRawData(const AnsiString& data);
     void __fastcall HandleRawConnected();
     void __fastcall HandleRawDisconnected(const String& reason);
 
-    void __fastcall HandleSBSData(const String& data);
+    void __fastcall HandleSBSData(const AnsiString& data);
     void __fastcall HandleSBSConnected();
     void __fastcall HandleSBSDisconnected(const String& reason);
 

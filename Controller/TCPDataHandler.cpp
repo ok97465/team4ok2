@@ -45,7 +45,7 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
             {
                 String timeStr = FHandler->FPlaybackStream->ReadLine();
                 if (FHandler->FPlaybackStream->EndOfStream) break;
-                String msgStr = FHandler->FPlaybackStream->ReadLine();
+                AnsiString msgStr = FHandler->FPlaybackStream->ReadLine();
 
                 __int64 currentTime = StrToInt64(timeStr);
                 if (firstPlaybackLine)
@@ -111,8 +111,8 @@ void TCPDataHandler::Connect(const String& host, int port)
 
     // new TThread(false) -> new TWorkerThread(this) 로 변경
     FWorkerThread = new TWorkerThread(this);
-    // OnExecute 할당 삭제
-    FWorkerThread->Start(); // Resume() 대신 Start()가 표준
+    FWorkerThread->FreeOnTerminate=true;
+	FWorkerThread->Resume(); // Resume() 대신 Start()가 표준
 }
 //---------------------------------------------------------------------------
 void TCPDataHandler::StartPlayback(const String& fileName)
@@ -124,8 +124,8 @@ void TCPDataHandler::StartPlayback(const String& fileName)
 
     // new TThread(false) -> new TWorkerThread(this) 로 변경
     FWorkerThread = new TWorkerThread(this);
-    // OnExecute 할당 삭제
-    FWorkerThread->Start();
+    FWorkerThread->FreeOnTerminate=true;
+    FWorkerThread->Resume();
 }
 //---------------------------------------------------------------------------
 void TCPDataHandler::Disconnect()
@@ -158,7 +158,7 @@ void TCPDataHandler::StopRecording()
 //---------------------------------------------------------------------------
 // 동기화 메소드들 (변경 없음)
 //---------------------------------------------------------------------------
-void __fastcall TCPDataHandler::SyncNotifyData(String data)
+void __fastcall TCPDataHandler::SyncNotifyData(AnsiString data)
 {
     if (FRecordStream)
     {
