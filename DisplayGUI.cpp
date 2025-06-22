@@ -1152,6 +1152,7 @@ void __fastcall TForm1::RawConnectButtonClick(TObject *Sender)
 {
 	if (!FRawDataHandler->IsActive())
     {
+		RawConnectButton->Caption = "Connecting... (Cancel)";
         FRawDataHandler->Connect(RawIpAddress->Text, 30002);
     }
     else
