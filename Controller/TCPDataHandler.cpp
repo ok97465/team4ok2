@@ -67,7 +67,7 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
     }
     catch (const Exception& e)
     {
-        // 네트워크 또는 파일 에러 처리
+        ShowMessage("Error while connecting: "+e.Message);
     }
 
     // 스레드 종료 처리
