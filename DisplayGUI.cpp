@@ -1308,38 +1308,51 @@ void __fastcall TForm1::LoadMap(int Type)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
 {
-  double    m_Eyeh= g_EarthView->m_Eye.h;
-  double    m_Eyex= g_EarthView->m_Eye.x;
-  double    m_Eyey= g_EarthView->m_Eye.y;
+  double    m_Eyeh = g_EarthView ? g_EarthView->m_Eye.h : 0.0;
+  double    m_Eyex = g_EarthView ? g_EarthView->m_Eye.x : 0.0;
+  double    m_Eyey = g_EarthView ? g_EarthView->m_Eye.y : 0.0;
 
+  Timer1->Enabled = false;
+  Timer2->Enabled = false;
 
-  Timer1->Enabled=false;
-  Timer2->Enabled=false;
-  delete g_EarthView;
-  if (g_GETileManager) delete g_GETileManager;
-  delete g_MasterLayer;
-  delete g_Storage;
-  provider.reset(); // Reset the provider to release resources
-  if (LoadMapFromInternet)
-  {
-   if (g_Keyhole) delete g_Keyhole;
+  // 해제 순서: 생성의 역순
+  if (g_EarthView) {
+    delete g_EarthView;
+    g_EarthView = nullptr;
   }
-  if (MapComboBox->ItemIndex==0)   LoadMap(GoogleMaps);
+  if (g_MasterLayer) {
+    delete g_MasterLayer;
+    g_MasterLayer = nullptr;
+  }
+  if (g_GETileManager) {
+    delete g_GETileManager;
+    g_GETileManager = nullptr;
+  }
+  if (g_Storage) {
+    delete g_Storage;
+    g_Storage = nullptr;
+  }
+  //if (LoadMapFromInternet) {
+    if (g_Keyhole) {
+      delete g_Keyhole;
+      g_Keyhole = nullptr;
+    }
+  //}
+  provider.reset();
 
-  else if (MapComboBox->ItemIndex==1)  LoadMap(SkyVector_VFR);
+  if (MapComboBox->ItemIndex == 0)      LoadMap(GoogleMaps);
+  else if (MapComboBox->ItemIndex == 1) LoadMap(SkyVector_VFR);
+  else if (MapComboBox->ItemIndex == 2) LoadMap(SkyVector_IFR_Low);
+  else if (MapComboBox->ItemIndex == 3) LoadMap(SkyVector_IFR_High);
+  else if (MapComboBox->ItemIndex == 4) LoadMap(OpenStreetMap);
 
-  else if (MapComboBox->ItemIndex==2)  LoadMap(SkyVector_IFR_Low);
-
-  else if (MapComboBox->ItemIndex==3)   LoadMap(SkyVector_IFR_High);
-
-  else if (MapComboBox->ItemIndex==4)   LoadMap(OpenStreetMap);
-
-   g_EarthView->m_Eye.h =m_Eyeh;
-   g_EarthView->m_Eye.x=m_Eyex;
-   g_EarthView->m_Eye.y=m_Eyey;
-   Timer1->Enabled=true;
-   Timer2->Enabled=true;
-
+  if (g_EarthView) {
+	g_EarthView->m_Eye.h = m_Eyeh;
+	g_EarthView->m_Eye.x = m_Eyex;
+	g_EarthView->m_Eye.y = m_Eyey;
+  }
+  Timer1->Enabled = true;
+  Timer2->Enabled = true;
 }
 //---------------------------------------------------------------------------
 
