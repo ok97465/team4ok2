@@ -1,13 +1,13 @@
 {
   "type": "service_account",
-  "project_id": "",
-  "private_key_id": "",
-  "private_key": "",
-  "client_email": "",
-  "client_id": "",
+  "project_id": "scs-lg-arch-4",
+  "private_key_id": "af7610e39a00e9bf731a7c3f421036e1e6e78c85",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDqXTTDElbSs5h6\n9kOMp/+CgCKfoZB9RkOy/ynU1T6tRkhAhMVz1+2jOcBxmhE72oHPTBGb0GfziCc9\nj+eQWkaH5FQzrX3pFedF0m+KfyEK44dKHOKFclL/Zw7QBQ1cwkt62qQo+VhKrg+M\nKSX0NljGnrIvj4GOEArGUQ3RFcZo0uoY5ApCeDe5wl4hU2KlUtVpoVcLGEq6MlUL\nUdgpvFl+PnfYNBS6IhEnheyOkmSrvM+ifa9s8IGVIVH++GoAtr+Pn7/OrGdG/foI\nRn4/EISZV0hV/YiAmuq++hqNtdZFE74pyZGPhBmK1sgkYFkVQkEEkQ4/JG3i0kSy\ntEVDPIyDAgMBAAECggEAEms5PoXn2iIqC95KcfjkeHG9LUVTh4giWyRf03QS7sFF\nFzT+fUIG6u4azsYB/SDWIazKMXzpvonNZuXMmChQJLvwIvbLaRDDBVZdh8mOY9gW\nUnlkrOibcN3waK7Zw8saILfWpC9WHg01KzNmSGqN0MZS6kphlZpzJ+57PIFBzHKo\njISq9hQ9Beo+/uF/Rw9U1YQ/g3dj+5bRnW9E+YXUp9cTzI5/z/+5ULVSkkx02J+m\ncYbJ+WyWDQluU2xJr04jLgE7pRyprCmC/lSybi5lQGmcz1WttqLw4+J2/CCIlUfb\nRw5TQOMxcleOuEaLIGC9dVCfEStT7rvBJXv/cBM4mQKBgQD3U8Hqtbo23Rl3WfX4\n/pSBymVgm0YOjV3NL0QWqV/9j710uhnMAuJvuiQ8JGZ0jbTs/1DFI8Lj3WDazwX0\ndWKdSf0KFKW6CGz6oMCTuetVbQ6ETIZ9fToh3ygX/JBP4138quqinnCVAOeUb0fJ\nEZBAfyqX5Uxwztn1sUG62/ej1QKBgQDylRRkLqeP+BACfKB+becZKLVgISBYhEmU\nuFU/hMYtgW3f5Xnnc8PayGpnLm1juO4ixnaConn52JTeNXkwRMTs7wXJBipna6NH\n1t+DNq7R7gsDgqBfpEOIfOJHgV/65QXwT2eFhWhLWpPD7wvjYU/+97aLamAKVfD6\nepid8WaS9wKBgQCCBFHopOfjd4+vomcgIhTHtjJc+sN1WvN4reRJVXjUvv+FoV92\nU/3dZikuRKRnmScHf6BiQk5toy8LV9F1lU/mB8MxzXDhvxQrHN6fyhjgq5f6DJCW\n34Hz1HArS+ZBWPFLpj36hvgAHJ2g9m7yUH1YqoEloLDyjIsgEbLQHFqukQKBgQC0\n8SZIo9QwuyOV90fvhiK+zXKcxZjO7b3ExMoxmuQHxWcjfpOzZNJOOvfDBwppO+PE\n5Kw5POAm0LoaFWDT9De/U3rJO2QdyFf+mfQWd49m31wvvhvJu0j0YdKW65WgG3yW\nh2P8YEovCtz1ZTVE4a09zZ/H1gzVKM2ayB9WkF2meQKBgQDaYxYC2d5hXLyUAivr\nkOxLE5gkugj+5wztgaQj8rKZFsGQSMsVh2crKozOdQuZNZfHn/yvW8t2T8zHekl+\njOov6F8hvCQhuLvivlV9D5kZU20VOreDtACzVr8ujjogX5LvucL2w47HgU8tUG80\nV8+35qAKwpTa7hpg8PXJ7AeNmQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "bigquery-client-t4@scs-lg-arch-4.iam.gserviceaccount.com",
+  "client_id": "113012068764260830297",
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
   "token_uri": "https://oauth2.googleapis.com/token",
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/bigquery-client-t4%40scs-lg-arch-4.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
 }
