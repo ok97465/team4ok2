@@ -13,15 +13,12 @@
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\mem.h \
   ..\zlib\zlib.h ..\zlib/zconf.h \
   D:\Architect\team4\Map\libgefetch/gefetch.h \
-  D:\Architect\team4\Map\libgefetch/Request.h \
-  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\stdio.h \
-  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_nfile.h \
-  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\stdarg.h \
-  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winsock2.h \
-  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winapifamily.h \
+  D:\Architect\team4\Map\libgefetch/Request_wininet.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\windows.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winapifamily.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\sdkddkver.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\excpt.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\stdarg.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\windef.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\minwindef.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\specstrings.h \
@@ -125,6 +122,10 @@
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\rpcasync.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\shellapi.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winperf.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winsock2.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\ws2def.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\inaddr.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\qos.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\wincrypt.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\bcrypt.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\ncrypt.h \
@@ -176,6 +177,6 @@
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\mcx.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\imm.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\ime_cmodes.h \
-  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\ws2def.h \
-  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\inaddr.h \
-  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\qos.h
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\wininet.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\stdio.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_nfile.h

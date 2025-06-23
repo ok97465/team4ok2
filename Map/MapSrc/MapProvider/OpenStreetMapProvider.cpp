@@ -7,7 +7,9 @@
 #endif
 
 //#define OSM_URL "http://tile.openstreetmap.org"
-#define OSM_URL "http://tiles.mapz.com/mapproxy/tiles/1.0.0/mapz_multicolor_poi_hq/EPSG3857"
+#define OSM_URL "https://api.maptiler.com/maps/openstreetmap"
+#define API_KEY "@2x.jpg?key=jPzOiONYSlDVXCeO7jIa"
+
 
 OpenStreetMapProvider::OpenStreetMapProvider(const std::string& dir, bool fromInternet)
     : inet(fromInternet) {
@@ -24,7 +26,7 @@ OpenStreetMapProvider::~OpenStreetMapProvider() {
 void OpenStreetMapProvider::FetchTile(TilePtr tile, KeyholeConnection* conn) {
     printf("[OpenStreetMapProvider][%s] ----> tile x(%d), y(%d), level(%d) \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
 
-    gefetch_error res = gefetch_fetch_image_openstreetmap(conn->GetGEFetch(), tile->GetX(), tile->GetY(), tile->GetLevel());
+    gefetch_error res = gefetch_fetch_image_openstreetmap(conn->GetGEFetch(), API_KEY, tile->GetX(), tile->GetY(), tile->GetLevel());
     if ((res == GEFETCH_NOT_FOUND) || (res == GEFETCH_INVALID_ZOOM)) {
         tile->Null();
         printf("[%s] tile->Null\n", __func__);

@@ -282,11 +282,12 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 	MakeAirTrackHostile();
 	MakeAirTrackUnknown();
 	MakePoint();
-        MakeTrackHook();
-        InitAirplaneInstancing();
-		InitAirplaneLinesInstancing();
-        InitHexTextInstancing();
-        g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+	MakeTrackHook();
+	InitAirplaneInstancing();
+	InitAirplaneLinesInstancing();
+	InitHexTextInstancing();
+	if(g_EarthView)
+		g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
 	glPushAttrib (GL_LINE_BIT);
 	glPopAttrib ();
     printf("OpenGL Version %s\n",glGetString(GL_VERSION));
@@ -303,7 +304,8 @@ void __fastcall TForm1::ObjectDisplayResize(TObject *Sender)
 	glEnable (GL_LINE_STIPPLE);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+	if(g_EarthView)
+		g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
@@ -314,9 +316,13 @@ void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 
  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
- g_EarthView->Animate();
- g_EarthView->Render(DrawMap->Checked);
- g_GETileManager->Cleanup();
+ if (g_EarthView)
+ {
+	g_EarthView->Animate();
+	g_EarthView->Render(DrawMap->Checked);
+ }
+ if( g_GETileManager)
+  g_GETileManager->Cleanup();
  Mw1 = Map_w[1].x-Map_w[0].x;
  Mw2 = Map_v[1].x-Map_v[0].x;
  Mh1 = Map_w[1].y-Map_w[0].y;
@@ -653,7 +659,8 @@ void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
 	 g_MouseLeftDownX = X;
 	 g_MouseLeftDownY = Y;
 	 g_MouseDownMask |= LEFT_MOUSE_DOWN ;
-	 g_EarthView->StartDrag(X, Y, NAV_DRAG_PAN);
+	 if(g_EarthView)
+	 	g_EarthView->StartDrag(X, Y, NAV_DRAG_PAN);
 	}
   }
  else if (Button==mbRight)
@@ -718,7 +725,8 @@ void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
 
   if (g_MouseDownMask & LEFT_MOUSE_DOWN)
   {
-   g_EarthView->Drag(g_MouseLeftDownX, g_MouseLeftDownY, X,Y, NAV_DRAG_PAN);
+    if(g_EarthView)
+		g_EarthView->Drag(g_MouseLeftDownX, g_MouseLeftDownY, X,Y, NAV_DRAG_PAN);
    ObjectDisplay->Repaint();
   }
 
@@ -726,7 +734,8 @@ void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ResetXYOffset(void)
 {
- SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
+ if(g_EarthView)
+ 	SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
  ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
@@ -857,14 +866,16 @@ int __fastcall TForm1::XY2LatLon2(int x, int y,double &lat,double &lon )
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ZoomInClick(TObject *Sender)
 {
-  g_EarthView->SingleMovement(NAV_ZOOM_IN);
+  if(g_EarthView)
+  	g_EarthView->SingleMovement(NAV_ZOOM_IN);
   ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TForm1::ZoomOutClick(TObject *Sender)
 {
- g_EarthView->SingleMovement(NAV_ZOOM_OUT);
+ if(g_EarthView)
+	g_EarthView->SingleMovement(NAV_ZOOM_OUT);
 
  ObjectDisplay->Repaint();
 }
@@ -1089,10 +1100,12 @@ void __fastcall TForm1::DeleteAllAreas(void)
 void __fastcall TForm1::FormMouseWheel(TObject *Sender, TShiftState Shift,
 	  int WheelDelta, TPoint &MousePos, bool &Handled)
 {
- if (WheelDelta>0)
+ if(g_EarthView){
+	if (WheelDelta>0)
 	  g_EarthView->SingleMovement(NAV_ZOOM_IN);
- else g_EarthView->SingleMovement(NAV_ZOOM_OUT);
-  ObjectDisplay->Repaint();
+ 	else g_EarthView->SingleMovement(NAV_ZOOM_OUT);
+  	  ObjectDisplay->Repaint();
+ }
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -1328,16 +1341,17 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
     delete g_GETileManager;
     g_GETileManager = nullptr;
   }
-  if (g_Storage) {
-    delete g_Storage;
-    g_Storage = nullptr;
-  }
   //if (LoadMapFromInternet) {
     if (g_Keyhole) {
       delete g_Keyhole;
       g_Keyhole = nullptr;
     }
   //}
+  if (g_Storage) {
+    delete g_Storage;
+    g_Storage = nullptr;
+  }
+
   provider.reset();
 
   if (MapComboBox->ItemIndex == 0)      LoadMap(GoogleMaps);

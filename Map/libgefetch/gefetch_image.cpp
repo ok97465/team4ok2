@@ -68,13 +68,13 @@ gefetch_error gefetch_fetch_image_skyvector(gefetch *handle,const char *key,cons
 	return gefetch_fetch(handle, urlbuf);
 }
 
-gefetch_error gefetch_fetch_image_openstreetmap(gefetch *handle, int x, int y, int level) {
+gefetch_error gefetch_fetch_image_openstreetmap(gefetch *handle, const char *key, int x, int y, int level) {
 	/* form full url */
 	char urlbuf[1024];
 	int correct = int_pow(2,level)-1;
 	y=correct-y;
 
-	if (_snprintf(urlbuf, sizeof(urlbuf),"%s/%d/%d/%d.jpeg", handle->url,level,x,y) >= sizeof(urlbuf))
+	if (_snprintf(urlbuf, sizeof(urlbuf),"%s/%d/%d/%d%s", handle->url,level,x,y,key) >= sizeof(urlbuf))
 		return GEFETCH_SMALL_BUFFER;
 	printf("%s\n",urlbuf);		
 	/* fetch */

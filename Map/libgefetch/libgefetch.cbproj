@@ -134,10 +134,12 @@
         <CppCompile Include="gefetch_zlib.cpp">
             <BuildOrder>8</BuildOrder>
         </CppCompile>
-        <CppCompile Include="Request.cpp">
-            <DependentOn>Request.h</DependentOn>
-            <BuildOrder>8</BuildOrder>
+        <CppCompile Include="Request_wininet.cpp">
+            <BuildOrder>9</BuildOrder>
         </CppCompile>
+        <None Include="Request_wininet.h">
+            <BuildOrder>10</BuildOrder>
+        </None>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

@@ -1,5 +1,6 @@
 #include "gefetch_internal.h"
-#include "Request.h"
+//#include "Request.h"
+#include "Request_wininet.h"
 
 /**
  * Internal function to form and execute single HTTP request
