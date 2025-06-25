@@ -399,6 +399,18 @@
             <DependentOn>RawDecoder.h</DependentOn>
             <BuildOrder>54</BuildOrder>
         </CppCompile>
+        <CppCompile Include="RouteInfo.cpp">
+            <BuildOrder>62</BuildOrder>
+        </CppCompile>
+        <None Include="RouteInfo.h">
+            <BuildOrder>64</BuildOrder>
+        </None>
+        <CppCompile Include="RouteProvider.cpp">
+            <BuildOrder>63</BuildOrder>
+        </CppCompile>
+        <None Include="RouteProvider.h">
+            <BuildOrder>65</BuildOrder>
+        </None>
         <CppCompile Include="SbsDecoder.cpp">
             <DependentOn>SbsDecoder.h</DependentOn>
             <BuildOrder>53</BuildOrder>
@@ -414,8 +426,8 @@
             <DependentOn>TriangulatPoly.h</DependentOn>
             <BuildOrder>32</BuildOrder>
         </CppCompile>
-        <FormResources Include="DisplayGUI.dfm"/>
         <FormResources Include="AreaDialog.dfm"/>
+        <FormResources Include="DisplayGUI.dfm"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

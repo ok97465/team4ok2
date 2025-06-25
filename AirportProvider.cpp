@@ -124,33 +124,37 @@ void AirportProvider::DownloadAndParseAviationDataAsync(
                 batch.push_back(info);
 
                 // 100개마다 콜백
-                if (batch.size() >= 100) {
-                    // 파싱 결과 출력
-                    std::cout << "[Batch Parsed] size=" << batch.size() << std::endl;
-                    for (const auto& a : batch) {
-                        std::cout << a.GetCode() << ", " << a.GetName() << ", " << a.GetICAO() << ", " << a.GetIATA() << ", "
-                                  << a.GetLocation() << ", " << a.GetCountryISO2() << ", " << a.GetLatitude() << ", "
-                                  << a.GetLongitude() << ", " << a.GetAltitudeFeet() << std::endl;
-                    }
-                    onBatchParsed(batch, false);
-                    batch.clear();
-                    lastBatchTime = std::chrono::steady_clock::now();
-                }
-            }
+				if (batch.size() >= 100) {
+					// 파싱 결과 출력
+#if 0
+					std::cout << "[Batch Parsed] size=" << batch.size() << std::endl;
+					for (const auto& a : batch) {
+						std::cout << a.GetCode() << ", " << a.GetName() << ", " << a.GetICAO() << ", " << a.GetIATA() << ", "
+								  << a.GetLocation() << ", " << a.GetCountryISO2() << ", " << a.GetLatitude() << ", "
+								  << a.GetLongitude() << ", " << a.GetAltitudeFeet() << std::endl;
+					}
+#endif
+					onBatchParsed(batch, false);
+					batch.clear();
+					lastBatchTime = std::chrono::steady_clock::now();
+				}
+			}
 
-            // 100개가 안되더라도 0.5초마다 콜백
-            auto now = std::chrono::steady_clock::now();
-            if (!batch.empty() && std::chrono::duration_cast<std::chrono::milliseconds>(now - lastBatchTime).count() >= 500) {
-                // 파싱 결과 출력
-                std::cout << "[Batch Parsed] size=" << batch.size() << std::endl;
-                for (const auto& a : batch) {
-                    std::cout << a.GetCode() << ", " << a.GetName() << ", " << a.GetICAO() << ", " << a.GetIATA() << ", "
-                              << a.GetLocation() << ", " << a.GetCountryISO2() << ", " << a.GetLatitude() << ", "
-                              << a.GetLongitude() << ", " << a.GetAltitudeFeet() << std::endl;
-                }
-                onBatchParsed(batch, false);
-                batch.clear();
-                lastBatchTime = now;
+			// 100개가 안되더라도 0.5초마다 콜백
+			auto now = std::chrono::steady_clock::now();
+			if (!batch.empty() && std::chrono::duration_cast<std::chrono::milliseconds>(now - lastBatchTime).count() >= 500) {
+				// 파싱 결과 출력
+#if 0
+				std::cout << "[Batch Parsed] size=" << batch.size() << std::endl;
+				for (const auto& a : batch) {
+					std::cout << a.GetCode() << ", " << a.GetName() << ", " << a.GetICAO() << ", " << a.GetIATA() << ", "
+							  << a.GetLocation() << ", " << a.GetCountryISO2() << ", " << a.GetLatitude() << ", "
+							  << a.GetLongitude() << ", " << a.GetAltitudeFeet() << std::endl;
+				}
+#endif
+				onBatchParsed(batch, false);
+				batch.clear();
+				lastBatchTime = now;
             }
 
             if (localDownloadFinished) {
