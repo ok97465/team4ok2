@@ -8,11 +8,13 @@
 #include <vector>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "AircraftDB.h"
 
 #pragma hdrstop
 
 #include "ntds2d.h"
 #include "hex_font.h"
+#include "Aircraft.h"
 #define RADPERDEG (asin(1.0f)/90.0f)
 #ifndef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_TO_EDGE 0x812F
@@ -662,15 +664,43 @@ void DrawAirTrackUnknown(float x, float y)
   glEnd();
  }
 //---------------------------------------------------------------------------
-  void DrawLeader(float x1, float y1, float x2, float y2)
- {
+void DrawLeader(float x1, float y1, float x2, float y2)
+{
+   // 기본 선 그리기
    glBegin(GL_LINE_STRIP);
    glVertex2f(x1,y1);
    glVertex2f(x2,y2);
    glEnd();
- }
+   
+   // 화살표 머리 그리기
+   float dx = x2 - x1;
+   float dy = y2 - y1;
+   float length = sqrt(dx*dx + dy*dy);
+   
+   if (length > 0) {
+       // 정규화
+       dx /= length;
+       dy /= length;
+       
+       // 화살표 머리 크기
+       float arrowSize = 8.0f;
+       
+       // 화살표 머리의 두 점 계산
+       float arrowX1 = x2 - arrowSize * dx + arrowSize * 0.5f * dy;
+       float arrowY1 = y2 - arrowSize * dy - arrowSize * 0.5f * dx;
+       float arrowX2 = x2 - arrowSize * dx - arrowSize * 0.5f * dy;
+       float arrowY2 = y2 - arrowSize * dy + arrowSize * 0.5f * dx;
+       
+       // 화살표 머리 그리기
+       glBegin(GL_TRIANGLES);
+       glVertex2f(x2, y2);
+       glVertex2f(arrowX1, arrowY1);
+       glVertex2f(arrowX2, arrowY2);
+       glEnd();
+   }
+}
 //---------------------------------------------------------------------------
- void ComputeTimeToGoPosition(float  TimeToGo,
+void ComputeTimeToGoPosition(float  TimeToGo,
 							  float  xs, float  ys,
 							  float  xv, float  yv,
 							  float &xe, float &ye)
@@ -837,7 +867,107 @@ float GetHexTextScale()
 {
     return gHexText.scale;
 }
- #if 0
+
+// 항공기 타입별 아이콘 선택 함수 추가
+int SelectAircraftIcon(const TADS_B_Aircraft* aircraft) 
+{
+    if (!aircraft) return 0;
+    
+    // 헬리콥터인지 확인
+    const char* heloType = NULL;
+    bool isHelo = aircraft_is_helicopter(aircraft->ICAO, &heloType);
+    if (isHelo) {
+        return 1; // 헬리콥터 아이콘 인덱스
+    }
+    
+    // 군용기인지 확인
+    if (aircraft_is_military(aircraft->ICAO, NULL)) {
+        return 2; // 군용기 아이콘 인덱스
+    }
+    
+    // 고도에 따른 아이콘 선택
+    if (aircraft->HaveAltitude) {
+        if (aircraft->Altitude > 30000) {
+            return 3; // 고고도 항공기 아이콘
+        } else if (aircraft->Altitude < 10000) {
+            return 4; // 저고도 항공기 아이콘
+        }
+    }
+    
+    // 속도에 따른 아이콘 선택
+    if (aircraft->HaveSpeedAndHeading) {
+        if (aircraft->Speed > 500) {
+            return 5; // 고속 항공기 아이콘
+        } else if (aircraft->Speed < 100) {
+            return 6; // 저속 항공기 아이콘
+        }
+    }
+    
+    return 0; // 기본 항공기 아이콘
+}
+
+// 다양한 리더 스타일 함수들
+void DrawLeaderArrow(float x1, float y1, float x2, float y2, float arrowSize)
+{
+   // 기본 선 그리기
+   glBegin(GL_LINE_STRIP);
+   glVertex2f(x1,y1);
+   glVertex2f(x2,y2);
+   glEnd();
+   
+   // 화살표 머리 그리기
+   float dx = x2 - x1;
+   float dy = y2 - y1;
+   float length = sqrt(dx*dx + dy*dy);
+   
+   if (length > 0) {
+       // 정규화
+       dx /= length;
+       dy /= length;
+       
+       // 화살표 머리의 두 점 계산
+       float arrowX1 = x2 - arrowSize * dx + arrowSize * 0.5f * dy;
+       float arrowY1 = y2 - arrowSize * dy - arrowSize * 0.5f * dx;
+       float arrowX2 = x2 - arrowSize * dx - arrowSize * 0.5f * dy;
+       float arrowY2 = y2 - arrowSize * dy + arrowSize * 0.5f * dx;
+       
+       // 화살표 머리 그리기
+       glBegin(GL_TRIANGLES);
+       glVertex2f(x2, y2);
+       glVertex2f(arrowX1, arrowY1);
+       glVertex2f(arrowX2, arrowY2);
+       glEnd();
+   }
+}
+
+void DrawLeaderDashed(float x1, float y1, float x2, float y2)
+{
+   // 점선 스타일 설정
+   glEnable(GL_LINE_STIPPLE);
+   glLineStipple(2, 0xAAAA); // 점선 패턴
+   
+   glBegin(GL_LINE_STRIP);
+   glVertex2f(x1,y1);
+   glVertex2f(x2,y2);
+   glEnd();
+   
+   glDisable(GL_LINE_STIPPLE);
+}
+
+void DrawLeaderThick(float x1, float y1, float x2, float y2, float thickness)
+{
+   // 두꺼운 선 그리기
+   glLineWidth(thickness);
+   
+   glBegin(GL_LINE_STRIP);
+   glVertex2f(x1,y1);
+   glVertex2f(x2,y2);
+   glEnd();
+   
+   glLineWidth(1.0f); // 기본 두께로 복원
+}
+
+#if 0
 //---------------------------------------------------------------------------
 // SAVE ORIGINAL CODE   ** DO NOT DELETE
 //

@@ -33,6 +33,7 @@
 #include "hex_font.h"
 #include "AircraftApi.h"
 #include "AircraftApiThread.h"
+#include "ntds2d.h"
 
 #define AIRCRAFT_DATABASE_URL   "https://opensky-network.org/datasets/metadata/aircraftDatabase.zip"
 #define AIRCRAFT_DATABASE_FILE   "aircraftDatabase.csv"
@@ -379,7 +380,7 @@ __fastcall TForm1::~TForm1()
   delete FSBSButtonScroller;
 }
 //---------------------------------------------------------------------------
-void __fastcall  TForm1::SetMapCenter(double &x, double &y)
+void __fastcall TForm1::SetMapCenter(double &x, double &y)
 {
   double siny;
   x=(MapCenterLon+0.0)/360.0;
@@ -638,9 +639,20 @@ void __fastcall TForm1::DrawObjects(void)
            ScrX2 = ScrX;
            ScrY2 = ScrY;
            //DrawPoint(ScrX,ScrY);
-           float color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+           float color[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // 기본 흰색
+           
+           // 항공기 타입에 따른 색상 설정
+           if (aircraft_is_helicopter(Data->ICAO, NULL)) {
+               color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; // 헬리콥터: 녹색
+           } else if (aircraft_is_military(Data->ICAO, NULL)) {
+               color[0] = 1.0f; color[1] = 0.0f; color[2] = 0.0f; // 군용기: 빨간색
+           } else {
+               color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f; // 민간기: 흰색
+           }
+           
            if (Data->HaveSpeedAndHeading)
            {
+                 // 속도와 방향이 있는 경우 보라색으로 강조
                  color[0]=1.0f; color[1]=0.0f; color[2]=1.0f; color[3]=1.0f;
 				 if (TimeToGoCheckBox->State==cbChecked)
 				 {
@@ -653,6 +665,7 @@ void __fastcall TForm1::DrawObjects(void)
 			else
 				{
 					Data->Heading=0.0;
+					// 속도와 방향이 없는 경우 빨간색으로 표시
 					color[0]=1.0f; color[1]=0.0f; color[2]=0.0f; color[3]=1.0f;
 				}
 
@@ -660,9 +673,21 @@ void __fastcall TForm1::DrawObjects(void)
 				AirplaneInstance inst;
 				inst.x = ScrX;
 				inst.y = ScrY;
-				inst.scale = 1.5f;
+				inst.scale = 1.5f; // 기본 크기
+				
+				// 고도에 따른 크기 조정
+				if (Data->HaveAltitude) {
+					if (Data->Altitude > 30000) {
+						inst.scale = 1.0f; // 고고도는 작게 (멀리 있어서)
+					} else if (Data->Altitude < 10000) {
+						inst.scale = 2.0f; // 저고도는 크게 (가까이 있어서)
+					} else {
+						inst.scale = 1.5f; // 중간 고도는 기본 크기
+					}
+				}
+				
 				inst.heading = Data->Heading;
-				inst.imageNum = Data->SpriteImage;
+				inst.imageNum = SelectAircraftIcon(Data);
 				inst.color[0] = color[0];
 				inst.color[1] = color[1];
 				inst.color[2] = color[2];
@@ -692,7 +717,24 @@ void __fastcall TForm1::DrawObjects(void)
 				}
         }
 	   }
-               DrawAirplaneLinesInstanced(m_lineBatch);
+               // 기존 배치 렌더링 대신 개별 스타일 적용
+               for (const auto& line : m_lineBatch) {
+                   // 항공기 타입에 따른 다른 리더 스타일 적용
+                   TADS_B_Aircraft* aircraft = FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
+                   if (aircraft && aircraft_is_military(aircraft->ICAO, NULL)) {
+                       // 군용기는 두꺼운 선
+                       DrawLeaderThick(line.x1, line.y1, line.x2, line.y2, 4.0f);
+                   } else if (aircraft && aircraft_is_helicopter(aircraft->ICAO, NULL)) {
+                       // 헬리콥터는 점선
+                       DrawLeaderDashed(line.x1, line.y1, line.x2, line.y2);
+                   } else {
+                       // 일반 항공기는 화살표
+                       DrawLeaderArrow(line.x1, line.y1, line.x2, line.y2, 8.0f);
+                   }
+               }
+               
+               // 기존 배치 렌더링 (백업용)
+               // DrawAirplaneLinesInstanced(m_lineBatch);
                DrawAirplaneImagesInstanced(m_planeBatch);
                DrawHexTextInstanced(m_textBatch);
 
