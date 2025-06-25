@@ -87,7 +87,7 @@
         <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\release\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
         <ProjectType>CppVCLApplication</ProjectType>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
-        <AllPackageLibs>rtl.lib;vcl.lib;IndySystem.lib;IndyCore.lib;bcbsmp.lib;vclx.lib;OpenGLPanel_DP.lib</AllPackageLibs>
+        <AllPackageLibs>rtl.lib;vcl.lib;IndySystem.lib;IndyCore.lib;bcbsmp.lib;vclx.lib;OpenGLPanel_DP.lib;IndyProtocols.lib</AllPackageLibs>
         <_TCHARMapping>wchar_t</_TCHARMapping>
         <Multithreaded>true</Multithreaded>
         <Icon_MainIcon>$(BDS)\bin\cbuilder_PROJECTICON.ico</Icon_MainIcon>
@@ -181,7 +181,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
-        <LinkPackageImports>rtl.bpi;vcl.bpi;IndySystem.bpi;IndyCore.bpi;bcbsmp.bpi;vclx.bpi;OpenGLPanel_DP.bpi</LinkPackageImports>
+        <LinkPackageImports>rtl.bpi;vcl.bpi;IndySystem.bpi;IndyCore.bpi;bcbsmp.bpi;vclx.bpi;OpenGLPanel_DP.bpi;IndyProtocols.bpi</LinkPackageImports>
         <BCC_IncludePath>Map\libgefetch;Map\png;Map\zlib;Map\jpeg;Map\libwwfetch;HashTable\Lib;$(BCC_IncludePath)</BCC_IncludePath>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -201,10 +201,25 @@
         <None Include="Aircraft.h">
             <BuildOrder>55</BuildOrder>
         </None>
+        <CppCompile Include="AircraftApi.cpp">
+            <BuildOrder>66</BuildOrder>
+        </CppCompile>
+        <None Include="AircraftApi.h">
+            <BuildOrder>67</BuildOrder>
+        </None>
+        <CppCompile Include="AircraftApiThread.cpp">
+            <BuildOrder>68</BuildOrder>
+        </CppCompile>
+        <None Include="AircraftApiThread.h">
+            <BuildOrder>69</BuildOrder>
+        </None>
         <CppCompile Include="AircraftDB.cpp">
             <DependentOn>AircraftDB.h</DependentOn>
             <BuildOrder>56</BuildOrder>
         </CppCompile>
+        <None Include="AircraftInfo.h">
+            <BuildOrder>70</BuildOrder>
+        </None>
         <CppCompile Include="AirportInfo.cpp">
             <BuildOrder>61</BuildOrder>
         </CppCompile>
