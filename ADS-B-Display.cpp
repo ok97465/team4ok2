@@ -3,10 +3,12 @@
 #include <vcl.h>
 #pragma hdrstop
 #include <tchar.h>
+#include "AirportProvider.h"
+#include "RouteProvider.h"
+
 //---------------------------------------------------------------------------
-USEFORM("DisplayGUI.cpp", Form1);
 USEFORM("AreaDialog.cpp", AreaConfirm);
-//---------------------------------------------------------------------------
+USEFORM("DisplayGUI.cpp", Form1);
 //---------------------------------------------------------------------------
 static FILE* pCout = NULL;
 static void SetStdOutToNewConsole(void);
@@ -22,6 +24,53 @@ static void SetStdOutToNewConsole(void)
 //---------------------------------------------------------------------------
 int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {
+	#if 0
+    // AirportProvider를 std::unique_ptr<IAviationProvider<AirportInfo>>로 사용
+	std::unique_ptr<IAviationProvider<AirportInfo>> airportProvider = std::make_unique<AirportProvider>();
+	airportProvider->DownloadAndParseAviationDataAsync(
+        [](const std::vector<AirportInfo>& batch, bool finished) {
+            if (!batch.empty()) {
+				printf("[AIRPORT BATCH] size=%zu\n", batch.size());
+                for (const auto& a : batch) {
+					printf("%s, %s, %s, %s, %s, %s, %s, %s, %s\n",
+                        a.GetCode().c_str(),
+                        a.GetName().c_str(),
+                        a.GetICAO().c_str(),
+                        a.GetIATA().c_str(),
+                        a.GetLocation().c_str(),
+                        a.GetCountryISO2().c_str(),
+                        a.GetLatitude().c_str(),
+                        a.GetLongitude().c_str(),
+                        a.GetAltitudeFeet().c_str());
+                }
+            }
+            if (finished) {
+                printf("[AIRPORT PARSING FINISHED]\n");
+			}
+        }
+    );
+
+    // RouteProvider를 std::unique_ptr<IAviationProvider<RouteInfo>>로 사용
+	std::unique_ptr<IAviationProvider<RouteInfo>> routeProvider = std::make_unique<RouteProvider>();
+	routeProvider->DownloadAndParseAviationDataAsync(
+        [](const std::vector<RouteInfo>& batch, bool finished) {
+            if (!batch.empty()) {
+                printf("[ROUTE BATCH] size=%zu\n", batch.size());
+                for (const auto& r : batch) {
+                    printf("%s, %s, %s, %s, %s\n",
+                        r.GetCallsign().c_str(),
+                        r.GetCode().c_str(),
+                        r.GetNumber().c_str(),
+                        r.GetAirlineCode().c_str(),
+                        r.GetAirportCodes().c_str());
+                }
+            }
+            if (finished) {
+                printf("[ROUTE PARSING FINISHED]\n");
+			}
+        }
+    );
+#endif
 	try
 	{
         SetStdOutToNewConsole();
