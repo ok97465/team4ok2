@@ -205,6 +205,18 @@
             <DependentOn>AircraftDB.h</DependentOn>
             <BuildOrder>56</BuildOrder>
         </CppCompile>
+        <CppCompile Include="AirportInfo.cpp">
+            <BuildOrder>61</BuildOrder>
+        </CppCompile>
+        <None Include="AirportInfo.h">
+            <BuildOrder>60</BuildOrder>
+        </None>
+        <CppCompile Include="AirportProvider.cpp">
+            <BuildOrder>57</BuildOrder>
+        </CppCompile>
+        <None Include="AirportProvider.h">
+            <BuildOrder>58</BuildOrder>
+        </None>
         <CppCompile Include="AreaDialog.cpp">
             <Form>AreaConfirm</Form>
             <FormType>dfm</FormType>
@@ -241,6 +253,9 @@
         </CppCompile>
         <None Include="hex_font.h">
             <BuildOrder>54</BuildOrder>
+        </None>
+        <None Include="IAviationProvider.h">
+            <BuildOrder>59</BuildOrder>
         </None>
         <CppCompile Include="LatLonConv.cpp">
             <DependentOn>LatLonConv.h</DependentOn>
