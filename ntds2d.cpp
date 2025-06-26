@@ -9,6 +9,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "AircraftDB.h"
+#include <stdio.h>
 
 #pragma hdrstop
 
@@ -100,6 +101,7 @@ static PFNGLDRAWARRAYSINSTANCEDPROC    pglDrawArraysInstanced    = nullptr;
 static PFNGLTEXIMAGE3DPROC             pglTexImage3D             = nullptr;
 static PFNGLTEXSUBIMAGE3DPROC          pglTexSubImage3D          = nullptr;
 
+extern ght_hash_table_t *AircraftDBHashTable;
 
 static void *GetAnyGLFuncAddress(const char *name)
 {
@@ -873,37 +875,71 @@ int SelectAircraftIcon(const TADS_B_Aircraft* aircraft)
 {
     if (!aircraft) return 0;
     
+    // DB에서 타입코드 조회
+    const TAircraftData* dbinfo = (const TAircraftData*) ght_get(AircraftDBHashTable, sizeof(aircraft->ICAO), &aircraft->ICAO);
+    if (dbinfo) {
+        const char* icaoType = dbinfo->Fields[5].c_str();
+        printf("ICAO:%06X TypeCode:%s\n", aircraft->ICAO, icaoType);
+        if (strstr(icaoType, "F") && (
+            strstr(icaoType, "B763") || strstr(icaoType, "B752") || strstr(icaoType, "B744") || strstr(icaoType, "MD11") || strstr(icaoType, "A306") || strstr(icaoType, "A332") )) {
+            printf("화물기 분류됨!\n");
+            return 76; // 화물기
+        }
+        if (strstr(icaoType, "B737") || strstr(icaoType, "A320") || strstr(icaoType, "A321") /* ... */) {
+            return 77; // 대형 여객기
+        }
+    } else {
+        printf("ICAO:%06X DB정보 없음\n", aircraft->ICAO);
+    }
+    
     // 헬리콥터인지 확인
     const char* heloType = NULL;
     bool isHelo = aircraft_is_helicopter(aircraft->ICAO, &heloType);
     if (isHelo) {
-        return 1; // 헬리콥터 아이콘 인덱스
+        if (heloType) {
+            if (strcmp(heloType, "H1P") == 0) return 72;
+            else if (strcmp(heloType, "H2P") == 0) return 73;
+            else if (strcmp(heloType, "H1T") == 0) return 74;
+            else if (strcmp(heloType, "H2T") == 0) return 75;
+        }
+        return 72;
     }
     
-    // 군용기인지 확인
-    if (aircraft_is_military(aircraft->ICAO, NULL)) {
-        return 2; // 군용기 아이콘 인덱스
+    // 군용기
+    if (aircraft_is_military(aircraft->ICAO, NULL)) return 2;
+
+    // ICAO 타입 코드로 화물기/대형 여객기 분류
+    if (dbinfo && !dbinfo->Fields[5].IsEmpty()) {
+        const char* icaoType = dbinfo->Fields[5].c_str();
+        // 대형 여객기: B737, B738, B739, B777, B763, B764, A320, A321, A319, A330, A350 등
+        if (strstr(icaoType, "B737") || strstr(icaoType, "B738") || strstr(icaoType, "B739") || strstr(icaoType, "B777") || strstr(icaoType, "B763") || strstr(icaoType, "B764") || strstr(icaoType, "A320") || strstr(icaoType, "A321") || strstr(icaoType, "A319") || strstr(icaoType, "A330") || strstr(icaoType, "A350") ) {
+            return 77; // 대형 여객기
+        }
     }
-    
-    // 고도에 따른 아이콘 선택
+    // FlightNum으로 화물기 감지 (UPS, FedEx 등)
+    if (aircraft->HaveFlightNum) {
+        const char* flightNum = aircraft->FlightNum;
+        if (flightNum && (strstr(flightNum, "5X") || strstr(flightNum, "FX") || strstr(flightNum, "1X") || strstr(flightNum, "9X"))) {
+            return 76; // 화물기
+        }
+    }
+    // FlightNum으로 대형 여객기 감지 (UA, AA, DL, WN 등)
+    if (aircraft->HaveFlightNum) {
+        const char* flightNum = aircraft->FlightNum;
+        if (flightNum && (strstr(flightNum, "UA") || strstr(flightNum, "AA") || strstr(flightNum, "DL") || strstr(flightNum, "WN"))) {
+            return 77; // 대형 여객기
+        }
+    }
+    // 고도/속도 조건
     if (aircraft->HaveAltitude) {
-        if (aircraft->Altitude > 30000) {
-            return 3; // 고고도 항공기 아이콘
-        } else if (aircraft->Altitude < 10000) {
-            return 4; // 저고도 항공기 아이콘
-        }
+        if (aircraft->Altitude > 30000) return 3;
+        else if (aircraft->Altitude < 10000) return 4;
     }
-    
-    // 속도에 따른 아이콘 선택
     if (aircraft->HaveSpeedAndHeading) {
-        if (aircraft->Speed > 500) {
-            return 5; // 고속 항공기 아이콘
-        } else if (aircraft->Speed < 100) {
-            return 6; // 저속 항공기 아이콘
-        }
+        if (aircraft->Speed > 500) return 5;
+        else if (aircraft->Speed < 100) return 6;
     }
-    
-    return 0; // 기본 항공기 아이콘
+    return 0;
 }
 
 // 다양한 리더 스타일 함수들
