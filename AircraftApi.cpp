@@ -1,5 +1,5 @@
-﻿#include <IdHTTP.hpp>
-#include <IdSSLOpenSSL.hpp>
+﻿#include <System.Net.HttpClient.hpp>
+#include <System.Net.URLClient.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -47,17 +47,15 @@ static std::vector<std::string> split_airport_codes(const std::string& s) {
 std::vector<AirportInfo> FetchAirportList() {
     std::vector<AirportInfo> result;
 
-    std::unique_ptr<TIdHTTP> http(new TIdHTTP(nullptr));
-    http->ReadTimeout = 5000; // 반드시 추가!
-    http->ConnectTimeout = 5000; // 반드시 추가!
-    std::unique_ptr<TIdSSLIOHandlerSocketOpenSSL> ssl(new TIdSSLIOHandlerSocketOpenSSL(nullptr));
-    http->IOHandler = ssl.get();
-    std::unique_ptr<TStringStream> stream(new TStringStream("", TEncoding::UTF8, true));
+    auto http = std::unique_ptr<THTTPClient>(THTTPClient::Create());
+    http->ConnectionTimeout = 5000;
+    http->ResponseTimeout = 5000;
 
     try {
-        http->Get("https://vrs-standing-data.adsb.lol/airports.csv", stream.get());
-        std::string response = AnsiString(stream->DataString).c_str();
+        String url = "https://vrs-standing-data.adsb.lol/airports.csv";
+        String data = http->Get(url)->ContentAsString();
 
+        std::string response = AnsiString(data).c_str();
         std::istringstream ss(response);
         std::string line;
         size_t line_no = 0;
@@ -99,26 +97,23 @@ std::vector<AirportInfo> FetchAirportList() {
     return result;
 }
 
-// 항로 정보 파싱 및 로딩
+// 루트 정보 파싱 및 로딩
 std::vector<RouteInfo> FetchRouteList() {
     std::vector<RouteInfo> result;
 
-    std::unique_ptr<TIdHTTP> http(new TIdHTTP(nullptr));
-    http->ReadTimeout = 5000; // 반드시 추가!
-    http->ConnectTimeout = 5000; // 반드시 추가!
-    std::unique_ptr<TIdSSLIOHandlerSocketOpenSSL> ssl(new TIdSSLIOHandlerSocketOpenSSL(nullptr));
-    http->IOHandler = ssl.get();
-    std::unique_ptr<TStringStream> stream(new TStringStream("", TEncoding::UTF8, true));
+    auto http = std::unique_ptr<THTTPClient>(THTTPClient::Create());
+    http->ConnectionTimeout = 5000;
+    http->ResponseTimeout = 5000;
 
     try {
-        http->Get("https://vrs-standing-data.adsb.lol/routes.csv", stream.get());
-        std::string response = AnsiString(stream->DataString).c_str();
+        String url = "https://vrs-standing-data.adsb.lol/routes.csv";
+        String data = http->Get(url)->ContentAsString();
 
+        std::string response = AnsiString(data).c_str();
         std::istringstream ss(response);
         std::string line;
         size_t line_no = 0;
 
-        // 첫 줄은 헤더
         std::getline(ss, line); line_no++;
 
         while (std::getline(ss, line)) {
@@ -190,6 +185,7 @@ void LoadAllData() {
     printf("LoadAllData() START\n");
     apiAirportList = FetchAirportList();
     apiRouteList = FetchRouteList();
+    printf("[AircraftApi] Loaded: airport=%zu, route=%zu\n", apiAirportList.size(), apiRouteList.size());
     printf("LoadAllData() END\n");
 #ifdef DEBUG_KANG
     PrintApiDataForTest();
