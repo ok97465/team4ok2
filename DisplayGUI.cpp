@@ -9,7 +9,10 @@
 #include <stdlib.h>
 #include <filesystem>
 #include <fileapi.h>
-
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <png.h>    // png 라이브러리 설치되어 있어야 함
+#include <fstream>
 
 #pragma hdrstop
 
@@ -26,6 +29,8 @@
 #include "csv.h"
 #include "MAPFactory.h"
 #include "hex_font.h"
+#include "AircraftApi.h"
+#include "AircraftApiThread.h"
 
 #define AIRCRAFT_DATABASE_URL   "https://opensky-network.org/datasets/metadata/aircraftDatabase.zip"
 #define AIRCRAFT_DATABASE_FILE   "aircraftDatabase.csv"
@@ -60,6 +65,12 @@ TForm1 *Form1;
 
 static char *stristr(const char *String, const char *Pattern);
 static const char * strnistr(const char * pszSource, DWORD dwLength, const char * pszFind) ;
+
+static void UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route);
+static void OnAircraftSelected(uint32_t icao);
+static const AirportInfo* FindAirportByIcao(const std::string& icao);
+static const RouteInfo* FindRouteByCallsign(const std::string& callSign);
+static std::string ICAO_to_string(uint32_t icao);
 
 //---------------------------------------------------------------------------
 uint32_t createRGB(uint8_t r, uint8_t g, uint8_t b)
@@ -177,7 +188,78 @@ static char *stristr(const char *String, const char *Pattern)
    return(NULL);
 }
 //---------------------------------------------------------------------------
+GLuint atlasTexId = 0;
+const int iconW = 48, iconH = 48;     // 아이콘 하나 크기
+const int atlasW = 144, atlasH = 48;  // 전체 atlas PNG 크기
 
+AtlasRect airportAtlasRects[3] = {
+    {0,   0, iconW, iconH},  // Civil
+    {48,  0, iconW, iconH},  // Military
+    {96,  0, iconW, iconH},  // Helipad
+};
+
+// PNG 파일 경로
+const char* AIRPORT_ICON_ATLAS_PNG = "../../Symbols/airport_atlas.png";
+
+void LoadAtlasTexture() {
+    if (atlasTexId != 0) return; // 이미 로드된 경우 skip
+
+    FILE* fp = fopen(AIRPORT_ICON_ATLAS_PNG, "rb");
+    if (!fp) { printf("[ERROR] 공항 마커 PNG 파일 열기 실패: %s\n", AIRPORT_ICON_ATLAS_PNG); return; }
+
+    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_infop info = png_create_info_struct(png);
+
+    if (setjmp(png_jmpbuf(png))) { printf("[ERROR] PNG 파싱 실패\n"); fclose(fp); return; }
+    png_init_io(png, fp);
+    png_read_info(png, info);
+
+    int width  = png_get_image_width(png, info);
+    int height = png_get_image_height(png, info);
+    int color_type = png_get_color_type(png, info);
+    int bit_depth  = png_get_bit_depth(png, info);
+
+    if (bit_depth == 16) png_set_strip_16(png);
+    if (color_type == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(png);
+    if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) png_set_expand(png);
+    if (png_get_valid(png, info, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(png);
+    if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_PALETTE)
+        png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+    if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+        png_set_gray_to_rgb(png);
+
+    png_read_update_info(png, info);
+
+    int rowbytes = png_get_rowbytes(png, info);
+    std::vector<png_byte> imageData(rowbytes * height);
+    std::vector<png_bytep> row_pointers(height);
+
+    for (int y = 0; y < height; y++)
+        row_pointers[y] = imageData.data() + y * rowbytes;
+    png_read_image(png, row_pointers.data());
+    fclose(fp);
+
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			png_bytep pixel = &imageData[(y * rowbytes) + x * 4]; // RGBA 포맷
+			// 흰색도 투명 처리
+			if (pixel[0] > 240 && pixel[1] > 240 && pixel[2] > 240) {
+				pixel[3] = 0; // 알파 0
+			}
+		}
+    }
+
+    glGenTextures(1, &atlasTexId);
+    glBindTexture(GL_TEXTURE_2D, atlasTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, imageData.data());
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    png_destroy_read_struct(&png, &info, NULL);
+}
 //---------------------------------------------------------------------------
 __fastcall TForm1::TForm1(TComponent* Owner)
 	: TForm(Owner)
@@ -242,6 +324,19 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   FRawButtonScroller = new TButtonScroller(RawConnectButton);
   FSBSButtonScroller = new TButtonScroller(SBSConnectButton);
 }
+
+void __fastcall TForm1::ApiCallTimerTimer(TObject *Sender)
+{
+    try {
+        new TLoadApiDataThread();
+        printf("ApiCallTimer: LoadAllData() OK\n");
+    } catch (const std::exception& e) {
+        printf("ApiCallTimer EXCEPTION: %s\n", e.what());
+    } catch (...) {
+        printf("ApiCallTimer UNKNOWN EXCEPTION\n");
+    }
+}
+
 //---------------------------------------------------------------------------
 __fastcall TForm1::~TForm1()
 {
@@ -294,6 +389,14 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 	glPushAttrib (GL_LINE_BIT);
 	glPopAttrib ();
     printf("OpenGL Version %s\n",glGetString(GL_VERSION));
+	 // API 로딩 비동기 호출
+    new TLoadApiDataThread();
+
+    // 1시간마다 주기 호출 설정
+    ApiCallTimer = new TTimer(this);
+    ApiCallTimer->Interval = 3600000; // 1시간
+    ApiCallTimer->OnTimer = ApiCallTimerTimer;
+    ApiCallTimer->Enabled = true;
 }
 //---------------------------------------------------------------------------
 
@@ -337,6 +440,7 @@ void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
  auto start = std::chrono::steady_clock::now();
  #endif
  DrawObjects();
+ DrawAirportMarkers();      // 공항 위치 점 그리기
  #ifdef MEASURE_PERFORMANCE
  auto end = std::chrono::steady_clock::now();
  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -646,6 +750,53 @@ void __fastcall TForm1::DrawObjects(void)
    }
  }
 }
+//------------------------------공항 타입 분류---------------------------------------
+AirportType GetAirportType(const AirportInfo& airport) {
+    return Civil;
+}
+//----------------------------------------------------------------------------------------------
+
+// (x, y)는 OpenGL world 좌표, iconDrawSize는 화면 픽셀 사이즈
+void DrawAtlasIcon(double x, double y, const AtlasRect& rect, GLuint texId, int iconDrawSize) {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texId);
+
+    float u0 = rect.x / (float)atlasW, v0 = rect.y / (float)atlasH;
+    float u1 = (rect.x + rect.w) / (float)atlasW, v1 = (rect.y + rect.h) / (float)atlasH;
+    float sz = (float)iconDrawSize;
+
+    glColor4f(1, 1, 1, 1); // 불투명(원본색)
+    glBegin(GL_QUADS);
+    glTexCoord2f(u0, v0); glVertex2f(x - sz/2, y - sz/2);
+    glTexCoord2f(u1, v0); glVertex2f(x + sz/2, y - sz/2);
+    glTexCoord2f(u1, v1); glVertex2f(x + sz/2, y + sz/2);
+    glTexCoord2f(u0, v1); glVertex2f(x - sz/2, y + sz/2);
+    glEnd();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+}
+
+void __fastcall TForm1::DrawAirportMarkers()
+{
+    // 최초 1회만 PNG 로드
+    LoadAtlasTexture();
+    for (const auto& airport : ::apiAirportList)
+    {
+        if (!airport.iata.empty() && fabs(airport.latitude) > 0.01 && fabs(airport.longitude) > 0.01) {
+            double x, y;
+            LatLon2XY(airport.latitude, airport.longitude, x, y);
+
+            // 화면 영역(픽셀 기준) 체크!
+            if (x < 0 || x > ObjectDisplay->Width || y < 0 || y > ObjectDisplay->Height)
+                continue; // 화면 밖이면 스킵
+
+            AirportType type = GetAirportType(airport);
+            const AtlasRect& rect = airportAtlasRects[(int)type];
+            DrawAtlasIcon(x, y, rect, atlasTexId, 28);
+        }
+    }
+}
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
 	  TMouseButton Button, TShiftState Shift, int X, int Y)
@@ -809,6 +960,7 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
 		 TrackHook.Valid_CC=true;
 		 TrackHook.ICAO_CC=ADS_B_Aircraft->ICAO;
 		 printf("%s\n\n",GetAircraftDBInfo(ADS_B_Aircraft->ICAO));
+     OnAircraftSelected(ADS_B_Aircraft->ICAO);
 		}
 		else
 		{
@@ -824,15 +976,7 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
 		 if (!CPA_Hook)
 		  {
 		   TrackHook.Valid_CC=false;
-           ICAOLabel->Caption="N/A";
-		   FlightNumLabel->Caption="N/A";
-		   CLatLabel->Caption="N/A";
-		   CLonLabel->Caption="N/A";
-		   SpdLabel->Caption="N/A";
-		   HdgLabel->Caption="N/A";
-		   AltLabel->Caption="N/A";
-		   MsgCntLabel->Caption="N/A";
-		   TrkLastUpdateTimeLabel->Caption="N/A";
+           UpdateCloseControlPanel(nullptr, nullptr);
 		  }
 		 else
 		   {
@@ -1699,4 +1843,132 @@ static int FinshARTCCBoundary(void)
 }
 //---------------------------------------------------------------------------
 
+// 공항 정보 찾기 (ICAO 코드로)
+const AirportInfo* FindAirportByIcao(const std::string& icao) {
+    for (const auto& ap : apiAirportList) {
+        if (ap.icao == icao)
+            return &ap;
+    }
+    return nullptr;
+}
 
+// 항공기 Callsign으로 RouteInfo 찾기
+const RouteInfo* FindRouteByCallsign(const std::string& callSign) {
+    for (const auto& route : apiRouteList) {
+        if (route.callSign == callSign)
+            return &route;
+    }
+    return nullptr;
+}
+
+// ICAO 코드 uint32 → 6자리 대문자 16진 문자열로 변환
+std::string ICAO_to_string(uint32_t icao) {
+    char buf[7] = {0};
+    snprintf(buf, sizeof(buf), "%06X", icao);
+    return std::string(buf);
+}
+
+// ========================
+// 2. 메인 패널 갱신 함수
+// ========================
+
+void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route)
+{
+    // -------- 기존 항공기 정보 갱신 --------
+    if (!ac) {
+        // 패널 초기화 (None 처리)
+        ICAOLabel->Caption      = "N/A";
+        FlightNumLabel->Caption = "N/A";
+        CLatLabel->Caption      = "N/A";
+        CLonLabel->Caption      = "N/A";
+        SpdLabel->Caption       = "N/A";
+        HdgLabel->Caption       = "N/A";
+        AltLabel->Caption       = "N/A";
+        MsgCntLabel->Caption    = "N/A";
+        TrkLastUpdateTimeLabel->Caption = "N/A";
+        RouteInfoMemo->Lines->Text = "N/A";
+        RouteInfoMemo->Hint = "";          // 툴팁도 동일하게
+        RouteInfoMemo->ShowHint = false;
+        return;
+    }
+
+    ICAOLabel->Caption      = ac->HexAddr;         // ICAO(16진)
+    FlightNumLabel->Caption = ac->FlightNum;       // Callsign
+    if (ac->HaveLatLon) {
+        CLatLabel->Caption = DMS::DegreesMinutesSecondsLat(ac->Latitude).c_str();
+        CLonLabel->Caption = DMS::DegreesMinutesSecondsLon(ac->Longitude).c_str();
+    } else {
+        CLatLabel->Caption = "N/A";
+        CLonLabel->Caption = "N/A";
+    }
+    if (ac->HaveSpeedAndHeading) {
+        SpdLabel->Caption = FloatToStrF(ac->Speed, ffFixed, 12, 2) + " KTS";
+        Form1->HdgLabel->Caption = FloatToStrF(ac->Heading, ffFixed, 12, 2) + " DEG";
+    } else {
+        SpdLabel->Caption = "N/A";
+        HdgLabel->Caption = "N/A";
+    }
+    if (ac->Altitude)
+        AltLabel->Caption = FloatToStrF(ac->Altitude, ffFixed, 12, 2) + " FT";
+    else
+        AltLabel->Caption = "N/A";
+    MsgCntLabel->Caption = "Raw: " + IntToStr((int)ac->NumMessagesRaw) +
+                           " SBS: " + IntToStr((int)ac->NumMessagesSBS);
+    TrkLastUpdateTimeLabel->Caption = TimeToChar(ac->LastSeen);
+
+    // -------- 경로(Route) 정보 표시부 --------
+    AnsiString routeText, toolTipText;
+
+    if (route) {
+        // 화면에는 공항 코드만
+        for (size_t i = 0; i < route->airportCodes.size(); ++i) {
+            routeText += route->airportCodes[i].c_str();
+            if (i < route->airportCodes.size() - 1)
+                routeText += "\n  ↓\n";
+        }
+        // 툴팁에는 전체 공항명 + Airline, Flight No 등 자세한 정보
+        for (size_t i = 0; i < route->airportCodes.size(); ++i) {
+            const AirportInfo* ap = FindAirportByIcao(route->airportCodes[i]);
+            AnsiString codeOnly = route->airportCodes[i].c_str();
+            AnsiString fullName = ap ? AnsiString(ap->name.c_str()) : "";
+            if (!toolTipText.IsEmpty()) toolTipText += "\n↓\n";
+            toolTipText += codeOnly;
+            if (!fullName.IsEmpty())
+                toolTipText += " (" + fullName + ")";
+        }
+        // 추가 정보 (Airline/Flight No)는 툴팁에만 추가
+//        if (!AnsiString(route->airlineCode.c_str()).IsEmpty())
+//            toolTipText += "\n\nAirline: " + AnsiString(route->airlineCode.c_str());
+//        if (!AnsiString(route->number.c_str()).IsEmpty())
+//            toolTipText += "\nFlight No: " + AnsiString(route->number.c_str());
+    } else {
+        routeText = "N/A";
+        toolTipText = "";
+    }
+
+    RouteInfoMemo->Lines->Text = routeText;
+    RouteInfoMemo->Hint = toolTipText;
+    RouteInfoMemo->ShowHint = !toolTipText.IsEmpty();
+}
+
+
+// ========================
+// 3. 항공기 선택 이벤트에서 호출
+// ========================
+
+// 항공기 선택(예: HookTrack에서 TrackHook.ICAO_CC가 확정될 때) 호출 예시:
+void __fastcall TForm1::OnAircraftSelected(uint32_t icao)
+{
+    // 항공기 객체 찾기
+    TADS_B_Aircraft* ac = FAircraftModel->FindAircraftByICAO(icao);
+    if (!ac) {
+        UpdateCloseControlPanel(nullptr, nullptr);
+        return;
+    }
+
+    // RouteInfo 찾기 (Callsign 기반)
+    const RouteInfo* route = FindRouteByCallsign(AnsiString(ac->FlightNum).c_str());
+
+    // 패널 전체 갱신 (기존 Close 라벨 + 경로)
+    UpdateCloseControlPanel(ac, route);
+}

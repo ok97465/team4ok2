@@ -29,6 +29,9 @@
 #include "TCPDataHandler.h"
 #include "AircraftDataModel.h"
 #include "IMAPProvider.h"
+#include <Vcl.ExtCtrls.hpp>
+#include "AircraftApi.h"
+#include "AircraftInfo.h"
 #include "ButtonScroller.h"
 typedef float T_GL_Color[4];
 
@@ -143,6 +146,17 @@ __published:	// IDE-managed Components
 	TMenuItem *UseSBSLocal;
 	TMenuItem *UseSBSRemote;
 	TMenuItem *LoadARTCCBoundaries1;
+	TLabel *Label20;
+	TPanel *Panel6;
+	TLabel *Label21;
+	TLabel *Label22;
+	TLabel *Label23;
+	TLabel *Label24;
+	TLabel *RawConnectStatus;
+	TLabel *SBSConnectStatus;
+	TLabel *APILastUpdateTime;
+	TMemo *RouteInfoMemo;
+	void __fastcall ApiCallTimerTimer(TObject *Sender);
 	void __fastcall ObjectDisplayInit(TObject *Sender);
 	void __fastcall ObjectDisplayResize(TObject *Sender);
 	void __fastcall ObjectDisplayPaint(TObject *Sender);
@@ -190,6 +204,8 @@ private:	// User declarations
 	AircraftDataModel *FAircraftModel;
 	TButtonScroller *FRawButtonScroller;
     TButtonScroller *FSBSButtonScroller;
+	
+	TTimer *ApiCallTimer;
 
     // 콜백에 의해 호출될 함수들
     void __fastcall HandleRawData(const AnsiString& data);
@@ -210,6 +226,7 @@ public:		// User declarations
 	int __fastcall  XY2LatLon2(int x, int y,double &lat,double &lon );
 	void __fastcall HookTrack(int X, int Y,bool CPA_Hook);
 	void __fastcall DrawObjects(void);
+	void __fastcall DrawAirportMarkers(void);
 	void __fastcall DeleteAllAreas(void);
 	void __fastcall Purge(void);
 	void __fastcall SendCotMessage(AnsiString IP_address, unsigned short Port,char *Buffer,DWORD Length);
@@ -219,6 +236,8 @@ public:		// User declarations
     void __fastcall CreateBigQueryCSV(void);
     void __fastcall CloseBigQueryCSV(void);
     bool __fastcall LoadARTCCBoundaries(AnsiString FileName);
+	void UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route);
+    void OnAircraftSelected(uint32_t icao);
 
 
 	int                        MouseDownX,MouseDownY;
@@ -261,6 +280,27 @@ public:		// User declarations
         std::vector<AirplaneLineInstance> m_lineBatch;
         std::vector<HexCharInstance> m_textBatch;
 };
+// --- [공항 마커(Atlas 아이콘) 관련 선언 추가] ---
+
+// 공항 타입(민간, 군용, 헬기장)
+enum AirportType { Civil = 0, Military = 1, Helipad = 2 };
+
+// Atlas PNG 내에서 아이콘의 위치/크기 정보
+struct AtlasRect { int x, y, w, h; };
+
+// Atlas 아이콘 배열(정의는 cpp에서!)
+extern const int iconW, iconH, atlasW, atlasH;
+extern AtlasRect airportAtlasRects[3];
+
+// 텍스처 핸들(정의는 cpp에서!)
+extern GLuint atlasTexId;
+
+// 공항 타입 분류 함수 선언
+AirportType GetAirportType(const AirportInfo& airport);
+
+// 아이콘 그리기 함수 선언
+void DrawAtlasIcon(double x, double y, const AtlasRect& rect, GLuint atlasTexId, int iconDrawSize = 32);
+
 //---------------------------------------------------------------------------
 extern PACKAGE TForm1 *Form1;
 //---------------------------------------------------------------------------

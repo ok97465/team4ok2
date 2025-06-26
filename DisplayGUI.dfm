@@ -2,7 +2,7 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'ADS-B Viewer'
-  ClientHeight = 681
+  ClientHeight = 1041
   ClientWidth = 1228
   Color = clBtnFace
   Constraints.MinHeight = 740
@@ -46,14 +46,14 @@ object Form1: TForm1
     Left = 978
     Top = 0
     Width = 250
-    Height = 681
+    Height = 1041
     Align = alRight
     Color = clWindow
     Constraints.MaxWidth = 250
     TabOrder = 0
     object Panel1: TPanel
       Left = 1
-      Top = 533
+      Top = 893
       Width = 248
       Height = 147
       Align = alBottom
@@ -151,13 +151,13 @@ object Form1: TForm1
       Left = 1
       Top = 1
       Width = 248
-      Height = 576
+      Height = 836
       Align = alTop
       Constraints.MinHeight = 70
       TabOrder = 1
       object Label15: TLabel
-        Left = 72
-        Top = 422
+        Left = 80
+        Top = 682
         Width = 98
         Height = 13
         Caption = 'Areas Of Interest'
@@ -170,7 +170,7 @@ object Form1: TForm1
       end
       object DrawMap: TCheckBox
         Left = 5
-        Top = 278
+        Top = 362
         Width = 96
         Height = 17
         Caption = 'Display Map'
@@ -186,7 +186,7 @@ object Form1: TForm1
       end
       object PurgeStale: TCheckBox
         Left = 5
-        Top = 301
+        Top = 385
         Width = 96
         Height = 19
         Caption = 'Purge Stale'
@@ -202,7 +202,7 @@ object Form1: TForm1
       end
       object CSpinStaleTime: TCSpinEdit
         Left = 107
-        Top = 280
+        Top = 364
         Width = 62
         Height = 21
         Increment = 5
@@ -213,7 +213,7 @@ object Form1: TForm1
       end
       object PurgeButton: TButton
         Left = 186
-        Top = 283
+        Top = 367
         Width = 51
         Height = 16
         Caption = 'Purge'
@@ -222,7 +222,7 @@ object Form1: TForm1
       end
       object AreaListView: TListView
         Left = 5
-        Top = 441
+        Top = 701
         Width = 235
         Height = 97
         Columns = <
@@ -243,7 +243,7 @@ object Form1: TForm1
       end
       object Insert: TButton
         Left = 5
-        Top = 544
+        Top = 804
         Width = 36
         Height = 18
         Caption = 'Insert'
@@ -251,8 +251,8 @@ object Form1: TForm1
         OnClick = InsertClick
       end
       object Delete: TButton
-        Left = 158
-        Top = 544
+        Left = 157
+        Top = 804
         Width = 44
         Height = 18
         Caption = 'Delete'
@@ -261,8 +261,8 @@ object Form1: TForm1
         OnClick = DeleteClick
       end
       object Complete: TButton
-        Left = 45
-        Top = 544
+        Left = 47
+        Top = 804
         Width = 57
         Height = 18
         Caption = 'Complete'
@@ -271,8 +271,8 @@ object Form1: TForm1
         OnClick = CompleteClick
       end
       object Cancel: TButton
-        Left = 107
-        Top = 544
+        Left = 110
+        Top = 804
         Width = 41
         Height = 18
         Caption = 'Cancel'
@@ -282,7 +282,7 @@ object Form1: TForm1
       end
       object RawConnectButton: TButton
         Left = 5
-        Top = 326
+        Top = 410
         Width = 104
         Height = 18
         Caption = 'Raw Connect'
@@ -291,7 +291,7 @@ object Form1: TForm1
       end
       object RawIpAddress: TEdit
         Left = 115
-        Top = 326
+        Top = 410
         Width = 110
         Height = 20
         TabOrder = 10
@@ -299,7 +299,7 @@ object Form1: TForm1
       end
       object CycleImages: TCheckBox
         Left = 107
-        Top = 301
+        Top = 385
         Width = 96
         Height = 19
         Caption = 'Cycle Images'
@@ -314,9 +314,9 @@ object Form1: TForm1
       end
       object Panel4: TPanel
         Left = 5
-        Top = 76
+        Top = 81
         Width = 244
-        Height = 198
+        Height = 269
         BevelInner = bvLowered
         BevelKind = bkFlat
         TabOrder = 12
@@ -414,7 +414,7 @@ object Form1: TForm1
         end
         object Label14: TLabel
           Left = 5
-          Top = 168
+          Top = 169
           Width = 109
           Height = 13
           Caption = 'LAST UPDATE TIME:'
@@ -568,6 +568,40 @@ object Form1: TForm1
           Font.Style = [fsBold, fsUnderline]
           ParentFont = False
         end
+        object Label20: TLabel
+          Left = 5
+          Top = 188
+          Width = 40
+          Height = 13
+          Caption = 'ROUTE:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object RouteInfoMemo: TMemo
+          Left = 66
+          Top = 187
+          Width = 150
+          Height = 69
+          TabStop = False
+          BorderStyle = bsNone
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          Lines.Strings = (
+            'N/A')
+          ParentColor = True
+          ParentFont = False
+          ParentShowHint = False
+          ReadOnly = True
+          ShowHint = True
+          TabOrder = 0
+        end
       end
       object Panel5: TPanel
         Left = 5
@@ -705,7 +739,7 @@ object Form1: TForm1
       end
       object RawPlaybackButton: TButton
         Left = 133
-        Top = 350
+        Top = 434
         Width = 96
         Height = 17
         Caption = 'Raw Playback'
@@ -714,7 +748,7 @@ object Form1: TForm1
       end
       object RawRecordButton: TButton
         Left = 5
-        Top = 350
+        Top = 434
         Width = 104
         Height = 17
         Caption = 'Raw Record'
@@ -723,7 +757,7 @@ object Form1: TForm1
       end
       object SBSConnectButton: TButton
         Left = 5
-        Top = 373
+        Top = 457
         Width = 104
         Height = 20
         Caption = 'SBS Connect'
@@ -732,7 +766,7 @@ object Form1: TForm1
       end
       object SBSIpAddress: TEdit
         Left = 115
-        Top = 373
+        Top = 457
         Width = 117
         Height = 20
         TabOrder = 17
@@ -740,7 +774,7 @@ object Form1: TForm1
       end
       object SBSRecordButton: TButton
         Left = 5
-        Top = 399
+        Top = 483
         Width = 104
         Height = 17
         Caption = 'SBS Record'
@@ -749,24 +783,121 @@ object Form1: TForm1
       end
       object SBSPlaybackButton: TButton
         Left = 115
-        Top = 399
+        Top = 483
         Width = 96
         Height = 17
         Caption = 'SBS Playback'
         TabOrder = 19
         OnClick = SBSPlaybackButtonClick
       end
+      object Panel6: TPanel
+        Left = 5
+        Top = 506
+        Width = 244
+        Height = 159
+        TabOrder = 20
+        object Label21: TLabel
+          Left = 56
+          Top = 8
+          Width = 119
+          Height = 16
+          Caption = 'Connection Status'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -13
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object Label22: TLabel
+          Left = 5
+          Top = 40
+          Width = 76
+          Height = 13
+          Caption = 'Raw Connect:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object Label23: TLabel
+          Left = 5
+          Top = 59
+          Width = 64
+          Height = 13
+          Caption = 'SBS Status:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object Label24: TLabel
+          Left = 5
+          Top = 78
+          Width = 125
+          Height = 13
+          Caption = 'API Last Update Time:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object RawConnectStatus: TLabel
+          Left = 87
+          Top = 40
+          Width = 82
+          Height = 13
+          Caption = 'Not Connected'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object SBSConnectStatus: TLabel
+          Left = 87
+          Top = 59
+          Width = 82
+          Height = 13
+          Caption = 'Not Connected'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object APILastUpdateTime: TLabel
+          Left = 136
+          Top = 78
+          Width = 65
+          Height = 13
+          Caption = '00:00:00:00'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+      end
     end
     object Panel2: TPanel
       Left = 1
-      Top = 577
+      Top = 829
       Width = 248
-      Height = 9
-      Align = alClient
+      Height = 66
       TabOrder = 2
       object MapComboBox: TComboBox
         Left = 5
-        Top = 6
+        Top = 14
         Width = 100
         Height = 20
         Style = csDropDownList
@@ -781,7 +912,7 @@ object Form1: TForm1
       end
       object BigQueryCheckBox: TCheckBox
         Left = 5
-        Top = 32
+        Top = 40
         Width = 124
         Height = 17
         Caption = 'BigQuery Upload'
@@ -794,7 +925,7 @@ object Form1: TForm1
     Left = 0
     Top = 0
     Width = 978
-    Height = 681
+    Height = 1041
     Cursor = crCross
     Align = alClient
     TabOrder = 1
