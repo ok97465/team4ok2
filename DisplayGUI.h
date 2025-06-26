@@ -156,6 +156,8 @@ __published:	// IDE-managed Components
 	TLabel *SBSConnectStatus;
 	TLabel *APILastUpdateTime;
 	TMemo *RouteInfoMemo;
+	TTrackBar *PlaybackSpeedTrackBar; // UI for playback speed
+	TLabel *PlaybackSpeedLabel;
 	void __fastcall ApiCallTimerTimer(TObject *Sender);
 	void __fastcall ObjectDisplayInit(TObject *Sender);
 	void __fastcall ObjectDisplayResize(TObject *Sender);
@@ -279,6 +281,10 @@ public:		// User declarations
         std::vector<AirplaneInstance> m_planeBatch;
         std::vector<AirplaneLineInstance> m_lineBatch;
         std::vector<HexCharInstance> m_textBatch;
+
+        // --- Playback Speed UI 함수 선언 추가 ---
+    void SetupPlaybackSpeedUI();
+    void __fastcall PlaybackSpeedTrackBarChange(TObject *Sender);
 };
 // --- [공항 마커(Atlas 아이콘) 관련 선언 추가] ---
 

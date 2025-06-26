@@ -42,11 +42,18 @@ private:
     TDataSourceType FDataSourceType;
     bool FIsActive;
 
+    // --- Playback speed multiplier ---
+    double FPlaybackSpeed = 1.0; // 1.0 = normal speed
+public:
     // 동기화 메소드 (변경 없음)
     void __fastcall SyncNotifyData(AnsiString data);
     void __fastcall SyncNotifyConnected();
     void __fastcall SyncNotifyReconnecting();
     void __fastcall ThreadTerminated(TObject* Sender);
+
+    // Playback speed methods
+    void SetPlaybackSpeed(double speed) { FPlaybackSpeed = speed; }
+    double GetPlaybackSpeed() const { return FPlaybackSpeed; }
 
 public:
     __fastcall TCPDataHandler(TComponent* AOwner);

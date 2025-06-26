@@ -13,6 +13,7 @@
 #include <GL/glu.h>
 #include <png.h>    // png 라이브러리 설치되어 있어야 함
 #include <fstream>
+#include <Vcl.ComCtrls.hpp> // For TTrackBar
 
 #pragma hdrstop
 
@@ -323,6 +324,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   FAircraftModel = new AircraftDataModel();
   FRawButtonScroller = new TButtonScroller(RawConnectButton);
   FSBSButtonScroller = new TButtonScroller(SBSConnectButton);
+  SetupPlaybackSpeedUI();
 }
 
 void __fastcall TForm1::ApiCallTimerTimer(TObject *Sender)
@@ -1971,4 +1973,48 @@ void __fastcall TForm1::OnAircraftSelected(uint32_t icao)
 
     // 패널 전체 갱신 (기존 Close 라벨 + 경로)
     UpdateCloseControlPanel(ac, route);
+}
+
+// Helper: Map trackbar position to playback speed (e.g., 1=0.5x, 2=1x, 3=2x, 4=4x)
+double TrackBarPosToSpeed(int pos) {
+    switch (pos) {
+        case 0: return 1.0;
+        case 1: return 2.0;
+        case 2: return 3.0;
+        default: return 1.0;
+    }
+}
+
+// --- Playback Speed UI Setup ---
+void TForm1::SetupPlaybackSpeedUI()
+{
+    // Create and configure the trackbar for playback speed
+    PlaybackSpeedTrackBar = new TTrackBar(this);
+    PlaybackSpeedTrackBar->Parent = this;
+    PlaybackSpeedTrackBar->Min = 0;
+    PlaybackSpeedTrackBar->Max = 2; // 0~2 (1배, 2배, 3배)
+    PlaybackSpeedTrackBar->Position = 0; // 기본값: 1배
+    PlaybackSpeedTrackBar->Left = 20;
+    PlaybackSpeedTrackBar->Top = 80;
+    PlaybackSpeedTrackBar->Width = 150;
+    PlaybackSpeedTrackBar->OnChange = PlaybackSpeedTrackBarChange;
+    PlaybackSpeedTrackBar->TickStyle = tsAuto;
+    PlaybackSpeedTrackBar->Show();
+
+    // Create and configure the label for playback speed
+    PlaybackSpeedLabel = new TLabel(this);
+    PlaybackSpeedLabel->Parent = this;
+    PlaybackSpeedLabel->Left = PlaybackSpeedTrackBar->Left + PlaybackSpeedTrackBar->Width + 10;
+    PlaybackSpeedLabel->Top = PlaybackSpeedTrackBar->Top + 2;
+    PlaybackSpeedLabel->Caption = "Playback Speed: 1x";
+    PlaybackSpeedLabel->Show();
+}
+
+// --- Playback Speed TrackBar Change Handler ---
+void __fastcall TForm1::PlaybackSpeedTrackBarChange(TObject *Sender)
+{
+    double speed = TrackBarPosToSpeed(PlaybackSpeedTrackBar->Position);
+    PlaybackSpeedLabel->Caption = "Playback Speed: " + FloatToStrF(speed, ffGeneral, 3, 2) + "x";
+    if (FRawDataHandler) FRawDataHandler->SetPlaybackSpeed(speed);
+    if (FSBSDataHandler) FSBSDataHandler->SetPlaybackSpeed(speed);
 }

@@ -117,7 +117,10 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
 				}
 
 				__int64 sleepTime = currentTime - lastTime;
-				if (sleepTime > 0 && sleepTime < 10000)
+				if (FHandler->FPlaybackSpeed > 0.0) {
+                    sleepTime = static_cast<__int64>(sleepTime / FHandler->FPlaybackSpeed);
+                }
+                if (sleepTime > 0 && sleepTime < 10000)
 				{
 					TThread::Sleep(sleepTime);
 				}

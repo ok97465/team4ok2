@@ -972,7 +972,7 @@ object Form1: TForm1
     end
   end
   object Timer1: TTimer
-    Interval = 500
+    Interval = 100
     OnTimer = Timer1Timer
     Left = 88
   end
