@@ -42,6 +42,9 @@ public:
     TADS_B_Aircraft* GetFirstAircraft(ght_iterator_t* iterator, const void** key);
     TADS_B_Aircraft* GetNextAircraft(ght_iterator_t* iterator, const void** key);
     TADS_B_Aircraft* FindAircraftByICAO(unsigned int Addr);
+    
+    // [신규] FCurrentSpriteImage 리셋 메서드
+    void ResetCurrentSpriteImage();
 };
 
 #endif

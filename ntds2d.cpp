@@ -875,6 +875,12 @@ int SelectAircraftIcon(const TADS_B_Aircraft* aircraft)
 {
     if (!aircraft) return 0;
     
+    // CycleImages가 체크되어 있으면 항공기에 할당된 SpriteImage 사용
+    // (이 경우 AircraftDataModel에서 랜덤하게 할당됨)
+    if (aircraft->SpriteImage >= 0) {
+        return aircraft->SpriteImage;
+    }
+    
     // DB에서 타입코드 조회
     const TAircraftData* dbinfo = (const TAircraftData*) ght_get(AircraftDBHashTable, sizeof(aircraft->ICAO), &aircraft->ICAO);
     if (dbinfo) {

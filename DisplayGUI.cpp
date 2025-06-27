@@ -1153,8 +1153,13 @@ void __fastcall TForm1::PurgeButtonClick(TObject *Sender)
 {
     // 1. Model에게 "모든 항공기 삭제" 작업을 위임
     FAircraftModel->PurgeAllAircraft();
+    
+    // 2. CycleImages가 체크되어 있으면 FCurrentSpriteImage도 리셋
+    if (CycleImages->Checked) {
+        FAircraftModel->ResetCurrentSpriteImage();
+    }
 
-    // 2. 화면에서 모든 항공기가 사라졌으므로, 즉시 화면을 새로고침
+    // 3. 화면에서 모든 항공기가 사라졌으므로, 즉시 화면을 새로고침
     ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
@@ -1455,6 +1460,10 @@ void __fastcall TForm1::RawPlaybackButtonClick(TObject *Sender)
 void __fastcall TForm1::CycleImagesClick(TObject *Sender)
 {
  CurrentSpriteImage=0;
+ // AircraftDataModel의 FCurrentSpriteImage도 리셋
+ if (FAircraftModel) {
+     FAircraftModel->ResetCurrentSpriteImage();
+ }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SBSConnectButtonClick(TObject *Sender)
