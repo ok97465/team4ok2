@@ -3,6 +3,8 @@
 #ifndef NTDS2DH
 #define NTDS2DH
 #include <vector>
+#include <windows.h>
+#include "Aircraft.h"
 int MakeAirplaneImages(void);
 void MakeAirTrackFriend(void);
 void MakeAirTrackHostile(void);
@@ -36,6 +38,12 @@ void DrawAirplaneLinesInstanced(const std::vector<AirplaneLineInstance>& instanc
 void DrawTrackHook(float x, float y);
 void DrawRadarCoverage(float xc, float yc, float major, float minor);
 void DrawLeader(float x1, float y1, float x2, float y2);
+
+// 다양한 리더 스타일 함수들
+void DrawLeaderArrow(float x1, float y1, float x2, float y2, float arrowSize = 8.0f);
+void DrawLeaderDashed(float x1, float y1, float x2, float y2);
+void DrawLeaderThick(float x1, float y1, float x2, float y2, float thickness = 3.0f);
+
 void ComputeTimeToGoPosition(float  TimeToGo,
                                                          float  xs, float  ys,
                                                          float  xv, float  yv,
@@ -54,6 +62,9 @@ void DrawHexTextInstanced(const std::vector<HexCharInstance>& instances);
 void SetHexTextScale(float scale);
 void SetHexTextBold(bool bold);
 float GetHexTextScale();
+
+// 항공기 타입별 아이콘 선택 함수
+int SelectAircraftIcon(const TADS_B_Aircraft* aircraft);
 
 //---------------------------------------------------------------------------
 #endif

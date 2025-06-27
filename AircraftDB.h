@@ -41,5 +41,12 @@ typedef struct
 
 bool InitAircraftDB(AnsiString FileName);
 const char * GetAircraftDBInfo(uint32_t addr);
+
+// 추가된 함수 선언들
+const char *aircraft_get_country(uint32_t addr, bool get_short);
+bool aircraft_is_helicopter(uint32_t addr, const char **type_ptr);
+const char *aircraft_get_military(uint32_t addr);
+bool aircraft_is_military(uint32_t addr, const char **country);
+
 //---------------------------------------------------------------------------
 #endif

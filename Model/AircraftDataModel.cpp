@@ -226,10 +226,16 @@ TADS_B_Aircraft* AircraftDataModel::FindOrCreateAircraft(unsigned int Addr, bool
         memset(aircraft, 0, sizeof(TADS_B_Aircraft)); // 모든 필드를 0으로 초기화
         aircraft->ICAO = Addr;
         snprintf(aircraft->HexAddr, sizeof(aircraft->HexAddr), "%06X", (int)Addr);
-        aircraft->SpriteImage = FCurrentSpriteImage;
+        
+        // CycleImages가 체크되어 있을 때만 SpriteImage 할당
         if (ACycleImages) {
+            aircraft->SpriteImage = FCurrentSpriteImage;
             FCurrentSpriteImage = (FCurrentSpriteImage + 1) % ANumSpriteImages;
+        } else {
+            // CycleImages가 체크되어 있지 않으면 -1로 설정하여 SelectAircraftIcon에서 타입별 아이콘 선택
+            aircraft->SpriteImage = -1;
         }
+        
         if (ght_insert(FHashTable, aircraft, sizeof(Addr), &Addr) < 0) {
             delete aircraft;
             return NULL;
@@ -309,4 +315,10 @@ TADS_B_Aircraft* AircraftDataModel::GetNextAircraft(ght_iterator_t* iterator, co
 TADS_B_Aircraft* AircraftDataModel::FindAircraftByICAO(unsigned int Addr)
 {
     return (TADS_B_Aircraft*)ght_get(FHashTable, sizeof(Addr), &Addr);
+}
+
+// [신규] FCurrentSpriteImage 리셋 메서드 구현
+void AircraftDataModel::ResetCurrentSpriteImage()
+{
+    FCurrentSpriteImage = 0;
 }
