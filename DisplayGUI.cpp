@@ -1988,33 +1988,64 @@ double TrackBarPosToSpeed(int pos) {
 // --- Playback Speed UI Setup ---
 void TForm1::SetupPlaybackSpeedUI()
 {
-    // Create and configure the trackbar for playback speed
-    PlaybackSpeedTrackBar = new TTrackBar(this);
-    PlaybackSpeedTrackBar->Parent = this;
-    PlaybackSpeedTrackBar->Min = 0;
-    PlaybackSpeedTrackBar->Max = 2; // 0~2 (1배, 2배, 3배)
-    PlaybackSpeedTrackBar->Position = 0; // 기본값: 1배
-    PlaybackSpeedTrackBar->Left = 20;
-    PlaybackSpeedTrackBar->Top = 80;
-    PlaybackSpeedTrackBar->Width = 150;
-    PlaybackSpeedTrackBar->OnChange = PlaybackSpeedTrackBarChange;
-    PlaybackSpeedTrackBar->TickStyle = tsAuto;
-    PlaybackSpeedTrackBar->Show();
-
-    // Create and configure the label for playback speed
+    // --- 기존 트랙바 삭제 및 드롭다운(ComboBox)으로 대체 ---
+    if (PlaybackSpeedTrackBar) {
+        delete PlaybackSpeedTrackBar;
+        PlaybackSpeedTrackBar = nullptr;
+    }
+    if (PlaybackSpeedLabel) {
+        delete PlaybackSpeedLabel;
+        PlaybackSpeedLabel = nullptr;
+    }
+    if (PlaybackSpeedComboBox) {
+        delete PlaybackSpeedComboBox;
+        PlaybackSpeedComboBox = nullptr;
+    }
+    
+    // ComboBox 생성
+    PlaybackSpeedComboBox = new TComboBox(this);
+    PlaybackSpeedComboBox->Parent = this;
+    PlaybackSpeedComboBox->Left = 20;
+    PlaybackSpeedComboBox->Top = 80;
+    PlaybackSpeedComboBox->Width = 80;
+    PlaybackSpeedComboBox->Style = csDropDownList;
+    PlaybackSpeedComboBox->Items->Add("1x");
+    PlaybackSpeedComboBox->Items->Add("2x");
+    PlaybackSpeedComboBox->Items->Add("3x");
+    PlaybackSpeedComboBox->ItemIndex = 0;
+    
+    // 라벨
     PlaybackSpeedLabel = new TLabel(this);
     PlaybackSpeedLabel->Parent = this;
-    PlaybackSpeedLabel->Left = PlaybackSpeedTrackBar->Left + PlaybackSpeedTrackBar->Width + 10;
-    PlaybackSpeedLabel->Top = PlaybackSpeedTrackBar->Top + 2;
-    PlaybackSpeedLabel->Caption = "Playback Speed: 1x";
+    PlaybackSpeedLabel->Left = PlaybackSpeedComboBox->Left + PlaybackSpeedComboBox->Width + 10;
+    PlaybackSpeedLabel->Top = PlaybackSpeedComboBox->Top + 2;
+    PlaybackSpeedLabel->Caption = "재생 속도";
+    PlaybackSpeedLabel->Font->Size = 10;
+    PlaybackSpeedLabel->Font->Color = clBlack;
     PlaybackSpeedLabel->Show();
+    
+    // 이벤트 핸들러 할당
+    PlaybackSpeedComboBox->OnChange = PlaybackSpeedComboBoxChange;
+    
+    // 최초 1회 적용
+    if (FRawDataHandler) FRawDataHandler->SetPlaybackSpeed(1.0);
+    if (FSBSDataHandler) FSBSDataHandler->SetPlaybackSpeed(1.0);
+    PlaybackSpeedLabel->Caption = "재생 속도: 1x";
 }
 
-// --- Playback Speed TrackBar Change Handler ---
-void __fastcall TForm1::PlaybackSpeedTrackBarChange(TObject *Sender)
+void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
 {
-    double speed = TrackBarPosToSpeed(PlaybackSpeedTrackBar->Position);
-    PlaybackSpeedLabel->Caption = "Playback Speed: " + FloatToStrF(speed, ffGeneral, 3, 2) + "x";
+    if (!PlaybackSpeedComboBox) return;
+    
+    int idx = PlaybackSpeedComboBox->ItemIndex;
+    double speed = 1.0;
+    if (idx == 1) speed = 2.0;
+    else if (idx == 2) speed = 3.0;
+    
     if (FRawDataHandler) FRawDataHandler->SetPlaybackSpeed(speed);
     if (FSBSDataHandler) FSBSDataHandler->SetPlaybackSpeed(speed);
+    
+    if (PlaybackSpeedLabel) {
+        PlaybackSpeedLabel->Caption = "재생 속도: " + FloatToStrF(speed, ffGeneral, 3, 2) + "x";
+    }
 }
