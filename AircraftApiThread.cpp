@@ -19,6 +19,7 @@ void __fastcall TLoadApiDataThread::Execute() {
     try {
         printf("[Thread] LoadAllData() 시작\n");
         LoadAllData();
+        Form1->InitRouteAirportMaps();
         printf("[Thread] LoadAllData() 완료\n");
 
         TThread::Synchronize(nullptr, NotifyUI);

@@ -159,6 +159,13 @@ __published:	// IDE-managed Components
 	TTrackBar *PlaybackSpeedTrackBar; // UI for playback speed
 	TLabel *PlaybackSpeedLabel;
 	TComboBox *PlaybackSpeedComboBox; // ComboBox for playback speed
+	TEdit *FilterOriginEdit;
+	TEdit *FilterAirlineEdit;
+	TEdit *FilterDestinationEdit;
+	TLabel *Label25;
+	TLabel *Label26;
+	TLabel *Label27;
+	TLabel *Label28;
 	void __fastcall ApiCallTimerTimer(TObject *Sender);
 	void __fastcall ObjectDisplayInit(TObject *Sender);
 	void __fastcall ObjectDisplayResize(TObject *Sender);
@@ -200,6 +207,9 @@ __published:	// IDE-managed Components
 	void __fastcall UseSBSRemoteClick(TObject *Sender);
 	void __fastcall UseSBSLocalClick(TObject *Sender);
 	void __fastcall LoadARTCCBoundaries1Click(TObject *Sender);
+	void __fastcall FilterAirlineEditChange(TObject *Sender);
+	void __fastcall FilterOriginEditChange(TObject *Sender);
+	void __fastcall FilterDestinationEditChange(TObject *Sender);
 
 private:	// User declarations
 	TCPDataHandler *FRawDataHandler;
@@ -207,6 +217,9 @@ private:	// User declarations
 	AircraftDataModel *FAircraftModel;
 	TButtonScroller *FRawButtonScroller;
     TButtonScroller *FSBSButtonScroller;
+	AnsiString filterAirline;
+    AnsiString filterOrigin;
+    AnsiString filterDestination;
 	
 	TTimer *ApiCallTimer;
 
@@ -241,6 +254,8 @@ public:		// User declarations
     bool __fastcall LoadARTCCBoundaries(AnsiString FileName);
 	void UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route);
     void OnAircraftSelected(uint32_t icao);
+	bool IsRouteMatched(const RouteInfo* route) const;
+	void InitRouteAirportMaps(); 
 
 
 	int                        MouseDownX,MouseDownY;

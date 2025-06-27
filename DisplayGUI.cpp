@@ -14,6 +14,7 @@
 #include <png.h>    // png 라이브러리 설치되어 있어야 함
 #include <fstream>
 #include <Vcl.ComCtrls.hpp> // For TTrackBar
+#include <unordered_map>
 
 #pragma hdrstop
 
@@ -69,10 +70,12 @@ static const char * strnistr(const char * pszSource, DWORD dwLength, const char 
 
 static void UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route);
 static void OnAircraftSelected(uint32_t icao);
-static const AirportInfo* FindAirportByIcao(const std::string& icao);
+//static const AirportInfo* FindAirportByIcao(const std::string& icao);
 static const RouteInfo* FindRouteByCallsign(const std::string& callSign);
 static std::string ICAO_to_string(uint32_t icao);
 
+static std::unordered_map<std::string, const RouteInfo*> callSignToRoute;
+static std::unordered_map<std::string, const AirportInfo*> icaoToAirport;
 //---------------------------------------------------------------------------
 uint32_t createRGB(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -189,6 +192,22 @@ static char *stristr(const char *String, const char *Pattern)
    return(NULL);
 }
 //---------------------------------------------------------------------------
+// Route/Airport map 채우는 함수
+void __fastcall TForm1::InitRouteAirportMaps()
+{
+    callSignToRoute.clear();
+    for (const auto& r : apiRouteList) {
+        std::string key = r.callSign;
+        callSignToRoute[key] = &r;
+    }
+    icaoToAirport.clear();
+    for (const auto& ap : apiAirportList) {
+        std::string key = ap.icao;
+        icaoToAirport[key] = &ap;
+    }
+}
+//---------------------------------------------------------------------------
+
 GLuint atlasTexId = 0;
 const int iconW = 48, iconH = 48;     // 아이콘 하나 크기
 const int atlasW = 144, atlasH = 48;  // 전체 atlas PNG 크기
@@ -399,6 +418,8 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
     ApiCallTimer->Interval = 3600000; // 1시간
     ApiCallTimer->OnTimer = ApiCallTimerTimer;
     ApiCallTimer->Enabled = true;
+
+    InitRouteAirportMaps();
 }
 //---------------------------------------------------------------------------
 
@@ -576,11 +597,46 @@ void __fastcall TForm1::DrawObjects(void)
         {
           if (Data->HaveLatLon)
           {
-                ViewableAircraft++;
+            // [1] RouteInfo 얻기
+            //const RouteInfo* route = FindRouteByCallsign(AnsiString(Data->FlightNum).c_str());
+
+            const RouteInfo* route = nullptr;
+            if (!filterAirline.IsEmpty() || !filterOrigin.IsEmpty() || !filterDestination.IsEmpty()) {
+                auto it = callSignToRoute.find(AnsiString(Data->FlightNum).c_str());
+                route = (it != callSignToRoute.end()) ? it->second : nullptr;
+                // (필터가 한 개라도 있을 때만 route lookup)
+                if (!IsRouteMatched(route)) continue;
+            }
+
+            // ① [추가] 필터가 지정된 경우에만 route==nullptr 항공기를 스킵
+            if ((!filterAirline.IsEmpty() || !filterOrigin.IsEmpty() || !filterDestination.IsEmpty()) && route == nullptr)
+                continue;
+
+            // [2] 항공사 필터
+            if (!filterAirline.IsEmpty() && route) {
+                AnsiString code = AnsiString(route->airlineCode.c_str()).UpperCase();
+				AnsiString filter = filterAirline.UpperCase();
+				if (code.SubString(1, filter.Length()) != filter)
+					continue;
+            }
+
+            // [3] 출발지 필터 (route->airportCodes[0]이 출발지)
+            if (!filterOrigin.IsEmpty() && route && !route->airportCodes.empty()) {
+                AnsiString origin = AnsiString(route->airportCodes.front().c_str()).UpperCase();
+                if (AnsiString(route->airportCodes.front().c_str()).UpperCase() != filterOrigin.UpperCase())
+                    continue;
+            }
+
+            // [4] 도착지 필터 (route->airportCodes.back()이 도착지)
+            if (!filterDestination.IsEmpty() && route && !route->airportCodes.empty()) {
+                if (AnsiString(route->airportCodes.back().c_str()).UpperCase() != filterDestination.UpperCase())
+                    continue;
+            }
+            ViewableAircraft++;
 
            LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
-		   ScrX2 = ScrX;
-		   ScrY2 = ScrY;
+           ScrX2 = ScrX;
+           ScrY2 = ScrY;
            //DrawPoint(ScrX,ScrY);
            float color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
            if (Data->HaveSpeedAndHeading)
@@ -752,6 +808,20 @@ void __fastcall TForm1::DrawObjects(void)
    }
  }
 }
+
+bool TForm1::IsRouteMatched(const RouteInfo* route) const {
+    if (!route) return false;
+    if (!filterAirline.IsEmpty() && AnsiString(route->airlineCode.c_str()).UpperCase() != filterAirline.UpperCase())
+        return false;
+    if (!filterOrigin.IsEmpty() && route->airportCodes.size() &&
+        AnsiString(route->airportCodes.front().c_str()).UpperCase() != filterOrigin.UpperCase())
+        return false;
+    if (!filterDestination.IsEmpty() && route->airportCodes.size() &&
+        AnsiString(route->airportCodes.back().c_str()).UpperCase() != filterDestination.UpperCase())
+        return false;
+    return true;
+}
+
 //------------------------------공항 타입 분류---------------------------------------
 AirportType GetAirportType(const AirportInfo& airport) {
     return Civil;
@@ -1846,13 +1916,14 @@ static int FinshARTCCBoundary(void)
 //---------------------------------------------------------------------------
 
 // 공항 정보 찾기 (ICAO 코드로)
+/*
 const AirportInfo* FindAirportByIcao(const std::string& icao) {
     for (const auto& ap : apiAirportList) {
         if (ap.icao == icao)
             return &ap;
     }
     return nullptr;
-}
+}*/
 
 // 항공기 Callsign으로 RouteInfo 찾기
 const RouteInfo* FindRouteByCallsign(const std::string& callSign) {
@@ -1930,7 +2001,9 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
         }
         // 툴팁에는 전체 공항명 + Airline, Flight No 등 자세한 정보
         for (size_t i = 0; i < route->airportCodes.size(); ++i) {
-            const AirportInfo* ap = FindAirportByIcao(route->airportCodes[i]);
+            const AirportInfo* ap = nullptr;
+            auto it = icaoToAirport.find(route->airportCodes[i]);
+            if (it != icaoToAirport.end()) ap = it->second;
             AnsiString codeOnly = route->airportCodes[i].c_str();
             AnsiString fullName = ap ? AnsiString(ap->name.c_str()) : "";
             if (!toolTipText.IsEmpty()) toolTipText += "\n↓\n";
@@ -1968,11 +2041,30 @@ void __fastcall TForm1::OnAircraftSelected(uint32_t icao)
         return;
     }
 
-    // RouteInfo 찾기 (Callsign 기반)
-    const RouteInfo* route = FindRouteByCallsign(AnsiString(ac->FlightNum).c_str());
+    // **배열을 AnsiString으로 변환한 뒤 처리!**
+    AnsiString flightNum = AnsiString(ac->FlightNum).Trim().UpperCase();
+    auto it = callSignToRoute.find(flightNum.c_str());
+    const RouteInfo* route = (it != callSignToRoute.end()) ? it->second : nullptr;
 
     // 패널 전체 갱신 (기존 Close 라벨 + 경로)
     UpdateCloseControlPanel(ac, route);
+}
+
+void __fastcall TForm1::FilterAirlineEditChange(TObject *Sender)
+{
+    filterAirline = FilterAirlineEdit->Text.Trim();
+    ObjectDisplay->Repaint();
+}
+void __fastcall TForm1::FilterOriginEditChange(TObject *Sender)
+{
+    filterOrigin = FilterOriginEdit->Text.Trim();
+    printf("[EditChange] filterOrigin: %s\n", filterOrigin.c_str());
+    ObjectDisplay->Repaint();
+}
+void __fastcall TForm1::FilterDestinationEditChange(TObject *Sender)
+{
+    filterDestination = FilterDestinationEdit->Text.Trim();
+    ObjectDisplay->Repaint();
 }
 
 // Helper: Map trackbar position to playback speed (e.g., 1=0.5x, 2=1x, 3=2x, 4=4x)
@@ -2049,3 +2141,5 @@ void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
         PlaybackSpeedLabel->Caption = "재생 속도: " + FloatToStrF(speed, ffGeneral, 3, 2) + "x";
     }
 }
+//---------------------------------------------------------------------------
+

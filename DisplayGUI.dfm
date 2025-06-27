@@ -155,9 +155,10 @@ object Form1: TForm1
       Align = alTop
       Constraints.MinHeight = 70
       TabOrder = 1
+      ExplicitLeft = 6
       object Label15: TLabel
         Left = 80
-        Top = 682
+        Top = 693
         Width = 98
         Height = 13
         Caption = 'Areas Of Interest'
@@ -166,6 +167,58 @@ object Form1: TForm1
         Font.Height = -11
         Font.Name = 'Tahoma'
         Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object Label25: TLabel
+        Left = 24
+        Top = 638
+        Width = 36
+        Height = 13
+        Caption = 'Airline'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object Label26: TLabel
+        Left = 104
+        Top = 638
+        Width = 33
+        Height = 13
+        Caption = 'Origin'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object Label27: TLabel
+        Left = 168
+        Top = 638
+        Width = 65
+        Height = 13
+        Caption = 'Destination'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object Label28: TLabel
+        Left = 80
+        Top = 615
+        Width = 80
+        Height = 14
+        Caption = 'Aircraft Filter'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -12
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold, fsUnderline]
         ParentFont = False
       end
       object DrawMap: TCheckBox
@@ -222,9 +275,9 @@ object Form1: TForm1
       end
       object AreaListView: TListView
         Left = 5
-        Top = 701
+        Top = 712
         Width = 235
-        Height = 97
+        Height = 86
         Columns = <
           item
             Caption = 'Area'
@@ -794,7 +847,7 @@ object Form1: TForm1
         Left = 5
         Top = 506
         Width = 244
-        Height = 159
+        Height = 103
         TabOrder = 20
         object Label21: TLabel
           Left = 56
@@ -887,6 +940,30 @@ object Form1: TForm1
           Font.Style = [fsBold]
           ParentFont = False
         end
+      end
+      object FilterOriginEdit: TEdit
+        Left = 95
+        Top = 656
+        Width = 57
+        Height = 20
+        TabOrder = 21
+        OnChange = FilterOriginEditChange
+      end
+      object FilterAirlineEdit: TEdit
+        Left = 16
+        Top = 656
+        Width = 57
+        Height = 20
+        TabOrder = 22
+        OnChange = FilterAirlineEditChange
+      end
+      object FilterDestinationEdit: TEdit
+        Left = 174
+        Top = 656
+        Width = 57
+        Height = 20
+        TabOrder = 23
+        OnChange = FilterDestinationEditChange
       end
     end
     object Panel2: TPanel
