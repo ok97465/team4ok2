@@ -12,8 +12,10 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <fstream>
+#include <sstream>
 #include <Vcl.ComCtrls.hpp> // For TTrackBar
 #include <unordered_map>
+#include <cctype>
 
 #pragma hdrstop
 
@@ -57,6 +59,7 @@
 #pragma link "Map\jpeg\Win64\Release\jpeg.a"
 #pragma link "Map\png\Win64\Release\png.a"
 #pragma link "cspin"
+#pragma link "cspin"
 #pragma resource "*.dfm"
 TForm1 *Form1;
  //---------------------------------------------------------------------------
@@ -76,6 +79,75 @@ static std::string ICAO_to_string(uint32_t icao);
 
 static std::unordered_map<std::string, const RouteInfo*> callSignToRoute;
 static std::unordered_map<std::string, const AirportInfo*> icaoToAirport;
+static std::unordered_map<std::string, std::pair<std::string, std::string>> airlineInfoMap;
+
+static std::string trim(const std::string& s)
+{
+    const char* ws = " \t\r\n\"";
+    size_t start = s.find_first_not_of(ws);
+    if (start == std::string::npos) return "";
+    size_t end = s.find_last_not_of(ws);
+    return s.substr(start, end - start + 1);
+}
+
+static void LoadAirlineInfo(const AnsiString& fileName)
+{
+    airlineInfoMap.clear();
+    std::ifstream f(fileName.c_str());
+    if (!f.is_open())
+    {
+        printf("Failed to open %s\n", fileName.c_str());
+        return;
+    }
+    std::string line;
+    std::getline(f, line); // header
+    while (std::getline(f, line))
+    {
+        if (line.empty()) continue;
+        std::stringstream ss(line);
+        std::string code,country,name;
+        if (std::getline(ss, code, ',') &&
+            std::getline(ss, country, ',') &&
+            std::getline(ss, name))
+        {
+            code = trim(code);
+            country = trim(country);
+            name = trim(name);
+            if (!code.empty())
+                airlineInfoMap[code] = {name, country};
+        }
+    }
+}
+
+static bool LookupAirline(const std::string& callSign,
+                          std::string& airline,
+                          std::string& country)
+{
+    std::string code;
+    for (char c : callSign)
+    {
+        if (isalpha(c)) code += toupper(c);
+        else break;
+    }
+    if (code.empty()) return false;
+    std::string key = code;
+    auto it = airlineInfoMap.find(key);
+    if (it == airlineInfoMap.end() && code.length() >= 3)
+    {
+        key = code.substr(0,3);
+        it = airlineInfoMap.find(key);
+    }
+    if (it == airlineInfoMap.end() && code.length() >= 2)
+    {
+        key = code.substr(0,2);
+        it = airlineInfoMap.find(key);
+    }
+    if (it == airlineInfoMap.end())
+        return false;
+    airline = it->second.first;
+    country = it->second.second;
+    return true;
+}
 //---------------------------------------------------------------------------
 uint32_t createRGB(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -245,9 +317,14 @@ __fastcall TForm1::TForm1(TComponent* Owner)
  TimeToGoTrackBar->Position=120;
  BigQueryCSV=NULL;
  BigQueryRowCount=0;
- BigQueryFileCount=0;
- InitAircraftDB(AircraftDBPathFileName);
- m_planeBatch.reserve(5000);
+  BigQueryFileCount=0;
+  InitAircraftDB(AircraftDBPathFileName);
+  {
+    AnsiString airlineFile = ExtractFilePath(ExtractFileDir(Application->ExeName)) +
+                             AnsiString("..\\AircraftDB\\airline_names_countries.csv");
+    LoadAirlineInfo(airlineFile);
+  }
+  m_planeBatch.reserve(5000);
   m_lineBatch.reserve(5000);
   m_textBatch.reserve(5000 * 6);
   SetHexTextScale(1.0f);
@@ -694,8 +771,21 @@ void __fastcall TForm1::DrawObjects(void)
         if (Data->HaveFlightNum)
           FlightNumLabel->Caption=Data->FlightNum;
         else FlightNumLabel->Caption="N/A";
+        {
+         std::string airline, country;
+         if (LookupAirline(AnsiString(Data->FlightNum).Trim().UpperCase().c_str(), airline, country))
+         {
+             AirlineNameLabel->Caption = airline.c_str();
+             AirlineCountryLabel->Caption = country.c_str();
+         }
+         else
+         {
+             AirlineNameLabel->Caption = "N/A";
+             AirlineCountryLabel->Caption = "N/A";
+         }
+        }
         if (Data->HaveLatLon)
-		{
+                {
 		 CLatLabel->Caption=DMS::DegreesMinutesSecondsLat(Data->Latitude).c_str();
 		 CLonLabel->Caption=DMS::DegreesMinutesSecondsLon(Data->Longitude).c_str();
         }
@@ -730,9 +820,11 @@ void __fastcall TForm1::DrawObjects(void)
         {
 		 TrackHook.Valid_CC=false;
 		 ICAOLabel->Caption="N/A";
-		 FlightNumLabel->Caption="N/A";
-         CLatLabel->Caption="N/A";
-		 CLonLabel->Caption="N/A";
+                FlightNumLabel->Caption="N/A";
+                AirlineNameLabel->Caption="N/A";
+                AirlineCountryLabel->Caption="N/A";
+        CLatLabel->Caption="N/A";
+                CLonLabel->Caption="N/A";
          SpdLabel->Caption="N/A";
 		 HdgLabel->Caption="N/A";
 		 AltLabel->Caption="N/A";
@@ -1958,6 +2050,8 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
         // 패널 초기화 (None 처리)
         ICAOLabel->Caption      = "N/A";
         FlightNumLabel->Caption = "N/A";
+        AirlineNameLabel->Caption = "N/A";
+        AirlineCountryLabel->Caption = "N/A";
         CLatLabel->Caption      = "N/A";
         CLonLabel->Caption      = "N/A";
         SpdLabel->Caption       = "N/A";
@@ -1973,6 +2067,19 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
 
     ICAOLabel->Caption      = ac->HexAddr;         // ICAO(16진)
     FlightNumLabel->Caption = ac->FlightNum;       // Callsign
+    {
+        std::string airline, country;
+        if (LookupAirline(AnsiString(ac->FlightNum).Trim().UpperCase().c_str(), airline, country))
+        {
+            AirlineNameLabel->Caption = airline.c_str();
+            AirlineCountryLabel->Caption = country.c_str();
+        }
+        else
+        {
+            AirlineNameLabel->Caption = "N/A";
+            AirlineCountryLabel->Caption = "N/A";
+        }
+    }
     if (ac->HaveLatLon) {
         CLatLabel->Caption = DMS::DegreesMinutesSecondsLat(ac->Latitude).c_str();
         CLonLabel->Caption = DMS::DegreesMinutesSecondsLon(ac->Longitude).c_str();
