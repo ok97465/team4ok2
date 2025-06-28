@@ -624,7 +624,7 @@ object Form1: TForm1
           Left = 65
           Top = 181
           Width = 21
-          Height = 8
+          Height = 13
           Caption = 'N/A'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
@@ -659,6 +659,32 @@ object Form1: TForm1
           Font.Style = [fsBold]
           ParentFont = False
         end
+        object LabelModel: TLabel
+          Left = 5
+          Top = 206
+          Width = 37
+          Height = 13
+          Caption = 'Model:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object AircraftModelLabel: TLabel
+          Left = 65
+          Top = 206
+          Width = 21
+          Height = 13
+          Caption = 'N/A'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
         object Label4: TLabel
           Left = 75
           Top = 0
@@ -674,9 +700,9 @@ object Form1: TForm1
         end
         object Label20: TLabel
           Left = 5
-          Top = 213
+          Top = 220
           Width = 40
-          Height = 15
+          Height = 13
           Caption = 'ROUTE:'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
@@ -687,7 +713,7 @@ object Form1: TForm1
         end
         object RouteInfoMemo: TMemo
           Left = 66
-          Top = 212
+          Top = 218
           Width = 150
           Height = 69
           TabStop = False
