@@ -1025,6 +1025,40 @@ object Form1: TForm1
     OnInit = ObjectDisplayInit
     OnResize = ObjectDisplayResize
     OnPaint = ObjectDisplayPaint
+    object ConflictListView: TListView
+      Left = 10
+      Top = 200
+      Width = 423
+      Height = 150
+      Columns = <
+        item
+          Caption = 'Aircraft 1'
+          Width = 70
+        end
+        item
+          Caption = 'Aircraft 2'
+          Width = 70
+        end
+        item
+          Caption = 'TCPA'
+          Width = 60
+        end
+        item
+          Caption = 'H Dist(NM)'
+          Width = 60
+        end
+        item
+          Caption = 'V Dist(Feet)'
+          Width = 60
+        end
+        item
+          Caption = 'Threat Level'
+          Width = 80
+        end>
+      GridLines = True
+      TabOrder = 0
+      ViewStyle = vsReport
+    end
   end
   object MainMenu1: TMainMenu
     Left = 24
@@ -1057,6 +1091,11 @@ object Form1: TForm1
     Interval = 5000
     OnTimer = Timer2Timer
     Left = 136
+  end
+  object AssessmentTimer: TTimer
+    Interval = 5000
+    OnTimer = AssessmentTimerTimer
+    Left = 208
   end
   object RecordRawSaveDialog: TSaveDialog
     DefaultExt = 'raw'

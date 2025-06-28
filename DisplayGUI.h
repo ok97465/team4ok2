@@ -14,6 +14,8 @@
 #include <IdBaseComponent.hpp>
 #include <IdComponent.hpp>
 #include <Graphics.hpp>
+#include <Vcl.Dialogs.hpp>
+#include <set>
 #include "FilesystemStorage.h"
 #include "KeyholeConnection.h"
 #include "GoogleLayer.h"
@@ -33,6 +35,7 @@
 #include "AircraftApi.h"
 #include "AircraftInfo.h"
 #include "ButtonScroller.h"
+#include "ProximityAssessor.h"
 typedef float T_GL_Color[4];
 
 
@@ -166,6 +169,8 @@ __published:	// IDE-managed Components
 	TLabel *Label26;
 	TLabel *Label27;
 	TLabel *Label28;
+	TTimer *AssessmentTimer;
+	TListView *ConflictListView;
 	void __fastcall ApiCallTimerTimer(TObject *Sender);
 	void __fastcall ObjectDisplayInit(TObject *Sender);
 	void __fastcall ObjectDisplayResize(TObject *Sender);
@@ -210,6 +215,8 @@ __published:	// IDE-managed Components
 	void __fastcall FilterAirlineEditChange(TObject *Sender);
 	void __fastcall FilterOriginEditChange(TObject *Sender);
 	void __fastcall FilterDestinationEditChange(TObject *Sender);
+	void __fastcall AssessmentTimerTimer(TObject *Sender);
+	void __fastcall OnAssessmentComplete(TObject *Sender);
 
 private:	// User declarations
 	TCPDataHandler *FRawDataHandler;
@@ -220,6 +227,10 @@ private:	// User declarations
 	AnsiString filterAirline;
     AnsiString filterOrigin;
     AnsiString filterDestination;
+	ProximityAssessor* FProximityAssessor;
+	std::map<unsigned int, std::vector<RelatedConflictInfo>> FConflictMap;
+	std::vector<ConflictPair> FSortedConflictList;
+	std::pair<unsigned int, unsigned int> FSelectedConflictPair;
 	
 	TTimer *ApiCallTimer;
 
@@ -234,6 +245,9 @@ private:	// User declarations
     void __fastcall HandleSBSDisconnected(const String& reason);
 	void __fastcall HandleSBSReconnecting();
 
+	void __fastcall UpdateConflictList();
+    void __fastcall ConflictListViewSelectItem(TObject *Sender, TListItem *Item, bool Selected);
+	void __fastcall CenterMapOnPair(unsigned int icao1, unsigned int icao2);
 
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);

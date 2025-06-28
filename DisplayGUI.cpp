@@ -272,6 +272,15 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   FRawButtonScroller = new TButtonScroller(RawConnectButton);
   FSBSButtonScroller = new TButtonScroller(SBSConnectButton);
   SetupPlaybackSpeedUI();
+
+  FProximityAssessor = new ProximityAssessor();
+  FProximityAssessor->OnComplete = OnAssessmentComplete;
+
+  AssessmentTimer->Interval = 1000;
+  AssessmentTimer->Enabled = true;
+
+  ConflictListView->OnSelectItem = ConflictListViewSelectItem;
+  FSelectedConflictPair = {0, 0};
 }
 
 void __fastcall TForm1::ApiCallTimerTimer(TObject *Sender)
@@ -291,6 +300,7 @@ __fastcall TForm1::~TForm1()
 {
  Timer1->Enabled=false;
  Timer2->Enabled=false;
+ AssessmentTimer->Enabled=false;
  delete g_EarthView;
  if (g_GETileManager) delete g_GETileManager;
  delete g_MasterLayer;
@@ -305,6 +315,8 @@ __fastcall TForm1::~TForm1()
   delete FSBSDataHandler;
   delete FRawButtonScroller;
   delete FSBSButtonScroller;
+  delete FAircraftModel;
+  delete FProximityAssessor;
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SetMapCenter(double &x, double &y)
@@ -568,6 +580,7 @@ void __fastcall TForm1::DrawObjects(void)
            ScrY2 = ScrY;
            //DrawPoint(ScrX,ScrY);
            float color[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // 기본 흰색
+           bool isPartOfSelectedPair = (Data->ICAO == FSelectedConflictPair.first || Data->ICAO == FSelectedConflictPair.second);
            
            // 항공기 타입에 따른 색상 설정
            if (aircraft_is_helicopter(Data->ICAO, NULL)) {
@@ -597,6 +610,11 @@ void __fastcall TForm1::DrawObjects(void)
 					color[0]=1.0f; color[1]=0.0f; color[2]=0.0f; color[3]=1.0f;
 				}
 
+      if (isPartOfSelectedPair) {
+        color[0] = 0.0f; color[1] = 1.0f; color[2] = 1.0f; // 밝은 청록색(Cyan)
+      } else if (FConflictMap.count(Data->ICAO)) {
+        color[0] = 0.0f; color[1] = 0.0f; color[2] = 1.0f;
+      }
 
 				AirplaneInstance inst;
 				inst.x = ScrX;
@@ -777,6 +795,62 @@ void __fastcall TForm1::DrawObjects(void)
 	CpaDistanceValue->Caption="None";
    }
  }
+ if (FSelectedConflictPair.first != 0)
+  {
+    TADS_B_Aircraft* ac1 = FAircraftModel->FindAircraftByICAO(FSelectedConflictPair.first);
+    TADS_B_Aircraft* ac2 = FAircraftModel->FindAircraftByICAO(FSelectedConflictPair.second);
+
+    if (ac1 && ac2 && ac1->HaveLatLon && ac2->HaveLatLon)
+    {
+      double tcpa = 0;
+      double cpa_distance_nm = 0;
+
+      // 1. 선택된 쌍의 CPA 정보 찾기
+      bool found = false;
+      if (FConflictMap.count(ac1->ICAO)) {
+        for (const auto& info : FConflictMap.at(ac1->ICAO)) {
+          if (info.otherAircraftICAO == ac2->ICAO) {
+              tcpa = info.timeToCPA;
+              cpa_distance_nm = info.cpaDistance;
+              found = true;
+              break;
+          }
+        }
+      }
+
+      if (found)
+      {
+        double lat1, lon1, lat2, lon2, junk;
+
+        // 2. 각 항공기의 미래 위치 계산
+        VDirect(ac1->Latitude, ac1->Longitude, ac1->Heading, ac1->Speed / 3600.0 * tcpa, &lat1, &lon1, &junk);
+        VDirect(ac2->Latitude, ac2->Longitude, ac2->Heading, ac2->Speed / 3600.0 * tcpa, &lat2, &lon2, &junk);
+
+        // 3. 예측 경로(녹색 선) 그리기
+        double x1_curr, y1_curr, x1_fut, y1_fut;
+        double x2_curr, y2_curr, x2_fut, y2_fut;
+        LatLon2XY(ac1->Latitude, ac1->Longitude, x1_curr, y1_curr);
+        LatLon2XY(lat1, lon1, x1_fut, y1_fut);
+        LatLon2XY(ac2->Latitude, ac2->Longitude, x2_curr, y2_curr);
+        LatLon2XY(lat2, lon2, x2_fut, y2_fut);
+
+        glLineWidth(3.0);
+        glColor4f(0.0, 1.0, 0.0, 0.6); // 반투명 녹색
+        glBegin(GL_LINES);
+        glVertex2d(x1_curr, y1_curr); glVertex2d(x1_fut, y1_fut);
+        glVertex2d(x2_curr, y2_curr); glVertex2d(x2_fut, y2_fut);
+        glEnd();
+
+        // 4. CPA 지점 사이를 잇는 빨간 선 그리기
+        glLineWidth(5.0);
+        glColor4f(1.0, 0.0, 0.0, 0.8); // 반투명 빨간색
+        glBegin(GL_LINES);
+        glVertex2d(x1_fut, y1_fut);
+        glVertex2d(x2_fut, y2_fut);
+        glEnd();
+      }
+    }
+  }
 }
 
 bool TForm1::IsRouteMatched(const RouteInfo* route) const {
@@ -2074,4 +2148,135 @@ void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
     }
 }
 //---------------------------------------------------------------------------
+void __fastcall TForm1::AssessmentTimerTimer(TObject *Sender)
+{
+	std::cout << "AssessmentTimer triggered." << std::endl;
+	std::vector<TADS_B_Aircraft*> snapshot_pointers;
+    snapshot_pointers.reserve(FAircraftModel->GetAircraftCount());
+
+    ght_iterator_t iterator;
+    const void* key;
+    TADS_B_Aircraft* aircraft;
+    for (aircraft = FAircraftModel->GetFirstAircraft(&iterator, &key);
+         aircraft;
+         aircraft = FAircraftModel->GetNextAircraft(&iterator, &key))
+    {
+        if (aircraft->HaveLatLon) {
+			snapshot_pointers.push_back(aircraft);
+        }
+    }
+    // 임계값: 수평 1해리, 수직 1000피트
+    FProximityAssessor->startAssessment(snapshot_pointers, 1.0, 1000.0, 120);
+}
+
+void __fastcall TForm1::OnAssessmentComplete(TObject *Sender)
+{
+    FConflictMap.clear();
+    FSortedConflictList = FProximityAssessor->SortedListResults;
+    FConflictMap = FProximityAssessor->MapResults;
+
+    UpdateConflictList();
+    ObjectDisplay->Repaint();
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::UpdateConflictList()
+{
+    // FSortedConflictList는 이미 백그라운드 스레드에서 위험도 순으로 완벽하게 정렬되어 있습니다.
+    ConflictListView->Items->BeginUpdate();
+    ConflictListView->Items->Clear();
+
+    // 스레드가 정렬해준 순서 그대로 리스트뷰에 추가합니다.
+    for (const auto& conflict : FSortedConflictList)
+    {
+        // "N/A" 제거 로직: 항목을 추가하기 전에 두 항공기가 모두 존재하는지 확인
+        TADS_B_Aircraft* ac1 = FAircraftModel->FindAircraftByICAO(conflict.ICAO1);
+        TADS_B_Aircraft* ac2 = FAircraftModel->FindAircraftByICAO(conflict.ICAO2);
+
+        if (ac1 && ac2)
+        {
+            TListItem* item = ConflictListView->Items->Add();
+
+            item->Caption = ac1->HexAddr;
+            item->SubItems->Add(ac2->HexAddr);
+
+            // 정밀한 시간 표시 로직
+            AnsiString tcpaStr;
+            if (conflict.timeToCPA < 60.0) {
+                tcpaStr.sprintf("%.1f s", conflict.timeToCPA);
+            } else {
+                int minutes = (int)conflict.timeToCPA / 60;
+                int seconds = (int)conflict.timeToCPA % 60;
+                tcpaStr.sprintf("%02d:%02d", minutes, seconds);
+            }
+            item->SubItems->Add(tcpaStr);
+
+            item->SubItems->Add(FloatToStrF(conflict.cpaDistance, ffFixed, 4, 1));
+            item->SubItems->Add(FloatToStrF(conflict.verticalCPA, ffFixed, 5, 0));
+
+            //item->SubItems->Add(FloatToStrF(conflict.threatScore, ffFixed, 6, 1));
+
+            double score = conflict.threatScore;
+            AnsiString levelStr;
+            if (score > 7.8) levelStr = "Critical";
+            else if (score > 6.5) levelStr = "High";
+            else if (score > 4.0) levelStr = "Medium";
+            else levelStr = "Low";
+
+            // 점수와 함께 레벨 표시
+            item->SubItems->Add(AnsiString().sprintf("%.1f - %s", score, levelStr.c_str()));
+
+            item->Data = (void*)((__int64)conflict.ICAO1 << 32 | conflict.ICAO2);
+        }
+    }
+    ConflictListView->Items->EndUpdate();
+}
+
+// ConflictListViewSelectItem 함수 (변경 없음, 이전과 동일)
+void __fastcall TForm1::ConflictListViewSelectItem(TObject *Sender, TListItem *Item, bool Selected)
+{
+    if (Selected && Item && Item->Data)
+    {
+        // Data 포인터에서 두 ICAO 값을 다시 추출
+        __int64 packedICAOs = (__int64)Item->Data;
+        unsigned int icao1 = (unsigned int)(packedICAOs >> 32);
+        unsigned int icao2 = (unsigned int)(packedICAOs & 0xFFFFFFFF);
+
+        // [수정] 새로 추가된 멤버 변수에 선택된 쌍의 정보를 저장
+        FSelectedConflictPair = {icao1, icao2};
+
+        // [추가] 두 항공기의 중간 지점으로 지도 중심 이동
+        CenterMapOnPair(icao1, icao2);
+
+        // 일반 선택(TrackHook)은 해제하여 중복 하이라이트 방지
+        TrackHook.Valid_CC = false;
+
+        ObjectDisplay->Repaint();
+    }
+    else
+    {
+        // 선택이 해제되면, 쌍 선택도 해제
+        FSelectedConflictPair = {0, 0};
+        ObjectDisplay->Repaint();
+    }
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::CenterMapOnPair(unsigned int icao1, unsigned int icao2)
+{
+    TADS_B_Aircraft* ac1 = FAircraftModel->FindAircraftByICAO(icao1);
+    TADS_B_Aircraft* ac2 = FAircraftModel->FindAircraftByICAO(icao2);
+
+    if (ac1 && ac2 && ac1->HaveLatLon && ac2->HaveLatLon)
+    {
+        // 두 항공기의 위도/경도 평균 계산
+        double centerLat = (ac1->Latitude + ac2->Latitude) / 2.0;
+        double centerLon = (ac1->Longitude + ac2->Longitude) / 2.0;
+
+        // g_EarthView를 직접 조작하여 지도 중심 이동 (기존 코드 방식 활용)
+        if(g_EarthView) {
+            MapCenterLat = centerLat;
+            MapCenterLon = centerLon;
+            SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
+        }
+    }
+}
 

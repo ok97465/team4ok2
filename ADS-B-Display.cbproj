@@ -410,6 +410,10 @@
             <DependentOn>PointInPolygon.h</DependentOn>
             <BuildOrder>32</BuildOrder>
         </CppCompile>
+        <CppCompile Include="ProximityAssessor.cpp">
+            <DependentOn>ProximityAssessor.h</DependentOn>
+            <BuildOrder>72</BuildOrder>
+        </CppCompile>
         <CppCompile Include="RawDecoder.cpp">
             <DependentOn>RawDecoder.h</DependentOn>
             <BuildOrder>54</BuildOrder>
@@ -428,7 +432,11 @@
         </None>
         <CppCompile Include="SbsDecoder.cpp">
             <DependentOn>SbsDecoder.h</DependentOn>
-            <BuildOrder>53</BuildOrder>
+            <BuildOrder>70</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="SpatialGrid.cpp">
+            <DependentOn>SpatialGrid.h</DependentOn>
+            <BuildOrder>71</BuildOrder>
         </CppCompile>
         <None Include="stb_image.h">
             <BuildOrder>37</BuildOrder>

@@ -79,7 +79,9 @@ bool computeCPA(double lat1, double lon1,double altitude1, double speed1, double
 
     // If TCPA is negative, the aircraft are diverging, no CPA will occur
     if (tcpa < 0) {
+#ifdef ENABLE_DEBUG
         printf("Aircraft are diverging; no CPA will occur.\n");
+#endif
         return(false);
     }
 
@@ -112,8 +114,10 @@ bool computeCPA(double lat1, double lon1,double altitude1, double speed1, double
 	cpa_distance_nm = horizontal_cpa * KM_TO_NM;
 
     // Output the results
+#ifdef ENABLE_DEBUG
     printf("TCPA: %.2f seconds\n", tcpa);
     printf("CPA Distance: %.2f NM (horizontal), %.2f feet (vertical)\n", cpa_distance_nm, vertical_cpa);
-	return(true);
+#endif
+    return(true);
 }
  //---------------------------------------------------------------------------
