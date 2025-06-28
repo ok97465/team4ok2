@@ -675,7 +675,7 @@ void __fastcall TForm1::DrawObjects(void)
                 aircraftPoint[1] = Data->Latitude;  // 위도
                 aircraftPoint[2] = 0.0;
 
-                // 모든 다각형을 확인하여 비행기가 하나라도 안에 있는지 체크
+                // 현재 위치가 다각형 안에 있는지 확인
                 for (DWORD i = 0; i < Areas->Count; i++) {
                     TArea *Area = (TArea *)Areas->Items[i];
                     if (PointInPolygon(Area->Points, Area->NumPoints, aircraftPoint)) {
@@ -683,8 +683,40 @@ void __fastcall TForm1::DrawObjects(void)
                         break;
                     }
                 }
+
+                // 현재 위치가 다각형 밖에 있다면, 미래 위치도 확인
+                if (!inAnyPolygon && Data->HaveSpeedAndHeading) {
+                    // 미래 위치 계산 (5분, 10분, 15분 후)
+                    const double timeIntervals[] = {5.0, 10.0, 15.0}; // 분 단위
+                    const int numIntervals = sizeof(timeIntervals) / sizeof(timeIntervals[0]);
+                    
+                    for (int t = 0; t < numIntervals && !inAnyPolygon; t++) {
+                        double futureLat, futureLon, junk;
+                        double timeInHours = timeIntervals[t] / 60.0; // 시간 단위로 변환
+                        
+                        // VDirect 함수를 사용하여 미래 위치 계산
+                        if (VDirect(Data->Latitude, Data->Longitude, 
+                                   Data->Heading, Data->Speed * timeInHours, 
+                                   &futureLat, &futureLon, &junk) == OKNOERROR) {
+                            
+                            pfVec3 futurePoint;
+                            futurePoint[0] = futureLon; // 경도
+                            futurePoint[1] = futureLat; // 위도
+                            futurePoint[2] = 0.0;
+                            
+                            // 미래 위치가 다각형 안에 있는지 확인
+                            for (DWORD i = 0; i < Areas->Count; i++) {
+                                TArea *Area = (TArea *)Areas->Items[i];
+                                if (PointInPolygon(Area->Points, Area->NumPoints, futurePoint)) {
+                                    inAnyPolygon = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
                 
-                // 어떤 다각형에도 포함되지 않으면 스킵
+                // 현재나 미래 위치가 어떤 다각형에도 포함되지 않으면 스킵
                 if (!inAnyPolygon) {
                     continue;
                 }
@@ -698,8 +730,7 @@ void __fastcall TForm1::DrawObjects(void)
                 aircraftPoint[1] = Data->Latitude;  // 위도
                 aircraftPoint[2] = 0.0;
 
-                // 경유지들 사이의 영역을 정의 (간단한 사각형으로 근사)
-                // 실제로는 더 정교한 경로 폴리곤을 만들어야 하지만, 여기서는 간단히 처리
+                // 현재 위치가 경유지 영역에 있는지 확인
                 for (size_t i = 0; i < route->airportCodes.size() - 1; i++) {
                     const AirportInfo* ap1 = nullptr;
                     const AirportInfo* ap2 = nullptr;
@@ -713,7 +744,6 @@ void __fastcall TForm1::DrawObjects(void)
                     
                     if (ap1 && ap2) {
                         // 두 공항 사이의 직선 경로 근처에 있는지 확인
-                        // 간단한 거리 기반 필터링 (실제로는 더 정교한 경로 계산 필요)
                         double lat1 = ap1->latitude, lon1 = ap1->longitude;
                         double lat2 = ap2->latitude, lon2 = ap2->longitude;
                         double aircraftLat = Data->Latitude, aircraftLon = Data->Longitude;
@@ -735,8 +765,59 @@ void __fastcall TForm1::DrawObjects(void)
                         }
                     }
                 }
+
+                // 현재 위치가 경유지 영역 밖에 있다면, 미래 위치도 확인
+                if (!inWaypointArea && Data->HaveSpeedAndHeading) {
+                    // 미래 위치 계산 (5분, 10분, 15분 후)
+                    const double timeIntervals[] = {5.0, 10.0, 15.0}; // 분 단위
+                    const int numIntervals = sizeof(timeIntervals) / sizeof(timeIntervals[0]);
+                    
+                    for (int t = 0; t < numIntervals && !inWaypointArea; t++) {
+                        double futureLat, futureLon, junk;
+                        double timeInHours = timeIntervals[t] / 60.0; // 시간 단위로 변환
+                        
+                        // VDirect 함수를 사용하여 미래 위치 계산
+                        if (VDirect(Data->Latitude, Data->Longitude, 
+                                   Data->Heading, Data->Speed * timeInHours, 
+                                   &futureLat, &futureLon, &junk) == OKNOERROR) {
+                            
+                            // 미래 위치가 경유지 영역에 있는지 확인
+                            for (size_t i = 0; i < route->airportCodes.size() - 1; i++) {
+                                const AirportInfo* ap1 = nullptr;
+                                const AirportInfo* ap2 = nullptr;
+                                
+                                auto it1 = icaoToAirport.find(route->airportCodes[i]);
+                                auto it2 = icaoToAirport.find(route->airportCodes[i + 1]);
+                                
+                                if (it1 != icaoToAirport.end()) ap1 = it1->second;
+                                if (it2 != icaoToAirport.end()) ap2 = it2->second;
+                                
+                                if (ap1 && ap2) {
+                                    double lat1 = ap1->latitude, lon1 = ap1->longitude;
+                                    double lat2 = ap2->latitude, lon2 = ap2->longitude;
+                                    
+                                    // 두 공항 사이의 중점
+                                    double midLat = (lat1 + lat2) / 2.0;
+                                    double midLon = (lon1 + lon2) / 2.0;
+                                    
+                                    // 중점에서 미래 위치까지의 거리
+                                    double distToMid = sqrt(pow(futureLat - midLat, 2) + pow(futureLon - midLon, 2));
+                                    
+                                    // 두 공항 사이의 거리
+                                    double routeDist = sqrt(pow(lat2 - lat1, 2) + pow(lon2 - lon1, 2));
+                                    
+                                    // 경로 거리의 1/3 이내에 있으면 경유지 영역으로 간주
+                                    if (distToMid <= routeDist / 3.0) {
+                                        inWaypointArea = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 
-                // 경유지 영역에 포함되지 않으면 스킵
+                // 현재나 미래 위치가 경유지 영역에 포함되지 않으면 스킵
                 if (!inWaypointArea) {
                     continue;
                 }

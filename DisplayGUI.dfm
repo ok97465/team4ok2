@@ -1047,7 +1047,7 @@ object Form1: TForm1
         Top = 808
         Width = 150
         Height = 17
-        Caption = 'Display polygons plane'
+        Caption = 'Polygon area only'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -11
@@ -1062,7 +1062,7 @@ object Form1: TForm1
         Top = 657
         Width = 188
         Height = 17
-        Caption = 'show the defined waypoints'
+        Caption = 'Waypoint area only'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -11
