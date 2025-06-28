@@ -193,6 +193,7 @@ __published:	// IDE-managed Components
 	void __fastcall AddPoint(int X, int Y);	  
 	void __fastcall ObjectDisplayMouseUp(TObject *Sender, TMouseButton Button,
           TShiftState Shift, int X, int Y);
+	void __fastcall ObjectDisplayDblClick(TObject *Sender);
 	void __fastcall Exit1Click(TObject *Sender);
 	void __fastcall ZoomInClick(TObject *Sender);
 	void __fastcall ZoomOutClick(TObject *Sender);

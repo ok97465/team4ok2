@@ -1075,6 +1075,30 @@ void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
   {
   if (AreaTemp)
    {
+    // 오른쪽 마우스 더블클릭 감지를 위한 정적 변수
+    static DWORD lastRightClickTime = 0;
+    static int lastRightClickX = 0;
+    static int lastRightClickY = 0;
+    
+    DWORD currentTime = GetTickCount();
+    
+    // 더블클릭 조건: 500ms 이내, 같은 위치에서 클릭 (5픽셀 이내)
+    if (currentTime - lastRightClickTime < 500 && 
+        abs(X - lastRightClickX) < 5 && 
+        abs(Y - lastRightClickY) < 5)
+    {
+      // 오른쪽 마우스 더블클릭 - 폴리곤 완성
+      if (AreaTemp->NumPoints >= 3)
+      {
+        CompleteClick(NULL);
+        return;
+      }
+    }
+    
+    lastRightClickTime = currentTime;
+    lastRightClickX = X;
+    lastRightClickY = Y;
+    
 	if (AreaTemp->NumPoints<MAX_AREA_POINTS)
 	{
 	  AddPoint(X, Y);
@@ -2492,5 +2516,14 @@ void __fastcall TForm1::CenterMapOnPair(unsigned int icao1, unsigned int icao2)
             SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
         }
     }
+}
+
+void __fastcall TForm1::ObjectDisplayDblClick(TObject *Sender)
+{
+  // 오른쪽 마우스 더블클릭 시 폴리곤 완성
+  if (AreaTemp && AreaTemp->NumPoints >= 3)
+  {
+    CompleteClick(NULL);
+  }
 }
 
