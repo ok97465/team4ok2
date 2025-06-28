@@ -15,6 +15,7 @@
 #include <IdComponent.hpp>
 #include <Graphics.hpp>
 #include <Vcl.Dialogs.hpp>
+#include "cspin.h"
 #include <set>
 #include "FilesystemStorage.h"
 #include "KeyholeConnection.h"
@@ -112,9 +113,13 @@ __published:	// IDE-managed Components
 	TLabel *Label7;
 	TLabel *Label6;
 	TLabel *Label18;
-	TLabel *FlightNumLabel;
-	TLabel *ICAOLabel;
-	TLabel *Label5;
+        TLabel *FlightNumLabel;
+        TLabel *ICAOLabel;
+        TLabel *AirlineNameLabel;
+        TLabel *AirlineCountryLabel;
+        TLabel *LabelAirlineName;
+        TLabel *LabelAirlineCountry;
+        TLabel *Label5;
 	TLabel *Label4;
 	TPanel *Panel5;
 	TLabel *Lon;

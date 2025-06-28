@@ -155,7 +155,6 @@ object Form1: TForm1
       Align = alTop
       Constraints.MinHeight = 70
       TabOrder = 1
-      ExplicitLeft = 6
       object Label15: TLabel
         Left = 80
         Top = 693
@@ -608,6 +607,58 @@ object Form1: TForm1
           Font.Style = [fsBold]
           ParentFont = False
         end
+        object LabelAirlineName: TLabel
+          Left = 5
+          Top = 182
+          Width = 39
+          Height = 13
+          Caption = 'Airline:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object AirlineNameLabel: TLabel
+          Left = 65
+          Top = 181
+          Width = 21
+          Height = 8
+          Caption = 'N/A'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object LabelAirlineCountry: TLabel
+          Left = 5
+          Top = 194
+          Width = 48
+          Height = 13
+          Caption = 'Country:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object AirlineCountryLabel: TLabel
+          Left = 65
+          Top = 195
+          Width = 21
+          Height = 13
+          Caption = 'N/A'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
         object Label4: TLabel
           Left = 75
           Top = 0
@@ -623,9 +674,9 @@ object Form1: TForm1
         end
         object Label20: TLabel
           Left = 5
-          Top = 188
+          Top = 213
           Width = 40
-          Height = 13
+          Height = 15
           Caption = 'ROUTE:'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
@@ -636,7 +687,7 @@ object Form1: TForm1
         end
         object RouteInfoMemo: TMemo
           Left = 66
-          Top = 187
+          Top = 212
           Width = 150
           Height = 69
           TabStop = False
