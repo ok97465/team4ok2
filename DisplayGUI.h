@@ -178,6 +178,8 @@ __published:	// IDE-managed Components
 	TLabel *Label28;
 	TTimer *AssessmentTimer;
 	TListView *ConflictListView;
+	TCheckBox *FilterPolygonOnlyCheckBox; // 다각형 내 비행기만 표시하는 체크박스
+	TCheckBox *FilterWaypointsOnlyCheckBox; // 정의된 경유지 내 비행기만 표시하는 체크박스
 	void __fastcall ApiCallTimerTimer(TObject *Sender);
 	void __fastcall ObjectDisplayInit(TObject *Sender);
 	void __fastcall ObjectDisplayResize(TObject *Sender);
@@ -224,6 +226,8 @@ __published:	// IDE-managed Components
 	void __fastcall FilterDestinationEditChange(TObject *Sender);
 	void __fastcall AssessmentTimerTimer(TObject *Sender);
 	void __fastcall OnAssessmentComplete(TObject *Sender);
+	void __fastcall FilterPolygonOnlyCheckBoxClick(TObject *Sender); // 다각형 필터 체크박스 이벤트
+	void __fastcall FilterWaypointsOnlyCheckBoxClick(TObject *Sender); // 경유지 필터 체크박스 이벤트
 
 private:	// User declarations
 	TCPDataHandler *FRawDataHandler;
@@ -238,6 +242,8 @@ private:	// User declarations
 	std::map<unsigned int, std::vector<RelatedConflictInfo>> FConflictMap;
 	std::vector<ConflictPair> FSortedConflictList;
 	std::pair<unsigned int, unsigned int> FSelectedConflictPair;
+	bool filterPolygonOnly; // 다각형 내 비행기만 표시하는 필터
+	bool filterWaypointsOnly; // 정의된 경유지 내 비행기만 표시하는 필터
 	
 	TTimer *ApiCallTimer;
 
