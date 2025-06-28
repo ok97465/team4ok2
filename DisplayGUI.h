@@ -117,6 +117,8 @@ __published:	// IDE-managed Components
         TLabel *ICAOLabel;
         TLabel *AirlineNameLabel;
         TLabel *AirlineCountryLabel;
+		TLabel *LabelModel;
+        TLabel *AircraftModelLabel;
         TLabel *LabelAirlineName;
         TLabel *LabelAirlineCountry;
         TLabel *Label5;

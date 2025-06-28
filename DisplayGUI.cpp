@@ -80,6 +80,7 @@ static std::string ICAO_to_string(uint32_t icao);
 static std::unordered_map<std::string, const RouteInfo*> callSignToRoute;
 static std::unordered_map<std::string, const AirportInfo*> icaoToAirport;
 static std::unordered_map<std::string, std::pair<std::string, std::string>> airlineInfoMap;
+extern ght_hash_table_t *AircraftDBHashTable;
 
 static std::string trim(const std::string& s)
 {
@@ -147,6 +148,17 @@ static bool LookupAirline(const std::string& callSign,
     airline = it->second.first;
     country = it->second.second;
     return true;
+}
+static AnsiString GetAircraftModel(uint32_t icao)
+{
+    const TAircraftData* data = (const TAircraftData*) ght_get(AircraftDBHashTable, sizeof(icao), &icao);
+    if (data)
+    {
+        AnsiString model = data->Fields[AC_DB_Model].Trim();
+        if (!model.IsEmpty())
+            return model;
+    }
+    return "N/A";
 }
 //---------------------------------------------------------------------------
 uint32_t createRGB(uint8_t r, uint8_t g, uint8_t b)
@@ -821,6 +833,7 @@ void __fastcall TForm1::DrawObjects(void)
 		 TrackHook.Valid_CC=false;
 		 ICAOLabel->Caption="N/A";
                 FlightNumLabel->Caption="N/A";
+                AircraftModelLabel->Caption="N/A";
                 AirlineNameLabel->Caption="N/A";
                 AirlineCountryLabel->Caption="N/A";
         CLatLabel->Caption="N/A";
@@ -2050,6 +2063,7 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
         // 패널 초기화 (None 처리)
         ICAOLabel->Caption      = "N/A";
         FlightNumLabel->Caption = "N/A";
+        AircraftModelLabel->Caption = "N/A";
         AirlineNameLabel->Caption = "N/A";
         AirlineCountryLabel->Caption = "N/A";
         CLatLabel->Caption      = "N/A";
@@ -2067,6 +2081,7 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
 
     ICAOLabel->Caption      = ac->HexAddr;         // ICAO(16진)
     FlightNumLabel->Caption = ac->FlightNum;       // Callsign
+    AircraftModelLabel->Caption = GetAircraftModel(ac->ICAO);
     {
         std::string airline, country;
         if (LookupAirline(AnsiString(ac->FlightNum).Trim().UpperCase().c_str(), airline, country))
