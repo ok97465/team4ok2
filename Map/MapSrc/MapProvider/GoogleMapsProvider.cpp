@@ -1,4 +1,7 @@
 ﻿#include "GoogleMapsProvider.h"
+#include <cstdio>
+#include <stdexcept>
+#include "LogHandler.h"
 
 #pragma package(smart_init)
 #ifdef WIN32
@@ -21,12 +24,14 @@ GoogleMapsProvider::~GoogleMapsProvider() {
 }
 
 void GoogleMapsProvider::FetchTile(TilePtr tile, KeyholeConnection* conn) {
-    printf("[GoogleMapsProvider][%s] ----> tile x(%d), y(%d), level(%d) \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[GoogleMapsProvider] tile x(%d), y(%d), level(%d)", 
+                tile->GetX(), tile->GetY(), tile->GetLevel());
 
     gefetch_error res = gefetch_fetch_image_googlemaps(conn->GetGEFetch(), tile->GetX(), tile->GetY(), tile->GetLevel());
     if ((res == GEFETCH_NOT_FOUND) || (res == GEFETCH_INVALID_ZOOM)) {
         tile->Null();
-        printf("[%s] tile->Null\n", __func__);
+        LOG_DEBUG_F(LogHandler::CAT_MAP, "Tile not found: x=%d, y=%d, level=%d", 
+                    tile->GetX(), tile->GetY(), tile->GetLevel());
         return;
     }
     else if (res != GEFETCH_OK) {
@@ -36,10 +41,14 @@ void GoogleMapsProvider::FetchTile(TilePtr tile, KeyholeConnection* conn) {
 
     RawBuffer* buf = new RawBuffer(gefetch_get_data_ptr(conn->GetGEFetch()), gefetch_get_data_size(conn->GetGEFetch()));
 
-    printf("[%s] buf size(%d)\n", __func__, buf->Size());    
+    // 큰 타일만 로깅 (50KB 이상)
+    if (buf->Size() > 50000) {
+        LOG_DEBUG_F(LogHandler::CAT_MAP, "Large tile loaded: %d bytes", buf->Size());
+    }
     try {
         tile->Load(buf, 1);
-        printf("[%s] tile->load\n", __func__);
+        // 타일 로딩 완료 로그 - 일반 DEBUG 레벨로 변경
+        LOG_DEBUG(LogHandler::CAT_MAP, "[GoogleMapsProvider] tile loaded successfully");
     } catch (...) {
         delete buf;
         throw;
@@ -47,11 +56,11 @@ void GoogleMapsProvider::FetchTile(TilePtr tile, KeyholeConnection* conn) {
 }
 
 std::string GoogleMapsProvider::GetCacheDir() const {
-    printf("[GoogleMapsProvider][%s] cacheDir(%s) \n", __func__, cacheDir.c_str());
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[GoogleMapsProvider] returning cache dir: %s", cacheDir.c_str());
     return cacheDir;
 }
 
 std::string GoogleMapsProvider::GetURI() const {
-    printf("[GoogleMapsProvider][%s]\n", __func__);
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[GoogleMapsProvider][%s]", __func__);
     return GOOGLE_URL;
 }

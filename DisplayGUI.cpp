@@ -35,6 +35,7 @@
 #include "AircraftApi.h"
 #include "AircraftApiThread.h"
 #include "ntds2d.h"
+#include "LogHandler.h"
 
 #define AIRCRAFT_DATABASE_URL   "https://opensky-network.org/datasets/metadata/aircraftDatabase.zip"
 #define AIRCRAFT_DATABASE_FILE   "aircraftDatabase.csv"
@@ -296,6 +297,17 @@ void __fastcall TForm1::InitRouteAirportMaps()
 __fastcall TForm1::TForm1(TComponent* Owner)
 	: TForm(Owner)
 {
+  // LogHandler 초기화
+  LogHandler::Initialize();
+  LogHandler::SetMinLevel(LogHandler::LOG_INFO);
+  LogHandler::EnableCategory(LogHandler::CAT_GENERAL | LogHandler::CAT_PURGE | 
+                            LogHandler::CAT_PROXIMITY | LogHandler::CAT_SBS | 
+                            LogHandler::CAT_PERFORMANCE | LogHandler::CAT_MAP);
+  LogHandler::SetConsoleOutput(true);
+  LogHandler::SetFileOutput("ads_b_debug.log");
+  
+  LOG_INFO(LogHandler::CAT_GENERAL, "ADS-B Display application starting...");
+
   AircraftDBPathFileName=ExtractFilePath(ExtractFileDir(Application->ExeName)) +AnsiString("..\\AircraftDB\\")+AIRCRAFT_DATABASE_FILE;
   ARTCCBoundaryDataPathFileName=ExtractFilePath(ExtractFileDir(Application->ExeName)) +AnsiString("..\\ARTCC_Boundary_Data\\")+ARTCC_BOUNDARY_FILE;
   BigQueryPath=ExtractFilePath(ExtractFileDir(Application->ExeName)) +AnsiString("..\\BigQuery\\");
@@ -341,7 +353,6 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   m_textBatch.reserve(5000 * 6);
   SetHexTextScale(1.0f);
   SetHexTextBold(true);
-  printf("init complete\n");
 
   	// Raw 데이터 핸들러 생성 및 콜백 연결
 	FRawDataHandler = new TCPDataHandler(this);
@@ -370,21 +381,23 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 
   ConflictListView->OnSelectItem = ConflictListViewSelectItem;
   FSelectedConflictPair = {0, 0};
-  
+
   // 필터 변수 초기화
   filterPolygonOnly = false;
   filterWaypointsOnly = false;
+    
+  LOG_INFO(LogHandler::CAT_GENERAL, "Initialization complete");
 }
 
 void __fastcall TForm1::ApiCallTimerTimer(TObject *Sender)
 {
     try {
         new TLoadApiDataThread();
-        printf("ApiCallTimer: LoadAllData() OK\n");
+        LOG_INFO(LogHandler::CAT_NETWORK, "API data loading thread started successfully");
     } catch (const std::exception& e) {
-        printf("ApiCallTimer EXCEPTION: %s\n", e.what());
+        LOG_ERROR_F(LogHandler::CAT_NETWORK, "API call exception: %s", e.what());
     } catch (...) {
-        printf("ApiCallTimer UNKNOWN EXCEPTION\n");
+        LOG_ERROR(LogHandler::CAT_NETWORK, "Unknown API call exception");
     }
 }
 
@@ -443,7 +456,7 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 		g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
 	glPushAttrib (GL_LINE_BIT);
 	glPopAttrib ();
-    printf("OpenGL Version %s\n",glGetString(GL_VERSION));
+    LOG_INFO_F(LogHandler::CAT_GENERAL, "OpenGL Version: %s", glGetString(GL_VERSION));
 	 // API 로딩 비동기 호출
     new TLoadApiDataThread();
 
@@ -1318,7 +1331,7 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
 		{
 		 TrackHook.Valid_CC=true;
 		 TrackHook.ICAO_CC=ADS_B_Aircraft->ICAO;
-		 printf("%s\n\n",GetAircraftDBInfo(ADS_B_Aircraft->ICAO));
+		 LOG_DEBUG_F(LogHandler::CAT_GENERAL, "Selected aircraft info: %s", GetAircraftDBInfo(ADS_B_Aircraft->ICAO));
      OnAircraftSelected(ADS_B_Aircraft->ICAO);
 		}
 		else
@@ -1823,18 +1836,25 @@ void __fastcall TForm1::LoadMap(int Type)
     AnsiString HomeDir = ExtractFilePath(ExtractFileDir(Application->ExeName));
 	provider = MAPFactory::Create(static_cast<MapType>(Type), HomeDir.c_str(), LoadMapFromInternet);
 
-	if (!provider) throw Sysutils::Exception("Unknown map type");
+	if (!provider) {
+        LOG_ERROR(LogHandler::CAT_MAP, "Failed to create map provider - Unknown map type");
+        throw Sysutils::Exception("Unknown map type");
+    }
 
     // 2. 캐시 디렉터리는  생성
     std::string cachedir = provider->GetCacheDir();
-     if (mkdir(cachedir.c_str()) != 0 && errno != EEXIST)
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "Map cache directory: %s", cachedir.c_str());
+    
+    if (mkdir(cachedir.c_str()) != 0 && errno != EEXIST) {
+        LOG_ERROR_F(LogHandler::CAT_MAP, "Failed to create cache directory: %s", cachedir.c_str());
 	    throw Sysutils::Exception("Can not create cache directory");
+    }
 
     g_Storage = new FilesystemStorage(cachedir, true);
 	g_Keyhole = new KeyholeConnection(provider->GetURI());
 	g_Keyhole->SetFetchTileCallback([p = provider.get()](TilePtr tile, KeyholeConnection* conn) {
 		if (!p) {
-			printf("[Callback] provider is nullptr!\n");
+			LOG_ERROR(LogHandler::CAT_MAP, "Provider is nullptr in tile fetch callback");
 			return;
 		}
         //printf("[Callback] LAMDA invoked!\n");
@@ -2069,9 +2089,9 @@ static bool CallBackInit=false;
 
 		 if (FinshARTCCBoundary())
 		   {
-			printf("Load ERROR ID %s\n",LastArea);
+			LOG_ERROR_F(LogHandler::CAT_MAP, "Failed to load area ID: %s", LastArea);
 		   }
-		 else printf("Loaded ID %s\n",LastArea);
+		 else LOG_INFO_F(LogHandler::CAT_MAP, "Successfully loaded area ID: %s", LastArea);
 		 strcpy(LastArea,Area);
 		 }
 	   if (Form1->AreaTemp==NULL)
@@ -2081,7 +2101,7 @@ static bool CallBackInit=false;
 			Form1->AreaTemp->Name=Area;
 			Form1->AreaTemp->Selected=false;
 			Form1->AreaTemp->Triangles=NULL;
-			 printf("Loading ID %s\n",Area);
+			 LOG_INFO_F(LogHandler::CAT_MAP, "Loading area ID: %s", Area);
 		   }
 	   if (sscanf(Lat,"%2d%2d%2d%2d%c",&Deg,&Min,&Sec,&Hsec,&Dir)!=5)
 		 printf("Latitude Parse Error\n");
@@ -2120,7 +2140,7 @@ bool __fastcall TForm1::LoadARTCCBoundaries(AnsiString FileName)
    CallBackInit=false;
    if (!CSV_open_and_parse_file(&csv_ctx))
     {
-	  printf("Parsing of \"%s\" failed: %s\n", FileName.c_str(), strerror(errno));
+	  LOG_ERROR_F(LogHandler::CAT_MAP, "Parsing of file failed: %s - %s", FileName.c_str(), strerror(errno));
       return (false);
 	}
    if ((Form1->AreaTemp!=NULL) && (Form1->AreaTemp->NumPoints>0))
@@ -2129,9 +2149,9 @@ bool __fastcall TForm1::LoadARTCCBoundaries(AnsiString FileName)
      strcpy(Area,Form1->AreaTemp->Name.c_str());
      if (FinshARTCCBoundary())
 	    {
-        printf("Loaded ERROR ID %s\n",Area);
+        LOG_ERROR_F(LogHandler::CAT_MAP, "Error finalizing area ID: %s", Area);
 	    }
-        else printf("Loaded ID %s\n",Area);
+        else LOG_INFO_F(LogHandler::CAT_MAP, "Successfully finalized area ID: %s", Area);
    }
    printf("Done\n");
    return(true);
@@ -2185,7 +2205,7 @@ static int FinshARTCCBoundary(void)
 
    TArea *Temp;
    Temp= Form1->AreaTemp;
-   printf("Duplicate Area Name %s\n",Form1->AreaTemp->Name.c_str());;
+   LOG_WARNING_F(LogHandler::CAT_MAP, "Duplicate area name: %s", Form1->AreaTemp->Name.c_str());
    Form1->AreaTemp=NULL;
    delete  Temp;
    return(-3);
@@ -2230,7 +2250,7 @@ const RouteInfo* FindRouteByCallsign(const std::string& callSign) {
     return nullptr;
 }
 
-// ICAO 코드 uint32 → 6자리 대문자 16진 문자열로 변환
+// ICAO 코드 uint32 → 6자리 대문자  16진 문자열로 변환
 std::string ICAO_to_string(uint32_t icao) {
     char buf[7] = {0};
     snprintf(buf, sizeof(buf), "%06X", icao);
@@ -2371,7 +2391,7 @@ void __fastcall TForm1::FilterAirlineEditChange(TObject *Sender)
 void __fastcall TForm1::FilterOriginEditChange(TObject *Sender)
 {
     filterOrigin = FilterOriginEdit->Text.Trim();
-    printf("[EditChange] filterOrigin: %s\n", filterOrigin.c_str());
+    LOG_DEBUG_F(LogHandler::CAT_GENERAL, "Filter origin changed: %s", filterOrigin.c_str());
     ObjectDisplay->Repaint();
 }
 void __fastcall TForm1::FilterDestinationEditChange(TObject *Sender)
@@ -2469,7 +2489,6 @@ void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::AssessmentTimerTimer(TObject *Sender)
 {
-	std::cout << "AssessmentTimer triggered." << std::endl;
 	std::vector<TADS_B_Aircraft*> snapshot_pointers;
     snapshot_pointers.reserve(FAircraftModel->GetAircraftCount());
 

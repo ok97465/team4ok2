@@ -2,11 +2,9 @@
 #pragma hdrstop
 
 #include "CPA.h"
+#include "LogHandler.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
-#include <stdio.h>
-#include <math.h>
-
 #include <stdio.h>
 #include <math.h>
 
@@ -59,6 +57,7 @@ void velocityVector(double lat, double lon, double speed, double heading, double
 bool computeCPA(double lat1, double lon1,double altitude1, double speed1, double heading1,
 				double lat2, double lon2,double altitude2, double speed2, double heading2,
 				double &tcpa,double &cpa_distance_nm, double &vertical_cpa) {
+
     double x1, y1, z1, x2, y2, z2;
     double vx1, vy1, vz1, vx2, vy2, vz2;
 
@@ -79,9 +78,7 @@ bool computeCPA(double lat1, double lon1,double altitude1, double speed1, double
 
     // If TCPA is negative, the aircraft are diverging, no CPA will occur
     if (tcpa < 0) {
-#ifdef ENABLE_DEBUG
-        printf("Aircraft are diverging; no CPA will occur.\n");
-#endif
+        LOG_DEBUG(LogHandler::CAT_PROXIMITY, "Aircraft are diverging; no CPA will occur");
         return(false);
     }
 
@@ -112,12 +109,11 @@ bool computeCPA(double lat1, double lon1,double altitude1, double speed1, double
 
     // Convert CPA distance to nautical miles
 	cpa_distance_nm = horizontal_cpa * KM_TO_NM;
-
-    // Output the results
-#ifdef ENABLE_DEBUG
-    printf("TCPA: %.2f seconds\n", tcpa);
-    printf("CPA Distance: %.2f NM (horizontal), %.2f feet (vertical)\n", cpa_distance_nm, vertical_cpa);
-#endif
+    
+    LOG_DEBUG_F(LogHandler::CAT_PROXIMITY,
+                    "DANGEROUS PROXIMITY DETECTED: TCPA=%.2fs, Distance=%.2fNM, Vertical=%.0fft",
+                      tcpa, cpa_distance_nm, vertical_cpa);
+    
     return(true);
 }
  //---------------------------------------------------------------------------

@@ -32,22 +32,22 @@ gefetch_error gefetch_fetch(gefetch *handle, char *url) {
 
 	/* try to get a file */
 	if ((result = gefetch_do_http_request(handle, METHOD_GET, url, 0, 0, &code)) != GEFETCH_OK){
-		printf("[%s] fail : code(%d)\n",__func__, code);		
+		// printf("[%s] fail : code(%d)\n",__func__, code);
 		return result;
 	}
 
 	/* success */
 	if (code == 200) {
-		printf("[%s] code(%d)\n",__func__, code);
+		// printf("[%s] code(%d)\n",__func__, code);
 		return GEFETCH_OK;
     }
 	/* not found */
 	if (code == 404){
-		printf("[%s] code(%d)\n",__func__, code);
+		// printf("[%s] code(%d)\n",__func__, code);
 		return GEFETCH_NOT_FOUND;
 	}
 
-	printf("[%s] other : code(%d)\n",__func__, code);
+	// printf("[%s] other : code(%d)\n",__func__, code);
 		/* other result codes */
 	return GEFETCH_FETCH_FAILED;
 }

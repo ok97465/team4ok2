@@ -4,6 +4,7 @@
 #pragma hdrstop
 
 #include "FileSystemStorage.h"
+#include "LogHandler.h"
 #include <dir.h>
 #include <stdio.h>
 //---------------------------------------------------------------------------
@@ -36,7 +37,7 @@ void FilesystemStorage::Process(TilePtr tile) {
 			if ((f = open(path.c_str(), O_RDONLY | O_BINARY)) == -1)
 			{
 			   // Removed Exception DP and added return
-			   printf("[%s] ----> cannot open file\n", __func__);			   //	throw SysException("cannot open file in filesystem storage", errno);
+			   // printf("[%s] ----> cannot open file\n", __func__);			   //	throw SysException("cannot open file in filesystem storage", errno);
 			   return;
 
 			}
@@ -91,7 +92,7 @@ void FilesystemStorage::Process(TilePtr tile) {
 				}
 
 				close(f);
-                printf("Saved Tile %s\n",path.c_str());
+				LOG_DEBUG_F(LogHandler::CAT_MAP, "Saved Tile %s", path.c_str());
 				return;
 			} else {
 				std::string path = m_StorageRoot + subpath.substr(0, pos);

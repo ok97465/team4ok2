@@ -2,6 +2,7 @@
 
 #include "TCPDataHandler.h"
 #include "TimeFunctions.h" // <<< GetCurrentTimeInMsec 사용을 위해 추가
+#include "LogHandler.h"
 
 const int MAX_RETRY_ATTEMPTS = 10;
 const int INITIAL_RETRY_INTERVAL_MS = 2000;  // 2초
@@ -82,7 +83,8 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
                 }
 				// 그 외 네트워크 오류의 경우, 재시도 횟수를 증가시키고 루프를 계속합니다.
 				retryCount++;
-                std::cout << "Connection attempt failed (Retry #" << retryCount << "): " << e.Message.c_str() << std::endl;
+                LOG_WARNING_F(LogHandler::CAT_NETWORK, "Connection attempt failed (Retry #%d): %s", 
+                             retryCount, e.Message.c_str());
                 if (FHandler->FClient->Connected()) {
 					FHandler->FClient->Disconnect();
 				}
