@@ -370,6 +370,10 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 
   ConflictListView->OnSelectItem = ConflictListViewSelectItem;
   FSelectedConflictPair = {0, 0};
+  
+  // 필터 변수 초기화
+  filterPolygonOnly = false;
+  filterWaypointsOnly = false;
 }
 
 void __fastcall TForm1::ApiCallTimerTimer(TObject *Sender)
@@ -662,6 +666,163 @@ void __fastcall TForm1::DrawObjects(void)
                 if (AnsiString(route->airportCodes.back().c_str()).UpperCase() != filterDestination.UpperCase())
                     continue;
             }
+
+            // [5] 다각형 내 비행기만 표시하는 필터
+            if (filterPolygonOnly && Areas->Count > 0) {
+                bool inAnyPolygon = false;
+                pfVec3 aircraftPoint;
+                aircraftPoint[0] = Data->Longitude; // 경도
+                aircraftPoint[1] = Data->Latitude;  // 위도
+                aircraftPoint[2] = 0.0;
+
+                // 현재 위치가 다각형 안에 있는지 확인
+                for (DWORD i = 0; i < Areas->Count; i++) {
+                    TArea *Area = (TArea *)Areas->Items[i];
+                    if (PointInPolygon(Area->Points, Area->NumPoints, aircraftPoint)) {
+                        inAnyPolygon = true;
+                        break;
+                    }
+                }
+
+                // 현재 위치가 다각형 밖에 있다면, 미래 위치도 확인
+                if (!inAnyPolygon && Data->HaveSpeedAndHeading) {
+                    // 미래 위치 계산 (5분, 10분, 15분 후)
+                    const double timeIntervals[] = {5.0, 10.0, 15.0}; // 분 단위
+                    const int numIntervals = sizeof(timeIntervals) / sizeof(timeIntervals[0]);
+                    
+                    for (int t = 0; t < numIntervals && !inAnyPolygon; t++) {
+                        double futureLat, futureLon, junk;
+                        double timeInHours = timeIntervals[t] / 60.0; // 시간 단위로 변환
+                        
+                        // VDirect 함수를 사용하여 미래 위치 계산
+                        if (VDirect(Data->Latitude, Data->Longitude, 
+                                   Data->Heading, Data->Speed * timeInHours, 
+                                   &futureLat, &futureLon, &junk) == OKNOERROR) {
+                            
+                            pfVec3 futurePoint;
+                            futurePoint[0] = futureLon; // 경도
+                            futurePoint[1] = futureLat; // 위도
+                            futurePoint[2] = 0.0;
+                            
+                            // 미래 위치가 다각형 안에 있는지 확인
+                            for (DWORD i = 0; i < Areas->Count; i++) {
+                                TArea *Area = (TArea *)Areas->Items[i];
+                                if (PointInPolygon(Area->Points, Area->NumPoints, futurePoint)) {
+                                    inAnyPolygon = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 현재나 미래 위치가 어떤 다각형에도 포함되지 않으면 스킵
+                if (!inAnyPolygon) {
+                    continue;
+                }
+            }
+
+            // [6] 정의된 경유지 내 비행기만 표시하는 필터
+            if (filterWaypointsOnly && route && !route->airportCodes.empty()) {
+                bool inWaypointArea = false;
+                pfVec3 aircraftPoint;
+                aircraftPoint[0] = Data->Longitude; // 경도
+                aircraftPoint[1] = Data->Latitude;  // 위도
+                aircraftPoint[2] = 0.0;
+
+                // 현재 위치가 경유지 영역에 있는지 확인
+                for (size_t i = 0; i < route->airportCodes.size() - 1; i++) {
+                    const AirportInfo* ap1 = nullptr;
+                    const AirportInfo* ap2 = nullptr;
+                    
+                    // 두 연속된 공항 정보 찾기
+                    auto it1 = icaoToAirport.find(route->airportCodes[i]);
+                    auto it2 = icaoToAirport.find(route->airportCodes[i + 1]);
+                    
+                    if (it1 != icaoToAirport.end()) ap1 = it1->second;
+                    if (it2 != icaoToAirport.end()) ap2 = it2->second;
+                    
+                    if (ap1 && ap2) {
+                        // 두 공항 사이의 직선 경로 근처에 있는지 확인
+                        double lat1 = ap1->latitude, lon1 = ap1->longitude;
+                        double lat2 = ap2->latitude, lon2 = ap2->longitude;
+                        double aircraftLat = Data->Latitude, aircraftLon = Data->Longitude;
+                        
+                        // 두 공항 사이의 중점
+                        double midLat = (lat1 + lat2) / 2.0;
+                        double midLon = (lon1 + lon2) / 2.0;
+                        
+                        // 중점에서 비행기까지의 거리
+                        double distToMid = sqrt(pow(aircraftLat - midLat, 2) + pow(aircraftLon - midLon, 2));
+                        
+                        // 두 공항 사이의 거리
+                        double routeDist = sqrt(pow(lat2 - lat1, 2) + pow(lon2 - lon1, 2));
+                        
+                        // 경로 거리의 1/3 이내에 있으면 경유지 영역으로 간주
+                        if (distToMid <= routeDist / 3.0) {
+                            inWaypointArea = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 현재 위치가 경유지 영역 밖에 있다면, 미래 위치도 확인
+                if (!inWaypointArea && Data->HaveSpeedAndHeading) {
+                    // 미래 위치 계산 (5분, 10분, 15분 후)
+                    const double timeIntervals[] = {5.0, 10.0, 15.0}; // 분 단위
+                    const int numIntervals = sizeof(timeIntervals) / sizeof(timeIntervals[0]);
+                    
+                    for (int t = 0; t < numIntervals && !inWaypointArea; t++) {
+                        double futureLat, futureLon, junk;
+                        double timeInHours = timeIntervals[t] / 60.0; // 시간 단위로 변환
+                        
+                        // VDirect 함수를 사용하여 미래 위치 계산
+                        if (VDirect(Data->Latitude, Data->Longitude, 
+                                   Data->Heading, Data->Speed * timeInHours, 
+                                   &futureLat, &futureLon, &junk) == OKNOERROR) {
+                            
+                            // 미래 위치가 경유지 영역에 있는지 확인
+                            for (size_t i = 0; i < route->airportCodes.size() - 1; i++) {
+                                const AirportInfo* ap1 = nullptr;
+                                const AirportInfo* ap2 = nullptr;
+                                
+                                auto it1 = icaoToAirport.find(route->airportCodes[i]);
+                                auto it2 = icaoToAirport.find(route->airportCodes[i + 1]);
+                                
+                                if (it1 != icaoToAirport.end()) ap1 = it1->second;
+                                if (it2 != icaoToAirport.end()) ap2 = it2->second;
+                                
+                                if (ap1 && ap2) {
+                                    double lat1 = ap1->latitude, lon1 = ap1->longitude;
+                                    double lat2 = ap2->latitude, lon2 = ap2->longitude;
+                                    
+                                    // 두 공항 사이의 중점
+                                    double midLat = (lat1 + lat2) / 2.0;
+                                    double midLon = (lon1 + lon2) / 2.0;
+                                    
+                                    // 중점에서 미래 위치까지의 거리
+                                    double distToMid = sqrt(pow(futureLat - midLat, 2) + pow(futureLon - midLon, 2));
+                                    
+                                    // 두 공항 사이의 거리
+                                    double routeDist = sqrt(pow(lat2 - lat1, 2) + pow(lon2 - lon1, 2));
+                                    
+                                    // 경로 거리의 1/3 이내에 있으면 경유지 영역으로 간주
+                                    if (distToMid <= routeDist / 3.0) {
+                                        inWaypointArea = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 현재나 미래 위치가 경유지 영역에 포함되지 않으면 스킵
+                if (!inWaypointArea) {
+                    continue;
+                }
+            }
+
             ViewableAircraft++;
 
            LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
@@ -995,6 +1156,30 @@ void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
   {
   if (AreaTemp)
    {
+    // 오른쪽 마우스 더블클릭 감지를 위한 정적 변수
+    static DWORD lastRightClickTime = 0;
+    static int lastRightClickX = 0;
+    static int lastRightClickY = 0;
+    
+    DWORD currentTime = GetTickCount();
+    
+    // 더블클릭 조건: 500ms 이내, 같은 위치에서 클릭 (5픽셀 이내)
+    if (currentTime - lastRightClickTime < 500 && 
+        abs(X - lastRightClickX) < 5 && 
+        abs(Y - lastRightClickY) < 5)
+    {
+      // 오른쪽 마우스 더블클릭 - 폴리곤 완성
+      if (AreaTemp->NumPoints >= 3)
+      {
+        CompleteClick(NULL);
+        return;
+      }
+    }
+    
+    lastRightClickTime = currentTime;
+    lastRightClickX = X;
+    lastRightClickY = Y;
+    
 	if (AreaTemp->NumPoints<MAX_AREA_POINTS)
 	{
 	  AddPoint(X, Y);
@@ -2195,6 +2380,18 @@ void __fastcall TForm1::FilterDestinationEditChange(TObject *Sender)
     ObjectDisplay->Repaint();
 }
 
+void __fastcall TForm1::FilterPolygonOnlyCheckBoxClick(TObject *Sender)
+{
+    filterPolygonOnly = FilterPolygonOnlyCheckBox->Checked;
+    ObjectDisplay->Repaint();
+}
+
+void __fastcall TForm1::FilterWaypointsOnlyCheckBoxClick(TObject *Sender)
+{
+    filterWaypointsOnly = FilterWaypointsOnlyCheckBox->Checked;
+    ObjectDisplay->Repaint();
+}
+
 // Helper: Map trackbar position to playback speed (e.g., 1=0.5x, 2=1x, 3=2x, 4=4x)
 double TrackBarPosToSpeed(int pos) {
     switch (pos) {
@@ -2400,5 +2597,14 @@ void __fastcall TForm1::CenterMapOnPair(unsigned int icao1, unsigned int icao2)
             SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
         }
     }
+}
+
+void __fastcall TForm1::ObjectDisplayDblClick(TObject *Sender)
+{
+  // 오른쪽 마우스 더블클릭 시 폴리곤 완성
+  if (AreaTemp && AreaTemp->NumPoints >= 3)
+  {
+    CompleteClick(NULL);
+  }
 }
 
