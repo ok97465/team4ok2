@@ -28,6 +28,7 @@
 #include <IdTCPConnection.hpp>
 #include "cspin.h"
 #include <vector>
+#include <utility>
 #include "ntds2d.h"
 #include "TCPDataHandler.h"
 #include "AircraftDataModel.h"
@@ -324,6 +325,9 @@ public:		// User declarations
         std::vector<AirplaneInstance> m_planeBatch;
         std::vector<AirplaneLineInstance> m_lineBatch;
         std::vector<HexCharInstance> m_textBatch;
+
+        // 선택된 항공기의 경로(대권) 좌표 목록
+        std::vector<std::vector<std::pair<double,double>>> m_selectedRoutePaths;
 
         // --- Playback Speed UI 함수 선언 추가 ---
     void SetupPlaybackSpeedUI();

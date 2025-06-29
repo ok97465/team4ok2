@@ -13,6 +13,8 @@
 #include <GL/glu.h>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+#include <cmath>
 #include <Vcl.ComCtrls.hpp> // For TTrackBar
 #include <unordered_map>
 #include <cctype>
@@ -82,6 +84,70 @@ static std::unordered_map<std::string, const RouteInfo*> callSignToRoute;
 static std::unordered_map<std::string, const AirportInfo*> icaoToAirport;
 static std::unordered_map<std::string, std::pair<std::string, std::string>> airlineInfoMap;
 extern ght_hash_table_t *AircraftDBHashTable;
+
+static std::vector<std::vector<std::pair<double,double>>> BuildRouteSegment(double lat1, double lon1,
+                                                                            double lat2, double lon2)
+{
+    auto normLon = [](double lon) {
+        while (lon > 180.0) lon -= 360.0;
+        while (lon < -180.0) lon += 360.0;
+        return lon;
+    };
+
+    std::vector<std::vector<std::pair<double,double>>> segments;
+    std::vector<std::pair<double,double>> current;
+
+    double dist, az1, az2;
+    if (VInverse(lat1, lon1, lat2, lon2, &dist, &az1, &az2) != OKNOERROR)
+        return segments;
+
+    int n = static_cast<int>(dist / 50) + 7; // scale with distance
+    if (n < 7) n = 7;              // minimum points
+    if (n > 77) n = 77;            // cap to avoid excess
+
+    double prevLat = lat1;
+    double prevLon = normLon(lon1);
+    current.emplace_back(prevLat, prevLon);
+
+    for (int i = 1; i <= n; ++i) {
+        double lat, lon, junk;
+        if (VDirect(lat1, lon1, az1, dist * (double(i) / (double)n), &lat, &lon, &junk) != OKNOERROR)
+            break;
+
+        lon = normLon(lon);
+        double diff = lon - prevLon;
+
+        if (diff > 180.0) {
+            double adjLon = lon - 360.0;
+            double t = (-180.0 - prevLon) / (adjLon - prevLon);
+            double latEdge = prevLat + (lat - prevLat) * t;
+            current.emplace_back(latEdge, -180.0);
+            segments.push_back(current);
+            current.clear();
+            current.emplace_back(latEdge, 180.0);
+            current.emplace_back(lat, lon);
+        } else if (diff < -180.0) {
+            double adjLon = lon + 360.0;
+            double t = (180.0 - prevLon) / (adjLon - prevLon);
+            double latEdge = prevLat + (lat - prevLat) * t;
+            current.emplace_back(latEdge, 180.0);
+            segments.push_back(current);
+            current.clear();
+            current.emplace_back(latEdge, -180.0);
+            current.emplace_back(lat, lon);
+        } else {
+            current.emplace_back(lat, lon);
+        }
+
+        prevLat = lat;
+        prevLon = lon;
+    }
+
+    if (!current.empty())
+        segments.push_back(current);
+
+    return segments;
+}
 
 static std::string trim(const std::string& s)
 {
@@ -1067,12 +1133,35 @@ void __fastcall TForm1::DrawObjects(void)
 		}
 	  }
 	}
-   if (!CpaDataIsValid)
+  if (!CpaDataIsValid)
+  {
+       TrackHook.Valid_CPA=false;
+       CpaTimeValue->Caption="None";
+       CpaDistanceValue->Caption="None";
+  }
+}
+ if (!m_selectedRoutePaths.empty())
+ {
+   glLineWidth(2.0f);
+   glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
+   for (const auto& seg : m_selectedRoutePaths)
    {
-	TrackHook.Valid_CPA=false;
-	CpaTimeValue->Caption="None";
-	CpaDistanceValue->Caption="None";
+       if (seg.size() < 2) continue;
+       double px = 0, py = 0;
+       glBegin(GL_LINE_STRIP);
+       for (size_t i = 0; i < seg.size(); ++i)
+       {
+           double x,y;
+           LatLon2XY(seg[i].first, seg[i].second, x, y);
+           glVertex2f(x, y);
+           if (i == seg.size() - 2) { px = x; py = y; }
+       }
+       glEnd();
+       double xe, ye;
+       LatLon2XY(seg.back().first, seg.back().second, xe, ye);
+       DrawLeaderArrow(px, py, xe, ye, 10.0f);
    }
+   glLineWidth(1.0f);
  }
  if (FSelectedConflictPair.first != 0)
   {
@@ -2377,10 +2466,27 @@ void __fastcall TForm1::OnAircraftSelected(uint32_t icao)
     // **배열을 AnsiString으로 변환한 뒤 처리!**
     AnsiString flightNum = AnsiString(ac->FlightNum).Trim().UpperCase();
     auto it = callSignToRoute.find(flightNum.c_str());
-    const RouteInfo* route = (it != callSignToRoute.end()) ? it->second : nullptr;
+	const RouteInfo* route = (it != callSignToRoute.end()) ? it->second : nullptr;
+
+    // 경로 점들 계산
+    m_selectedRoutePaths.clear();
+    if (route && route->airportCodes.size() >= 2) {
+        size_t count = std::min<size_t>(route->airportCodes.size() - 1, 2);
+        for (size_t i = 0; i < count; ++i) {
+            auto it1 = icaoToAirport.find(route->airportCodes[i]);
+            auto it2 = icaoToAirport.find(route->airportCodes[i + 1]);
+			if (it1 != icaoToAirport.end() && it2 != icaoToAirport.end()) {
+                auto segs = BuildRouteSegment(it1->second->latitude, it1->second->longitude,
+                                            it2->second->latitude, it2->second->longitude);
+                for (auto& s : segs)
+                    if (!s.empty()) m_selectedRoutePaths.push_back(std::move(s));
+            }
+        }
+    }
 
     // 패널 전체 갱신 (기존 Close 라벨 + 경로)
     UpdateCloseControlPanel(ac, route);
+    ObjectDisplay->Repaint();
 }
 
 void __fastcall TForm1::FilterAirlineEditChange(TObject *Sender)
