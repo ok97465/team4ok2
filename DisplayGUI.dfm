@@ -155,10 +155,9 @@ object Form1: TForm1
       Align = alTop
       Constraints.MinHeight = 70
       TabOrder = 1
-      ExplicitLeft = 6
       object Label15: TLabel
         Left = 80
-        Top = 693
+        Top = 675
         Width = 98
         Height = 13
         Caption = 'Areas Of Interest'
@@ -171,7 +170,7 @@ object Form1: TForm1
       end
       object Label25: TLabel
         Left = 24
-        Top = 638
+        Top = 621
         Width = 36
         Height = 13
         Caption = 'Airline'
@@ -184,7 +183,7 @@ object Form1: TForm1
       end
       object Label26: TLabel
         Left = 104
-        Top = 638
+        Top = 621
         Width = 33
         Height = 13
         Caption = 'Origin'
@@ -197,7 +196,7 @@ object Form1: TForm1
       end
       object Label27: TLabel
         Left = 168
-        Top = 638
+        Top = 621
         Width = 65
         Height = 13
         Caption = 'Destination'
@@ -210,7 +209,7 @@ object Form1: TForm1
       end
       object Label28: TLabel
         Left = 80
-        Top = 615
+        Top = 608
         Width = 80
         Height = 14
         Caption = 'Aircraft Filter'
@@ -275,7 +274,7 @@ object Form1: TForm1
       end
       object AreaListView: TListView
         Left = 5
-        Top = 712
+        Top = 694
         Width = 235
         Height = 86
         Columns = <
@@ -296,7 +295,7 @@ object Form1: TForm1
       end
       object Insert: TButton
         Left = 5
-        Top = 804
+        Top = 786
         Width = 36
         Height = 18
         Caption = 'Insert'
@@ -305,7 +304,7 @@ object Form1: TForm1
       end
       object Delete: TButton
         Left = 157
-        Top = 804
+        Top = 786
         Width = 44
         Height = 18
         Caption = 'Delete'
@@ -315,7 +314,7 @@ object Form1: TForm1
       end
       object Complete: TButton
         Left = 47
-        Top = 804
+        Top = 786
         Width = 57
         Height = 18
         Caption = 'Complete'
@@ -325,7 +324,7 @@ object Form1: TForm1
       end
       object Cancel: TButton
         Left = 110
-        Top = 804
+        Top = 786
         Width = 41
         Height = 18
         Caption = 'Cancel'
@@ -608,6 +607,84 @@ object Form1: TForm1
           Font.Style = [fsBold]
           ParentFont = False
         end
+        object LabelAirlineName: TLabel
+          Left = 5
+          Top = 182
+          Width = 39
+          Height = 13
+          Caption = 'Airline:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object AirlineNameLabel: TLabel
+          Left = 65
+          Top = 181
+          Width = 21
+          Height = 13
+          Caption = 'N/A'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object LabelAirlineCountry: TLabel
+          Left = 5
+          Top = 194
+          Width = 48
+          Height = 13
+          Caption = 'Country:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object AirlineCountryLabel: TLabel
+          Left = 65
+          Top = 195
+          Width = 21
+          Height = 13
+          Caption = 'N/A'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object LabelModel: TLabel
+          Left = 5
+          Top = 206
+          Width = 37
+          Height = 13
+          Caption = 'Model:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object AircraftModelLabel: TLabel
+          Left = 65
+          Top = 206
+          Width = 21
+          Height = 13
+          Caption = 'N/A'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
         object Label4: TLabel
           Left = 75
           Top = 0
@@ -623,7 +700,7 @@ object Form1: TForm1
         end
         object Label20: TLabel
           Left = 5
-          Top = 188
+          Top = 220
           Width = 40
           Height = 13
           Caption = 'ROUTE:'
@@ -636,7 +713,7 @@ object Form1: TForm1
         end
         object RouteInfoMemo: TMemo
           Left = 66
-          Top = 187
+          Top = 218
           Width = 150
           Height = 69
           TabStop = False
@@ -943,7 +1020,7 @@ object Form1: TForm1
       end
       object FilterOriginEdit: TEdit
         Left = 95
-        Top = 656
+        Top = 636
         Width = 57
         Height = 20
         TabOrder = 21
@@ -951,7 +1028,7 @@ object Form1: TForm1
       end
       object FilterAirlineEdit: TEdit
         Left = 16
-        Top = 656
+        Top = 636
         Width = 57
         Height = 20
         TabOrder = 22
@@ -959,11 +1036,41 @@ object Form1: TForm1
       end
       object FilterDestinationEdit: TEdit
         Left = 174
-        Top = 656
+        Top = 636
         Width = 57
         Height = 20
         TabOrder = 23
         OnChange = FilterDestinationEditChange
+      end
+      object FilterPolygonOnlyCheckBox: TCheckBox
+        Left = 5
+        Top = 808
+        Width = 150
+        Height = 17
+        Caption = 'Polygon area only'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 24
+        OnClick = FilterPolygonOnlyCheckBoxClick
+      end
+      object FilterWaypointsOnlyCheckBox: TCheckBox
+        Left = 5
+        Top = 657
+        Width = 188
+        Height = 17
+        Caption = 'Waypoint area only'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 25
+        OnClick = FilterWaypointsOnlyCheckBoxClick
       end
     end
     object Panel2: TPanel

@@ -12,8 +12,10 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <fstream>
+#include <sstream>
 #include <Vcl.ComCtrls.hpp> // For TTrackBar
 #include <unordered_map>
+#include <cctype>
 
 #pragma hdrstop
 
@@ -58,6 +60,7 @@
 #pragma link "Map\jpeg\Win64\Release\jpeg.a"
 #pragma link "Map\png\Win64\Release\png.a"
 #pragma link "cspin"
+#pragma link "cspin"
 #pragma resource "*.dfm"
 TForm1 *Form1;
  //---------------------------------------------------------------------------
@@ -77,6 +80,87 @@ static std::string ICAO_to_string(uint32_t icao);
 
 static std::unordered_map<std::string, const RouteInfo*> callSignToRoute;
 static std::unordered_map<std::string, const AirportInfo*> icaoToAirport;
+static std::unordered_map<std::string, std::pair<std::string, std::string>> airlineInfoMap;
+extern ght_hash_table_t *AircraftDBHashTable;
+
+static std::string trim(const std::string& s)
+{
+    const char* ws = " \t\r\n\"";
+    size_t start = s.find_first_not_of(ws);
+    if (start == std::string::npos) return "";
+    size_t end = s.find_last_not_of(ws);
+    return s.substr(start, end - start + 1);
+}
+
+static void LoadAirlineInfo(const AnsiString& fileName)
+{
+    airlineInfoMap.clear();
+    std::ifstream f(fileName.c_str());
+    if (!f.is_open())
+    {
+        printf("Failed to open %s\n", fileName.c_str());
+        return;
+    }
+    std::string line;
+    std::getline(f, line); // header
+    while (std::getline(f, line))
+    {
+        if (line.empty()) continue;
+        std::stringstream ss(line);
+        std::string code,country,name;
+        if (std::getline(ss, code, ',') &&
+            std::getline(ss, country, ',') &&
+            std::getline(ss, name))
+        {
+            code = trim(code);
+            country = trim(country);
+            name = trim(name);
+            if (!code.empty())
+                airlineInfoMap[code] = {name, country};
+        }
+    }
+}
+
+static bool LookupAirline(const std::string& callSign,
+                          std::string& airline,
+                          std::string& country)
+{
+    std::string code;
+    for (char c : callSign)
+    {
+        if (isalpha(c)) code += toupper(c);
+        else break;
+    }
+    if (code.empty()) return false;
+    std::string key = code;
+    auto it = airlineInfoMap.find(key);
+    if (it == airlineInfoMap.end() && code.length() >= 3)
+    {
+        key = code.substr(0,3);
+        it = airlineInfoMap.find(key);
+    }
+    if (it == airlineInfoMap.end() && code.length() >= 2)
+    {
+        key = code.substr(0,2);
+        it = airlineInfoMap.find(key);
+    }
+    if (it == airlineInfoMap.end())
+        return false;
+    airline = it->second.first;
+    country = it->second.second;
+    return true;
+}
+static AnsiString GetAircraftModel(uint32_t icao)
+{
+    const TAircraftData* data = (const TAircraftData*) ght_get(AircraftDBHashTable, sizeof(icao), &icao);
+    if (data)
+    {
+        AnsiString model = data->Fields[AC_DB_Model].Trim();
+        if (!model.IsEmpty())
+            return model;
+    }
+    return "N/A";
+}
 //---------------------------------------------------------------------------
 uint32_t createRGB(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -257,9 +341,14 @@ __fastcall TForm1::TForm1(TComponent* Owner)
  TimeToGoTrackBar->Position=120;
  BigQueryCSV=NULL;
  BigQueryRowCount=0;
- BigQueryFileCount=0;
- InitAircraftDB(AircraftDBPathFileName);
- m_planeBatch.reserve(5000);
+  BigQueryFileCount=0;
+  InitAircraftDB(AircraftDBPathFileName);
+  {
+    AnsiString airlineFile = ExtractFilePath(ExtractFileDir(Application->ExeName)) +
+                             AnsiString("..\\AircraftDB\\airline_names_countries.csv");
+    LoadAirlineInfo(airlineFile);
+  }
+  m_planeBatch.reserve(5000);
   m_lineBatch.reserve(5000);
   m_textBatch.reserve(5000 * 6);
   SetHexTextScale(1.0f);
@@ -293,6 +382,10 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   ConflictListView->OnSelectItem = ConflictListViewSelectItem;
   FSelectedConflictPair = {0, 0};
 
+  // 필터 변수 초기화
+  filterPolygonOnly = false;
+  filterWaypointsOnly = false;
+    
   LOG_INFO(LogHandler::CAT_GENERAL, "Initialization complete");
 }
 
@@ -586,6 +679,163 @@ void __fastcall TForm1::DrawObjects(void)
                 if (AnsiString(route->airportCodes.back().c_str()).UpperCase() != filterDestination.UpperCase())
                     continue;
             }
+
+            // [5] 다각형 내 비행기만 표시하는 필터
+            if (filterPolygonOnly && Areas->Count > 0) {
+                bool inAnyPolygon = false;
+                pfVec3 aircraftPoint;
+                aircraftPoint[0] = Data->Longitude; // 경도
+                aircraftPoint[1] = Data->Latitude;  // 위도
+                aircraftPoint[2] = 0.0;
+
+                // 현재 위치가 다각형 안에 있는지 확인
+                for (DWORD i = 0; i < Areas->Count; i++) {
+                    TArea *Area = (TArea *)Areas->Items[i];
+                    if (PointInPolygon(Area->Points, Area->NumPoints, aircraftPoint)) {
+                        inAnyPolygon = true;
+                        break;
+                    }
+                }
+
+                // 현재 위치가 다각형 밖에 있다면, 미래 위치도 확인
+                if (!inAnyPolygon && Data->HaveSpeedAndHeading) {
+                    // 미래 위치 계산 (5분, 10분, 15분 후)
+                    const double timeIntervals[] = {5.0, 10.0, 15.0}; // 분 단위
+                    const int numIntervals = sizeof(timeIntervals) / sizeof(timeIntervals[0]);
+                    
+                    for (int t = 0; t < numIntervals && !inAnyPolygon; t++) {
+                        double futureLat, futureLon, junk;
+                        double timeInHours = timeIntervals[t] / 60.0; // 시간 단위로 변환
+                        
+                        // VDirect 함수를 사용하여 미래 위치 계산
+                        if (VDirect(Data->Latitude, Data->Longitude, 
+                                   Data->Heading, Data->Speed * timeInHours, 
+                                   &futureLat, &futureLon, &junk) == OKNOERROR) {
+                            
+                            pfVec3 futurePoint;
+                            futurePoint[0] = futureLon; // 경도
+                            futurePoint[1] = futureLat; // 위도
+                            futurePoint[2] = 0.0;
+                            
+                            // 미래 위치가 다각형 안에 있는지 확인
+                            for (DWORD i = 0; i < Areas->Count; i++) {
+                                TArea *Area = (TArea *)Areas->Items[i];
+                                if (PointInPolygon(Area->Points, Area->NumPoints, futurePoint)) {
+                                    inAnyPolygon = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 현재나 미래 위치가 어떤 다각형에도 포함되지 않으면 스킵
+                if (!inAnyPolygon) {
+                    continue;
+                }
+            }
+
+            // [6] 정의된 경유지 내 비행기만 표시하는 필터
+            if (filterWaypointsOnly && route && !route->airportCodes.empty()) {
+                bool inWaypointArea = false;
+                pfVec3 aircraftPoint;
+                aircraftPoint[0] = Data->Longitude; // 경도
+                aircraftPoint[1] = Data->Latitude;  // 위도
+                aircraftPoint[2] = 0.0;
+
+                // 현재 위치가 경유지 영역에 있는지 확인
+                for (size_t i = 0; i < route->airportCodes.size() - 1; i++) {
+                    const AirportInfo* ap1 = nullptr;
+                    const AirportInfo* ap2 = nullptr;
+                    
+                    // 두 연속된 공항 정보 찾기
+                    auto it1 = icaoToAirport.find(route->airportCodes[i]);
+                    auto it2 = icaoToAirport.find(route->airportCodes[i + 1]);
+                    
+                    if (it1 != icaoToAirport.end()) ap1 = it1->second;
+                    if (it2 != icaoToAirport.end()) ap2 = it2->second;
+                    
+                    if (ap1 && ap2) {
+                        // 두 공항 사이의 직선 경로 근처에 있는지 확인
+                        double lat1 = ap1->latitude, lon1 = ap1->longitude;
+                        double lat2 = ap2->latitude, lon2 = ap2->longitude;
+                        double aircraftLat = Data->Latitude, aircraftLon = Data->Longitude;
+                        
+                        // 두 공항 사이의 중점
+                        double midLat = (lat1 + lat2) / 2.0;
+                        double midLon = (lon1 + lon2) / 2.0;
+                        
+                        // 중점에서 비행기까지의 거리
+                        double distToMid = sqrt(pow(aircraftLat - midLat, 2) + pow(aircraftLon - midLon, 2));
+                        
+                        // 두 공항 사이의 거리
+                        double routeDist = sqrt(pow(lat2 - lat1, 2) + pow(lon2 - lon1, 2));
+                        
+                        // 경로 거리의 1/3 이내에 있으면 경유지 영역으로 간주
+                        if (distToMid <= routeDist / 3.0) {
+                            inWaypointArea = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 현재 위치가 경유지 영역 밖에 있다면, 미래 위치도 확인
+                if (!inWaypointArea && Data->HaveSpeedAndHeading) {
+                    // 미래 위치 계산 (5분, 10분, 15분 후)
+                    const double timeIntervals[] = {5.0, 10.0, 15.0}; // 분 단위
+                    const int numIntervals = sizeof(timeIntervals) / sizeof(timeIntervals[0]);
+                    
+                    for (int t = 0; t < numIntervals && !inWaypointArea; t++) {
+                        double futureLat, futureLon, junk;
+                        double timeInHours = timeIntervals[t] / 60.0; // 시간 단위로 변환
+                        
+                        // VDirect 함수를 사용하여 미래 위치 계산
+                        if (VDirect(Data->Latitude, Data->Longitude, 
+                                   Data->Heading, Data->Speed * timeInHours, 
+                                   &futureLat, &futureLon, &junk) == OKNOERROR) {
+                            
+                            // 미래 위치가 경유지 영역에 있는지 확인
+                            for (size_t i = 0; i < route->airportCodes.size() - 1; i++) {
+                                const AirportInfo* ap1 = nullptr;
+                                const AirportInfo* ap2 = nullptr;
+                                
+                                auto it1 = icaoToAirport.find(route->airportCodes[i]);
+                                auto it2 = icaoToAirport.find(route->airportCodes[i + 1]);
+                                
+                                if (it1 != icaoToAirport.end()) ap1 = it1->second;
+                                if (it2 != icaoToAirport.end()) ap2 = it2->second;
+                                
+                                if (ap1 && ap2) {
+                                    double lat1 = ap1->latitude, lon1 = ap1->longitude;
+                                    double lat2 = ap2->latitude, lon2 = ap2->longitude;
+                                    
+                                    // 두 공항 사이의 중점
+                                    double midLat = (lat1 + lat2) / 2.0;
+                                    double midLon = (lon1 + lon2) / 2.0;
+                                    
+                                    // 중점에서 미래 위치까지의 거리
+                                    double distToMid = sqrt(pow(futureLat - midLat, 2) + pow(futureLon - midLon, 2));
+                                    
+                                    // 두 공항 사이의 거리
+                                    double routeDist = sqrt(pow(lat2 - lat1, 2) + pow(lon2 - lon1, 2));
+                                    
+                                    // 경로 거리의 1/3 이내에 있으면 경유지 영역으로 간주
+                                    if (distToMid <= routeDist / 3.0) {
+                                        inWaypointArea = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 현재나 미래 위치가 경유지 영역에 포함되지 않으면 스킵
+                if (!inWaypointArea) {
+                    continue;
+                }
+            }
+
             ViewableAircraft++;
 
            LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
@@ -707,8 +957,21 @@ void __fastcall TForm1::DrawObjects(void)
         if (Data->HaveFlightNum)
           FlightNumLabel->Caption=Data->FlightNum;
         else FlightNumLabel->Caption="N/A";
+        {
+         std::string airline, country;
+         if (LookupAirline(AnsiString(Data->FlightNum).Trim().UpperCase().c_str(), airline, country))
+         {
+             AirlineNameLabel->Caption = airline.c_str();
+             AirlineCountryLabel->Caption = country.c_str();
+         }
+         else
+         {
+             AirlineNameLabel->Caption = "N/A";
+             AirlineCountryLabel->Caption = "N/A";
+         }
+        }
         if (Data->HaveLatLon)
-		{
+                {
 		 CLatLabel->Caption=DMS::DegreesMinutesSecondsLat(Data->Latitude).c_str();
 		 CLonLabel->Caption=DMS::DegreesMinutesSecondsLon(Data->Longitude).c_str();
         }
@@ -743,9 +1006,12 @@ void __fastcall TForm1::DrawObjects(void)
         {
 		 TrackHook.Valid_CC=false;
 		 ICAOLabel->Caption="N/A";
-		 FlightNumLabel->Caption="N/A";
-         CLatLabel->Caption="N/A";
-		 CLonLabel->Caption="N/A";
+                FlightNumLabel->Caption="N/A";
+                AircraftModelLabel->Caption="N/A";
+                AirlineNameLabel->Caption="N/A";
+                AirlineCountryLabel->Caption="N/A";
+        CLatLabel->Caption="N/A";
+                CLonLabel->Caption="N/A";
          SpdLabel->Caption="N/A";
 		 HdgLabel->Caption="N/A";
 		 AltLabel->Caption="N/A";
@@ -903,6 +1169,30 @@ void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
   {
   if (AreaTemp)
    {
+    // 오른쪽 마우스 더블클릭 감지를 위한 정적 변수
+    static DWORD lastRightClickTime = 0;
+    static int lastRightClickX = 0;
+    static int lastRightClickY = 0;
+    
+    DWORD currentTime = GetTickCount();
+    
+    // 더블클릭 조건: 500ms 이내, 같은 위치에서 클릭 (5픽셀 이내)
+    if (currentTime - lastRightClickTime < 500 && 
+        abs(X - lastRightClickX) < 5 && 
+        abs(Y - lastRightClickY) < 5)
+    {
+      // 오른쪽 마우스 더블클릭 - 폴리곤 완성
+      if (AreaTemp->NumPoints >= 3)
+      {
+        CompleteClick(NULL);
+        return;
+      }
+    }
+    
+    lastRightClickTime = currentTime;
+    lastRightClickX = X;
+    lastRightClickY = Y;
+    
 	if (AreaTemp->NumPoints<MAX_AREA_POINTS)
 	{
 	  AddPoint(X, Y);
@@ -1978,6 +2268,9 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
         // 패널 초기화 (None 처리)
         ICAOLabel->Caption      = "N/A";
         FlightNumLabel->Caption = "N/A";
+        AircraftModelLabel->Caption = "N/A";
+        AirlineNameLabel->Caption = "N/A";
+        AirlineCountryLabel->Caption = "N/A";
         CLatLabel->Caption      = "N/A";
         CLonLabel->Caption      = "N/A";
         SpdLabel->Caption       = "N/A";
@@ -1993,6 +2286,20 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
 
     ICAOLabel->Caption      = ac->HexAddr;         // ICAO(16진)
     FlightNumLabel->Caption = ac->FlightNum;       // Callsign
+    AircraftModelLabel->Caption = GetAircraftModel(ac->ICAO);
+    {
+        std::string airline, country;
+        if (LookupAirline(AnsiString(ac->FlightNum).Trim().UpperCase().c_str(), airline, country))
+        {
+            AirlineNameLabel->Caption = airline.c_str();
+            AirlineCountryLabel->Caption = country.c_str();
+        }
+        else
+        {
+            AirlineNameLabel->Caption = "N/A";
+            AirlineCountryLabel->Caption = "N/A";
+        }
+    }
     if (ac->HaveLatLon) {
         CLatLabel->Caption = DMS::DegreesMinutesSecondsLat(ac->Latitude).c_str();
         CLonLabel->Caption = DMS::DegreesMinutesSecondsLon(ac->Longitude).c_str();
@@ -2090,6 +2397,18 @@ void __fastcall TForm1::FilterOriginEditChange(TObject *Sender)
 void __fastcall TForm1::FilterDestinationEditChange(TObject *Sender)
 {
     filterDestination = FilterDestinationEdit->Text.Trim();
+    ObjectDisplay->Repaint();
+}
+
+void __fastcall TForm1::FilterPolygonOnlyCheckBoxClick(TObject *Sender)
+{
+    filterPolygonOnly = FilterPolygonOnlyCheckBox->Checked;
+    ObjectDisplay->Repaint();
+}
+
+void __fastcall TForm1::FilterWaypointsOnlyCheckBoxClick(TObject *Sender)
+{
+    filterWaypointsOnly = FilterWaypointsOnlyCheckBox->Checked;
     ObjectDisplay->Repaint();
 }
 
@@ -2297,5 +2616,14 @@ void __fastcall TForm1::CenterMapOnPair(unsigned int icao1, unsigned int icao2)
             SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
         }
     }
+}
+
+void __fastcall TForm1::ObjectDisplayDblClick(TObject *Sender)
+{
+  // 오른쪽 마우스 더블클릭 시 폴리곤 완성
+  if (AreaTemp && AreaTemp->NumPoints >= 3)
+  {
+    CompleteClick(NULL);
+  }
 }
 

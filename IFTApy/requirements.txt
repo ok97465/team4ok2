@@ -1,3 +1,4 @@
 mkl_random
 numpy
 tqdm
+pandas
