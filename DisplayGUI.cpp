@@ -191,30 +191,29 @@ static bool LookupAirline(const std::string& callSign,
                           std::string& airline,
                           std::string& country)
 {
-    std::string code;
-    for (char c : callSign)
-    {
-        if (isalpha(c)) code += toupper(c);
-        else break;
+    if (callSign.length() < 2) return false;
+
+    // Try with the first 3 characters
+    if (callSign.length() >= 3) {
+        std::string key3 = callSign.substr(0, 3);
+        auto it = airlineInfoMap.find(key3);
+        if (it != airlineInfoMap.end()) {
+            airline = it->second.first;
+            country = it->second.second;
+            return true;
+        }
     }
-    if (code.empty()) return false;
-    std::string key = code;
-    auto it = airlineInfoMap.find(key);
-    if (it == airlineInfoMap.end() && code.length() >= 3)
-    {
-        key = code.substr(0,3);
-        it = airlineInfoMap.find(key);
+
+    // If not found or callsign is shorter than 3, try with the first 2 characters
+    std::string key2 = callSign.substr(0, 2);
+    auto it = airlineInfoMap.find(key2);
+    if (it != airlineInfoMap.end()) {
+        airline = it->second.first;
+        country = it->second.second;
+        return true;
     }
-    if (it == airlineInfoMap.end() && code.length() >= 2)
-    {
-        key = code.substr(0,2);
-        it = airlineInfoMap.find(key);
-    }
-    if (it == airlineInfoMap.end())
-        return false;
-    airline = it->second.first;
-    country = it->second.second;
-    return true;
+
+    return false;
 }
 static AnsiString GetAircraftModel(uint32_t icao)
 {
@@ -2447,7 +2446,6 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
     RouteInfoMemo->Hint = toolTipText;
     RouteInfoMemo->ShowHint = !toolTipText.IsEmpty();
 }
-
 
 // ========================
 // 3. 항공기 선택 이벤트에서 호출
