@@ -18,6 +18,7 @@
 #include <Vcl.ComCtrls.hpp> // For TTrackBar
 #include <unordered_map>
 #include <cctype>
+#include <Sysutils.hpp>
 
 #pragma hdrstop
 
@@ -743,6 +744,26 @@ void __fastcall TForm1::DrawObjects(void)
             if (!filterDestination.IsEmpty() && route && !route->airportCodes.empty()) {
                 if (AnsiString(route->airportCodes.back().c_str()).UpperCase() != filterDestination.UpperCase())
                     continue;
+            }
+
+            // [속도/고도 필터] - TrackBar 값에 따른 필터링
+            int minSpeed = SpeedMinTrackBar->Position;
+            int maxSpeed = SpeedMaxTrackBar->Position;
+            int minAlt = AltitudeMinTrackBar->Position;
+            int maxAlt = AltitudeMaxTrackBar->Position;
+            
+            // 속도 필터 체크
+            if (Data->HaveSpeedAndHeading) {
+                if (Data->Speed < minSpeed || Data->Speed > maxSpeed) {
+                    continue; // 속도 범위를 벗어나면 스킵
+                }
+            }
+            
+            // 고도 필터 체크
+            if (Data->HaveAltitude) {
+                if (Data->Altitude < minAlt || Data->Altitude > maxAlt) {
+                    continue; // 고도 범위를 벗어나면 스킵
+                }
             }
 
             // [5] 다각형 내 비행기만 표시하는 필터
@@ -1857,7 +1878,7 @@ void __fastcall TForm1::HandleSBSDisconnected(const String& reason)
      if (PlayBackSBSStream) {
         delete PlayBackSBSStream;
         PlayBackSBSStream = NULL;
-        SBSPlaybackButton->Caption = "SBS Playback";
+               SBSPlaybackButton->Caption = "SBS Playback";
         SBSConnectButton->Enabled = true;
     }
 }
@@ -2731,4 +2752,57 @@ void __fastcall TForm1::ObjectDisplayDblClick(TObject *Sender)
     CompleteClick(NULL);
   }
 }
+//---------------------------------------------------------------------------
+void __fastcall TForm1::SpeedFilterTrackBarChange(TObject *Sender)
+{
+    int minSpeed = SpeedMinTrackBar->Position;
+    int maxSpeed = SpeedMaxTrackBar->Position;
+    
+    // MIN/MAX 값 검증 및 자동 조정
+    if (Sender == SpeedMinTrackBar) {
+        // MIN 슬라이더가 움직인 경우, MAX보다 크면 MAX를 MIN에 맞춤
+        if (minSpeed > maxSpeed) {
+            SpeedMaxTrackBar->Position = minSpeed;
+            maxSpeed = minSpeed;
+        }
+    } else if (Sender == SpeedMaxTrackBar) {
+        // MAX 슬라이더가 움직인 경우, MIN보다 작으면 MIN을 MAX에 맞춤
+        if (maxSpeed < minSpeed) {
+            SpeedMinTrackBar->Position = maxSpeed;
+            minSpeed = maxSpeed;
+        }
+    }
+    
+    SpeedFilterLabel->Caption = "Speed: " + IntToStr(minSpeed) + " ~ " + IntToStr(maxSpeed) + " knots";
+    
+    // 화면 다시 그리기 (필터 적용)
+    ObjectDisplay->Repaint();
+}
+
+void __fastcall TForm1::AltitudeFilterTrackBarChange(TObject *Sender)
+{
+    int minAlt = AltitudeMinTrackBar->Position;
+    int maxAlt = AltitudeMaxTrackBar->Position;
+    
+    // MIN/MAX 값 검증 및 자동 조정
+    if (Sender == AltitudeMinTrackBar) {
+        // MIN 슬라이더가 움직인 경우, MAX보다 크면 MAX를 MIN에 맞춤
+        if (minAlt > maxAlt) {
+            AltitudeMaxTrackBar->Position = minAlt;
+            maxAlt = minAlt;
+        }
+    } else if (Sender == AltitudeMaxTrackBar) {
+        // MAX 슬라이더가 움직인 경우, MIN보다 작으면 MIN을 MAX에 맞춤
+        if (maxAlt < minAlt) {
+            AltitudeMinTrackBar->Position = maxAlt;
+            minAlt = maxAlt;
+        }
+    }
+    
+    AltitudeFilterLabel->Caption = "Altitude: " + IntToStr(minAlt) + " ~ " + IntToStr(maxAlt) + " ft";
+    
+    // 화면 다시 그리기 (필터 적용)
+    ObjectDisplay->Repaint();
+}
+//---------------------------------------------------------------------------
 

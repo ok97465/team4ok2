@@ -181,6 +181,15 @@ __published:	// IDE-managed Components
 	TListView *ConflictListView;
 	TCheckBox *FilterPolygonOnlyCheckBox; // 다각형 내 비행기만 표시하는 체크박스
 	TCheckBox *FilterWaypointsOnlyCheckBox; // 정의된 경유지 내 비행기만 표시하는 체크박스
+	// --- 속도/고도 필터 UI ---
+    TTrackBar *SpeedMinTrackBar;
+    TTrackBar *SpeedMaxTrackBar;
+    TTrackBar *AltitudeMinTrackBar;
+    TTrackBar *AltitudeMaxTrackBar;
+    TLabel *SpeedFilterLabel;
+    TLabel *AltitudeFilterLabel;
+    void __fastcall SpeedFilterTrackBarChange(TObject *Sender);
+    void __fastcall AltitudeFilterTrackBarChange(TObject *Sender);
 	void __fastcall ApiCallTimerTimer(TObject *Sender);
 	void __fastcall ObjectDisplayInit(TObject *Sender);
 	void __fastcall ObjectDisplayResize(TObject *Sender);

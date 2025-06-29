@@ -7,6 +7,7 @@
 #include "Aircraft.h" // TADS_B_Aircraft 구조체 정의
 #include "ght_hash_table.h"
 #include "ParsedData.h" // 디코더가 반환하는 표준 데이터 구조
+#include <vector>
 
 class TStringGrid; // Forward declaration
 
@@ -42,9 +43,10 @@ public:
     TADS_B_Aircraft* GetFirstAircraft(ght_iterator_t* iterator, const void** key);
     TADS_B_Aircraft* GetNextAircraft(ght_iterator_t* iterator, const void** key);
     TADS_B_Aircraft* FindAircraftByICAO(unsigned int Addr);
-    
-    // [신규] FCurrentSpriteImage 리셋 메서드
     void ResetCurrentSpriteImage();
+
+    // [신규] 속도/고도 필터링 메서드
+    std::vector<TADS_B_Aircraft*> FilterAircraftBySpeedAndAltitude(double minSpeed, double maxSpeed, double minAltitude, double maxAltitude);
 };
 
 #endif

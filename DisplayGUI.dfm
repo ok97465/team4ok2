@@ -1132,9 +1132,83 @@ object Form1: TForm1
     OnInit = ObjectDisplayInit
     OnResize = ObjectDisplayResize
     OnPaint = ObjectDisplayPaint
+	object SpeedMinTrackBar: TTrackBar
+      Left = 20
+      Top = 10
+      Width = 200
+      Height = 30
+      Min = 0
+      Max = 1000
+      Frequency = 50
+      Position = 0
+      TabOrder = 1
+      OnChange = SpeedFilterTrackBarChange
+    end
+    object SpeedMaxTrackBar: TTrackBar
+      Left = 240
+      Top = 10
+      Width = 200
+      Height = 30
+      Min = 0
+      Max = 1000
+      Frequency = 50
+      Position = 1000
+      TabOrder = 2
+      OnChange = SpeedFilterTrackBarChange
+    end
+    object AltitudeMinTrackBar: TTrackBar
+      Left = 20
+      Top = 50
+      Width = 200
+      Height = 30
+      Min = 0
+      Max = 60000
+      Frequency = 2000
+      Position = 0
+      TabOrder = 3
+      OnChange = AltitudeFilterTrackBarChange
+    end
+    object AltitudeMaxTrackBar: TTrackBar
+      Left = 240
+      Top = 50
+      Width = 200
+      Height = 30
+      Min = 0
+      Max = 60000
+      Frequency = 2000
+      Position = 60000
+      TabOrder = 4
+      OnChange = AltitudeFilterTrackBarChange
+    end
+    object SpeedFilterLabel: TLabel
+      Left = 460
+      Top = 15
+      Width = 200
+      Height = 20
+      Caption = 'Speed: 0 ~ 1000 knots'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object AltitudeFilterLabel: TLabel
+      Left = 460
+      Top = 55
+      Width = 200
+      Height = 20
+      Caption = 'Altitude: 0 ~ 60000 ft'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
     object ConflictListView: TListView
-      Left = 10
-      Top = 200
+      Left = 0
+      Top = 890
       Width = 423
       Height = 150
       Columns = <
@@ -1163,7 +1237,7 @@ object Form1: TForm1
           Width = 80
         end>
       GridLines = True
-      TabOrder = 0
+      TabOrder = 5
       ViewStyle = vsReport
     end
   end
