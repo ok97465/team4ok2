@@ -1,4 +1,7 @@
 ﻿#include "OpenStreetMapProvider.h"
+#include <cstdio>
+#include <stdexcept>
+#include "LogHandler.h"
 
 #pragma package(smart_init)
 #ifdef WIN32
@@ -24,12 +27,13 @@ OpenStreetMapProvider::~OpenStreetMapProvider() {
 }
 
 void OpenStreetMapProvider::FetchTile(TilePtr tile, KeyholeConnection* conn) {
-    printf("[OpenStreetMapProvider][%s] ----> tile x(%d), y(%d), level(%d) \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[OpenStreetMapProvider] tile x(%d), y(%d), level(%d)", 
+                tile->GetX(), tile->GetY(), tile->GetLevel());
 
     gefetch_error res = gefetch_fetch_image_openstreetmap(conn->GetGEFetch(), API_KEY, tile->GetX(), tile->GetY(), tile->GetLevel());
     if ((res == GEFETCH_NOT_FOUND) || (res == GEFETCH_INVALID_ZOOM)) {
         tile->Null();
-        printf("[%s] tile->Null\n", __func__);
+        LOG_DEBUG_F(LogHandler::CAT_MAP, "[%s] tile->Null (NOT_FOUND or INVALID_ZOOM)", __func__);
         return;
     }
     else if (res != GEFETCH_OK) {
@@ -39,28 +43,28 @@ void OpenStreetMapProvider::FetchTile(TilePtr tile, KeyholeConnection* conn) {
 
     RawBuffer* buf = new RawBuffer(gefetch_get_data_ptr(conn->GetGEFetch()), gefetch_get_data_size(conn->GetGEFetch()));
 
-    printf("[%s] buf size(%d)\n", __func__, buf->Size());
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[%s] buf size(%d)", __func__, buf->Size());
     try {
         if(tile->IsNull() == 1) {
-            printf("[%s] tile is null\n", __func__);
+            LOG_WARNING_F(LogHandler::CAT_MAP, "[%s] tile is null", __func__);
             delete buf;
             return;
         }
         tile->Load(buf, 1);
-        printf("[%s] tile->load\n", __func__);
+        LOG_DEBUG_F(LogHandler::CAT_MAP, "[%s] tile->load success", __func__);
     } catch (...) {
-        printf("[%s] tile->load fail\n", __func__);
+        LOG_ERROR_F(LogHandler::CAT_MAP, "[%s] tile->load fail", __func__);
         delete buf;
         throw;
     }
 }
 
 std::string OpenStreetMapProvider::GetCacheDir() const {
-    printf("[OpenStreetMapProvider][%s] cacheDir(%s) \n", __func__, cacheDir.c_str());
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[OpenStreetMapProvider] returning cache dir: %s", cacheDir.c_str());
     return cacheDir;
 }
 
 std::string OpenStreetMapProvider::GetURI() const {
-    printf("[OpenStreetMapProvider][%s]\n", __func__);
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[OpenStreetMapProvider][%s]", __func__);
     return OSM_URL;
 }

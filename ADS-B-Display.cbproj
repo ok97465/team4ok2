@@ -276,6 +276,10 @@
             <DependentOn>LatLonConv.h</DependentOn>
             <BuildOrder>33</BuildOrder>
         </CppCompile>
+        <CppCompile Include="LogHandler.cpp">
+            <DependentOn>LogHandler.h</DependentOn>
+            <BuildOrder>73</BuildOrder>
+        </CppCompile>
         <CppCompile Include="Map\MapSrc\EarthView.cpp">
             <DependentOn>Map\MapSrc\EarthView.h</DependentOn>
             <BuildOrder>23</BuildOrder>

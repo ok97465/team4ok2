@@ -1,7 +1,8 @@
 .\Win64\Release\Request_wininet.o: Request_wininet.cpp \
-  D:\Architect\team4\Map\libgefetch/Request_wininet.h \
+  C:\Users\pcuser\Documents\LG\choi\team4\Map\libgefetch/Request_wininet.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\windows.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winapifamily.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winpackagefamily.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\sdkddkver.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\mem.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_stddef.h \

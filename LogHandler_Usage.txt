@@ -1,0 +1,111 @@
+// LogHandler 사용 예시 및 설정 가이드
+
+/*
+=== LogHandler 사용법 ===
+
+1. 초기화 (DisplayGUI.cpp의 TForm1 생성자에서 이미 설정됨):
+   LogHandler::Initialize();
+   LogHandler::SetMinLevel(LogHandler::LOG_INFO);
+   LogHandler::EnableCategory(LogHandler::CAT_GENERAL | LogHandler::CAT_PURGE | 
+                             LogHandler::CAT_PROXIMITY | LogHandler::CAT_SBS | 
+                             LogHandler::CAT_PERFORMANCE | LogHandler::CAT_MAP);
+   LogHandler::SetConsoleOutput(true);
+   LogHandler::SetFileOutput("ads_b_debug.log");
+
+2. 기본 로깅:
+   LOG_INFO(LogHandler::CAT_GENERAL, "Application started");
+   LOG_ERROR(LogHandler::CAT_SBS, "Invalid SBS message received");
+   LOG_DEBUG_F(LogHandler::CAT_PERFORMANCE, "Operation took %d ms", elapsed_time);
+
+3. 조건부 로깅 (성능 최적화):
+   // 1000번째 메시지마다 로깅
+   LOG_EVERY_N(LogHandler::LOG_DEBUG, LogHandler::CAT_SBS, "sbs_count", 1000, 
+               "Processing SBS messages");
+   
+   // 5초마다 로깅
+   LOG_WITH_INTERVAL(LogHandler::LOG_INFO, LogHandler::CAT_PROXIMITY, "proximity_status", 5000, 
+                     "Proximity assessment running");
+
+4. 성능 측정:
+   auto start = std::chrono::steady_clock::now();
+   // ... 작업 수행 ...
+   auto end = std::chrono::steady_clock::now();
+   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+   LOG_DEBUG_F(LogHandler::CAT_PERFORMANCE, "Task completed in %lld ms", duration.count());
+
+5. 카테고리별 제어:
+   // 특정 카테고리만 활성화
+   LogHandler::DisableCategory(LogHandler::CAT_SBS);
+   LogHandler::EnableCategory(LogHandler::CAT_PURGE | LogHandler::CAT_PERFORMANCE);
+   
+   // 로그 레벨 변경
+   LogHandler::SetMinLevel(LogHandler::LOG_WARNING); // WARNING 이상만 출력
+
+=== 카테고리 설명 ===
+- CAT_GENERAL: 일반적인 애플리케이션 메시지
+- CAT_PURGE: 항공기 데이터 정리 관련
+- CAT_PROXIMITY: 근접 평가 관련
+- CAT_SBS: SBS 메시지 처리 관련
+- CAT_PERFORMANCE: 성능 측정 관련
+- CAT_UI: 사용자 인터페이스 관련
+- CAT_NETWORK: 네트워크 통신 관련
+- CAT_MAP: 지도 관련
+
+=== 성능 최적화 팁 ===
+1. 고빈도 로그는 조건부 로깅 사용 (LOG_EVERY_N, LOG_WITH_INTERVAL)
+2. 디버그 로그는 개발 시에만 활성화
+3. 파일 출력보다 콘솔 출력이 더 빠름
+4. 로그 레벨을 적절히 설정하여 불필요한 로그 제거
+5. 연산자 오버로딩을 통해 카테고리 조합 시 자연스러운 문법 지원
+
+=== 카테고리 조합 사용법 ===
+// 연산자 오버로딩으로 자연스러운 문법 지원
+LogHandler::EnableCategory(LogHandler::CAT_PURGE | LogHandler::CAT_MAP);
+
+// 여러 카테고리 조합도 가능
+LogHandler::EnableCategory(LogHandler::CAT_GENERAL | LogHandler::CAT_PERFORMANCE | LogHandler::CAT_SBS);
+
+// 단일 카테고리 사용
+LogHandler::EnableCategory(LogHandler::CAT_GENERAL);
+
+=== 실제 적용 사례 ===
+
+1. AircraftDataModel.cpp: 
+   - PURGE 카테고리: 항공기 데이터 정리 성능 측정
+   - SBS 카테고리: 1000번째 SBS 메시지마다 로깅
+   - PERFORMANCE 카테고리: purge 작업 소요 시간 측정
+
+2. ProximityAssessor.cpp:
+   - PROXIMITY 카테고리: 근접 평가 결과 및 충돌 발견 개수
+   - PERFORMANCE 카테고리: 근접 평가 실행 시간
+
+3. CPA.cpp:
+   - PROXIMITY 카테고리: 위험한 근접 상황 경고 (5NM 이하, 1000ft 이하)
+   - PERFORMANCE 카테고리: 느린 CPA 계산 감지 (100마이크로초 이상)
+   - 100번째 계산마다 진행 상황 로깅
+
+4. DisplayGUI.cpp:
+   - GENERAL 카테고리: 애플리케이션 시작/종료, OpenGL 버전
+   - NETWORK 카테고리: API 데이터 로딩, 연결 상태
+
+5. Map 관련 파일들:
+   - MAP 카테고리: 타일 로딩, 텍스처 생성, HTTP 요청
+   - 성능 최적화: 고빈도 작업은 100-1000번째마다만 로깅
+   - GoogleMapsProvider: 1000번째 타일마다 진행 상황
+   - TextureTile: 500번째 JPEG 로딩마다 상태 확인
+   - Request_wininet: 100번째 HTTP 요청마다 네트워크 상태
+
+6. ntds2d.cpp:
+   - MAP 카테고리: 공항 아틀라스 로딩 에러
+   - GENERAL 카테고리: 항공기 타입 분류 (50번째마다)
+
+=== 런타임 제어 ===
+// 애플리케이션 실행 중에 로그 설정 변경 가능
+if (debugging_mode) {
+    LogHandler::SetMinLevel(LogHandler::LOG_DEBUG);
+    LogHandler::EnableCategory(LogHandler::CAT_PERFORMANCE);
+} else {
+    LogHandler::SetMinLevel(LogHandler::LOG_WARNING);
+    LogHandler::DisableCategory(LogHandler::CAT_SBS);
+}
+*/

@@ -28,7 +28,7 @@ void Request::MemBufferAddBuffer(MemBuffer *b, unsigned char *buffer, size_t siz
 
 int Request::SendHTTP(LPCSTR url, BYTE *post, DWORD postLength, HTTPRequest *req, char *sid, long *httpcode)
 {
-    printf("[%s] using wininet", __func__);
+    // printf("[%s] using wininet", __func__);  // 로그 제거
 
     HINTERNET hInternet = InternetOpenA("gefetch", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
     if (!hInternet) return 1;
@@ -99,6 +99,6 @@ int Request::SendRequest(bool IsPost, LPCSTR url, char *pszHeaderSend, DWORD Hea
     (void)pszHeaderSend;
     (void)HeaderSendLength;
     (void)sid;
-    printf("[%s] using wininet", __func__);
+    // printf("[%s] using wininet", __func__);  // 로그 제거
     return SendHTTP(url, NULL, 0, Ret, NULL, httpcode);
 }

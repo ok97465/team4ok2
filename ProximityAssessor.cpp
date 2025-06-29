@@ -5,8 +5,7 @@
 #include "ProximityAssessor.h"
 #include "SpatialGrid.h"
 #include "CPA.h"
-
-#define MEASURE_PERFORMANCE 1
+#include "LogHandler.h"
 
 // TAssessmentThread 생성자 (변경 없음)
 __fastcall TAssessmentThread::TAssessmentThread(const std::vector<TADS_B_Aircraft*>& snapshot, double hThresh, double vThresh, int timeSec)
@@ -18,9 +17,8 @@ __fastcall TAssessmentThread::TAssessmentThread(const std::vector<TADS_B_Aircraf
 // TAssessmentThread 실행 함수 수정
 void __fastcall TAssessmentThread::Execute()
 {
-#ifdef MEASURE_PERFORMANCE
     auto start = std::chrono::steady_clock::now();
-#endif
+    
     SpatialGrid* grid = new SpatialGrid();
 
     for (auto ac : FAircraftSnapshot) {
@@ -110,11 +108,9 @@ void __fastcall TAssessmentThread::Execute()
         }
     }
 
-#ifdef MEASURE_PERFORMANCE
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "computeCPA execution time: " << duration << " ms" << std::endl;
-#endif
+    LOG_DEBUG_F(LogHandler::CAT_PERFORMANCE, "Proximity assessment execution time: %lld ms", duration);
 }
 
 // ProximityAssessor 클래스 구현 (변경 없음)

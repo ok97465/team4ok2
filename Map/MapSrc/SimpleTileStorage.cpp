@@ -4,6 +4,7 @@
 #pragma hdrstop
 
 #include "SimpleTileStorage.h"
+#include "LogHandler.h"
 
 //---------------------------------------------------------------------------
 
@@ -136,12 +137,12 @@ void SimpleTileStorage::ThreadRun() {
 }
 
 void SimpleTileStorage::SetNextLoadStorage(TileStorage *ts) {
-	printf("[%s]\n", __func__);
+	LOG_DEBUG_F(LogHandler::CAT_MAP, "[SimpleTileStorage][%s]", __func__);
 	m_pNextLoadStorage = ts;
 }
 
 void SimpleTileStorage::SetSaveStorage(TileStorage *ts) {
-	printf("[%s]\n", __func__);
+	LOG_DEBUG_F(LogHandler::CAT_MAP, "[SimpleTileStorage][%s]", __func__);
 	m_pSaveStorage = ts;
 }
 

@@ -4,6 +4,7 @@
 #pragma hdrstop
 
 #include "Tile.h"
+#include "LogHandler.h"
 
 //---------------------------------------------------------------------------
 
@@ -92,7 +93,8 @@ int Tile::IsNull() {
 
 /* load/save */
 void Tile::Load(RawBuffer *data, int keep) {
-	printf("[%s]\n",__func__);
+	LOG_DEBUG_F(LogHandler::CAT_MAP, "[Tile][%s] x(%d), y(%d), level(%d)", __func__, m_X, m_Y, m_Level);
+	
 	if (keep)
 		m_RawData = data;
 	else 

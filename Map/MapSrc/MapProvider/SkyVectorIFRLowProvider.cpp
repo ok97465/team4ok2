@@ -1,4 +1,5 @@
 #include "SkyVectorIFRLowProvider.h"
+#include "LogHandler.h"
 
 #pragma package(smart_init)
 #ifdef WIN32
@@ -24,7 +25,7 @@ SkyVectorIFRLowProvider::~SkyVectorIFRLowProvider() {
 }
 
 void SkyVectorIFRLowProvider::FetchTile(TilePtr tile, KeyholeConnection* conn) {
-    printf("[SkyVectorIFRLowProvider][%s] ----> tile x(%d), y(%d), level(%d) \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[SkyVectorIFRLowProvider][%s] tile x(%d), y(%d), level(%d)", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
 
     gefetch_error res = gefetch_fetch_image_skyvector(
         conn->GetGEFetch(),
@@ -53,6 +54,6 @@ std::string SkyVectorIFRLowProvider::GetCacheDir() const {
 }
 
 std::string SkyVectorIFRLowProvider::GetURI() const {
-    printf("[SkyVectorIFRHighProvider][%s]\n", __func__);
+    LOG_DEBUG_F(LogHandler::CAT_MAP, "[SkyVectorIFRLowProvider][%s]", __func__);
     return SKYVECTOR_URL;
 }

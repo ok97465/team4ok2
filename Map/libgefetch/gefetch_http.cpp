@@ -1,7 +1,6 @@
 #include "gefetch_internal.h"
 //#include "Request.h"
 #include "Request_wininet.h"
-
 /**
  * Internal function to form and execute single HTTP request
  *
@@ -28,12 +27,12 @@ gefetch_error gefetch_do_http_request(gefetch *handle, int method, const char *u
  {
   handle->currentdata=(unsigned char *)ret.message;
   handle->currentsize=ret.messageLength;
-  printf("[%s] GEFETCH_OK\n",__func__);		
+  // printf("[%s] GEFETCH_OK\n",__func__);
   return GEFETCH_OK;
  }
  else
  {
-	printf("[%s] GEFETCH_FETCH_FAILED\n",__func__);		
+	// printf("[%s] GEFETCH_FETCH_FAILED\n",__func__);
 	return GEFETCH_FETCH_FAILED;
  }  
 }

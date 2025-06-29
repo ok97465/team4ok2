@@ -1,5 +1,5 @@
 .\Win64\Release\gefetch_http.o: gefetch_http.cpp \
-  D:\Architect\team4\Map\libgefetch/gefetch_internal.h \
+  C:\Users\pcuser\Documents\LG\choi\team4\Map\libgefetch/gefetch_internal.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\stdlib.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_stddef.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_defs.h \
@@ -12,10 +12,11 @@
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_loc.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\mem.h \
   ..\zlib\zlib.h ..\zlib/zconf.h \
-  D:\Architect\team4\Map\libgefetch/gefetch.h \
-  D:\Architect\team4\Map\libgefetch/Request_wininet.h \
+  C:\Users\pcuser\Documents\LG\choi\team4\Map\libgefetch/gefetch.h \
+  C:\Users\pcuser\Documents\LG\choi\team4\Map\libgefetch/Request_wininet.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\windows.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winapifamily.h \
+  c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\winpackagefamily.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\sdkddkver.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\sdk\excpt.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\stdarg.h \

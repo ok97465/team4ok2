@@ -4,6 +4,7 @@
 #pragma hdrstop
 
 #include "KeyholeConnection.h"
+#include "LogHandler.h"
 
 //---------------------------------------------------------------------------
 
@@ -26,16 +27,16 @@ KeyholeConnection::~KeyholeConnection() noexcept {
 }
 
 void KeyholeConnection::SetFetchTileCallback(std::function<void(TilePtr, KeyholeConnection*)> cb) {
-	printf("[KeyholeConnection][%s]\n", __func__);
+	LOG_DEBUG_F(LogHandler::CAT_MAP, "[KeyholeConnection][%s]", __func__);
 	fetchTileCallback = cb;
 }    
 
 void KeyholeConnection::Process(TilePtr tile) {
      if (fetchTileCallback) {
-		printf("[KeyholeConnection][%s] ----> tile x(%d), y(%d), level(%d) \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
+		LOG_DEBUG_F(LogHandler::CAT_MAP, "[KeyholeConnection][%s] tile x(%d), y(%d), level(%d)", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
 		fetchTileCallback(tile, this); 
     } else {
-		printf("[KeyholeConnection][%s] null \n", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());		
+		LOG_WARNING_F(LogHandler::CAT_MAP, "[KeyholeConnection][%s] callback is null for tile x(%d), y(%d), level(%d)", __func__, tile->GetX(), tile->GetY(), tile->GetLevel());
         tile->Null();
     }
 }

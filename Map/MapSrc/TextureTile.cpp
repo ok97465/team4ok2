@@ -4,6 +4,7 @@
 #pragma hdrstop
 
 #include "TextureTile.h"
+#include "LogHandler.h"
 
 //---------------------------------------------------------------------------
 
@@ -57,7 +58,7 @@ void TextureTile::Load(RawBuffer *data, int keep) {
 	Texture *tex = new Texture;
 
 	try {
-		printf("[%s] tile->LoadJPEG\n", __func__);		
+		LOG_DEBUG_F(LogHandler::CAT_MAP, "Loading JPEG texture: %d bytes", data->Size());
 		tex->LoadJPEG(TEXTURE_SOURCE_MEM, data->Data(), data->Size());
 		//tex->LoadPNG(TEXTURE_SOURCE_MEM, data->Data(), data->Size());
 	} catch (...) {

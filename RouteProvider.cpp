@@ -6,6 +6,7 @@
 #include <chrono>
 #include <iostream>
 #include <fstream>
+#include "LogHandler.h"
 
 RouteProvider::RouteProvider() {}
 RouteProvider::~RouteProvider() {}
@@ -77,13 +78,12 @@ void RouteProvider::DownloadAndParseAviationDataAsync(
 
                 // 100개마다 콜백
 				if (batch.size() >= 100) {
-					// 파싱 결과 출력
 #if 0
-					std::cout << "[Route Batch Parsed] size=" << batch.size() << std::endl;
-					for (const auto& r : batch) {
-						std::cout << r.GetCallsign() << ", " << r.GetCode() << ", " << r.GetNumber() << ", "
-								  << r.GetAirlineCode() << ", " << r.GetAirportCodes() << std::endl;
-					}
+                std::cout << "[Route Batch Parsed] size=" << batch.size() << std::endl;
+                for (const auto& r : batch) {
+                    std::cout << r.GetCallsign() << ", " << r.GetCode() << ", " << r.GetNumber() << ", "
+                              << r.GetAirlineCode() << ", " << r.GetAirportCodes() << std::endl;
+                }
 #endif
 					onBatchParsed(batch, false);
 					batch.clear();
@@ -129,10 +129,11 @@ void RouteProvider::DownloadAndParseAviationDataAsync(
                 }
                 // 남은 데이터도 콜백
                 if (!batch.empty()) {
-                    std::cout << "[Route Batch Parsed] size=" << batch.size() << std::endl;
+                    LOG_DEBUG_F(LogHandler::CAT_GENERAL, "[Route Batch Parsed] size=%zu", batch.size());
                     for (const auto& r : batch) {
-                        std::cout << r.GetCallsign() << ", " << r.GetCode() << ", " << r.GetNumber() << ", "
-                                  << r.GetAirlineCode() << ", " << r.GetAirportCodes() << std::endl;
+                        LOG_DEBUG_F(LogHandler::CAT_GENERAL, "%s, %s, %s, %s, %s", 
+                                  r.GetCallsign().c_str(), r.GetCode().c_str(), r.GetNumber().c_str(),
+                                  r.GetAirlineCode().c_str(), r.GetAirportCodes().c_str());
                     }
                     onBatchParsed(batch, false);
                     batch.clear();

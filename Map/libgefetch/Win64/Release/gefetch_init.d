@@ -1,5 +1,5 @@
 .\Win64\Release\gefetch_init.o: gefetch_init.cpp \
-  D:\Architect\team4\Map\libgefetch/gefetch_internal.h \
+  C:\Users\pcuser\Documents\LG\choi\team4\Map\libgefetch/gefetch_internal.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\stdlib.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_stddef.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_defs.h \
@@ -12,4 +12,4 @@
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\_loc.h \
   c:\program\ files\ (x86)\embarcadero\studio\23.0\include\windows\crtl\mem.h \
   ..\zlib\zlib.h ..\zlib/zconf.h \
-  D:\Architect\team4\Map\libgefetch/gefetch.h
+  C:\Users\pcuser\Documents\LG\choi\team4\Map\libgefetch/gefetch.h

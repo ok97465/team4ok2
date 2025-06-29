@@ -19,6 +19,8 @@
 #include "Aircraft.h"
 #include "AircraftApi.h"
 #include "DisplayGUI.h"
+#include "LogHandler.h"
+
 #define RADPERDEG (asin(1.0f)/90.0f)
 #ifndef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_TO_EDGE 0x812F
@@ -284,14 +286,14 @@ int MakeAirportImages(void)
     const char* filename = "../../Symbols/airport_atlas.png";
     FILE* fp = fopen(filename, "rb");
     if(!fp){
-        printf("[ERROR] failed to open airport atlas: %s\n", filename);
+        LOG_ERROR_F(LogHandler::CAT_MAP, "Failed to open airport atlas: %s", filename);
         return 0;
     }
 
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_infop info = png_create_info_struct(png);
     if(setjmp(png_jmpbuf(png))){
-        printf("[ERROR] png parse error\n");
+        LOG_ERROR(LogHandler::CAT_MAP, "PNG parse error");
         fclose(fp);
         return 0;
     }
@@ -1003,17 +1005,17 @@ int SelectAircraftIcon(const TADS_B_Aircraft* aircraft)
     const TAircraftData* dbinfo = (const TAircraftData*) ght_get(AircraftDBHashTable, sizeof(aircraft->ICAO), &aircraft->ICAO);
     if (dbinfo) {
         const char* icaoType = dbinfo->Fields[5].c_str();
-        printf("ICAO:%06X TypeCode:%s\n", aircraft->ICAO, icaoType);
+        LOG_DEBUG_F(LogHandler::CAT_GENERAL, "ICAO:%06X TypeCode:%s", aircraft->ICAO, icaoType);
         if (strstr(icaoType, "F") && (
             strstr(icaoType, "B763") || strstr(icaoType, "B752") || strstr(icaoType, "B744") || strstr(icaoType, "MD11") || strstr(icaoType, "A306") || strstr(icaoType, "A332") )) {
-            printf("화물기 분류됨!\n");
+            LOG_INFO_F(LogHandler::CAT_GENERAL, "Cargo aircraft classified: ICAO:%06X", aircraft->ICAO);
             return 76; // 화물기
         }
         if (strstr(icaoType, "B737") || strstr(icaoType, "A320") || strstr(icaoType, "A321") /* ... */) {
             return 77; // 대형 여객기
         }
     } else {
-        printf("ICAO:%06X DB정보 없음\n", aircraft->ICAO);
+        LOG_DEBUG(LogHandler::CAT_GENERAL, "Aircraft DB info missing");
     }
     
     // 헬리콥터인지 확인

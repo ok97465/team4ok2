@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "gefetch_internal.h"
-
 static int int_pow(int base, int exponent);
 static int int_pow(int base, int exponent) {
     int result = 1;
@@ -25,7 +24,7 @@ gefetch_error gefetch_fetch_image_googlemaps(gefetch *handle, int x, int y, int 
 
 	if (_snprintf(urlbuf, sizeof(urlbuf),"%s/vt/lyrs=y&x=%d&y=%d&z=%d", handle->url,x,y,level) >= sizeof(urlbuf))
 		return GEFETCH_SMALL_BUFFER;
-	printf("%s\n",urlbuf);		
+	// printf("%s\n",urlbuf);
 	/* fetch */
 	return gefetch_fetch(handle, urlbuf);
 }
@@ -41,7 +40,7 @@ gefetch_error gefetch_fetch_image_skyvector(gefetch *handle,const char *key,cons
 
 	newlevel = 23 + 301-ichart - (2 * level);
 
-	printf("[%s] new level %d Level %d Ichart %d\n",__func__, newlevel,level,ichart);
+	// printf("[%s] new level %d Level %d Ichart %d\n",__func__, newlevel,level,ichart);
 
 	if (ichart==301)
 	 {
@@ -60,10 +59,10 @@ gefetch_error gefetch_fetch_image_skyvector(gefetch *handle,const char *key,cons
 
 	if (_snprintf(urlbuf, sizeof(urlbuf),"%s/%s/%s/%s/%d/%d/%d.jpg", handle->url,key,chart,edition,newlevel,x,y) >= sizeof(urlbuf))
 	{
-        printf("error\n");
+        // printf("error\n");
 		return GEFETCH_SMALL_BUFFER;
 	}
-	printf("[%s] %s\n",__func__, urlbuf);
+	// printf("[%s] %s\n",__func__, urlbuf);
 	/* fetch */
 	return gefetch_fetch(handle, urlbuf);
 }
@@ -76,7 +75,7 @@ gefetch_error gefetch_fetch_image_openstreetmap(gefetch *handle, const char *key
 
 	if (_snprintf(urlbuf, sizeof(urlbuf),"%s/%d/%d/%d%s", handle->url,level,x,y,key) >= sizeof(urlbuf))
 		return GEFETCH_SMALL_BUFFER;
-	printf("%s\n",urlbuf);		
+	// printf("%s\n",urlbuf);		
 	/* fetch */
 	return gefetch_fetch(handle, urlbuf);
 }
