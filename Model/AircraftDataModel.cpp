@@ -5,6 +5,7 @@
 #include "TimeFunctions.h"
 #include "RawDecoder.h"
 #include "SbsDecoder.h"
+#include <vector>
 
 #pragma link "HashTable\\Lib\\Win64\\Release\\HashTableLib.a"
 
@@ -321,4 +322,25 @@ TADS_B_Aircraft* AircraftDataModel::FindAircraftByICAO(unsigned int Addr)
 void AircraftDataModel::ResetCurrentSpriteImage()
 {
     FCurrentSpriteImage = 0;
+}
+
+std::vector<TADS_B_Aircraft*> AircraftDataModel::FilterAircraftBySpeedAndAltitude(double minSpeed, double maxSpeed, double minAltitude, double maxAltitude)
+{
+    std::vector<TADS_B_Aircraft*> filtered;
+    ght_iterator_t iterator;
+    const void* key;
+    TADS_B_Aircraft* aircraft = GetFirstAircraft(&iterator, &key);
+    while (aircraft)
+    {
+        if (aircraft->HaveSpeedAndHeading && aircraft->HaveAltitude)
+        {
+            if (aircraft->Speed >= minSpeed && aircraft->Speed <= maxSpeed &&
+                aircraft->Altitude >= minAltitude && aircraft->Altitude <= maxAltitude)
+            {
+                filtered.push_back(aircraft);
+            }
+        }
+        aircraft = GetNextAircraft(&iterator, &key);
+    }
+    return filtered;
 }
