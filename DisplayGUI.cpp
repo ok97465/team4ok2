@@ -1859,6 +1859,22 @@ void __fastcall TForm1::HandleSBSData(const AnsiString& data)
             CloseBigQueryCSV();
             RunPythonScript(this->BigQueryPythonScript, this->BigQueryPath + " " + this->BigQueryCSVFileName);
             CreateBigQueryCSV();
+
+            AnsiString HomeDir = ExtractFilePath(ExtractFileDir(Application->ExeName));
+            AnsiString csvPath = HomeDir + "..\\BigQuery\\result.csv";
+            if (FileExists(csvPath)) {
+                TStreamReader *reader = new TStreamReader(csvPath, false);
+                try {
+                    while (!reader->EndOfStream) {
+                        AnsiString line = reader->ReadLine();
+                        printf("%s\n", line.c_str());
+                    }
+                } __finally {
+                    delete reader;
+                }
+            } else {
+                printf("no result.csv\n");
+            }			
         }
     }
 
