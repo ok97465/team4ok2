@@ -14,6 +14,7 @@ private:
     EarthView* FEarthView;
     TileManager* FTileManager;
     void __fastcall RenderTask();
+    void __fastcall NotifyUI();
 protected:
     void __fastcall Execute() override;
 public:

@@ -20,34 +20,37 @@ void __fastcall TEarthViewRenderThread::RenderTask()
 {
     if (FEarthView && FPanel)
     {
-        {
-            std::lock_guard<std::mutex> lock(g_glMutex);
-            FPanel->MakeOpenGLPanelCurrent();
+        std::lock_guard<std::mutex> lock(g_glMutex);
+        FPanel->MakeOpenGLPanelCurrent();
 
-            if (Form1->DrawMap->Checked)
-                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            else
-                glClearColor(0.37f, 0.37f, 0.37f, 0.0f);
+        if (Form1->DrawMap->Checked)
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        else
+            glClearColor(0.37f, 0.37f, 0.37f, 0.0f);
 
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            FEarthView->Animate();
-            FEarthView->Render(Form1->DrawMap->Checked);
-            if (FTileManager)
-                FTileManager->Cleanup();
+        FEarthView->Animate();
+        FEarthView->Render(Form1->DrawMap->Checked);
+        if (FTileManager)
+            FTileManager->Cleanup();
 
-            FPanel->MakeOpenGLPanelNotCurrent();
-        }
-
-        Form1->ObjectDisplay->Invalidate();
+        FPanel->MakeOpenGLPanelNotCurrent();
     }
+}
+
+void __fastcall TEarthViewRenderThread::NotifyUI()
+{
+    if (Form1 && Form1->ObjectDisplay)
+        Form1->ObjectDisplay->Invalidate();
 }
 
 void __fastcall TEarthViewRenderThread::Execute()
 {
     while (!Terminated)
     {
-        TThread::Queue(nullptr, RenderTask);
+        RenderTask();
+        TThread::Synchronize(nullptr, NotifyUI);
         Sleep(30);
     }
 }
