@@ -26,9 +26,7 @@ void __fastcall TEarthViewRenderThread::Execute()
     {
         if (FEarthView && FPanel)
         {
-            {
-                std::lock_guard<std::mutex> lock(g_glMutex);
-                FPanel->MakeOpenGLPanelCurrent();
+            FPanel->MakeOpenGLPanelCurrent();
 
                 if (Form1->DrawMap->Checked)
                     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -41,8 +39,7 @@ void __fastcall TEarthViewRenderThread::Execute()
                 FEarthView->Render(Form1->DrawMap->Checked);
                 if (FTileManager)
                     FTileManager->Cleanup();
-                FPanel->MakeOpenGLPanelNotCurrent();
-            }
+            FPanel->MakeOpenGLPanelNotCurrent();
             // Queue the repaint instead of blocking the thread with Synchronize
             // so termination doesn't deadlock while waiting for the mutex.
             TThread::Queue(nullptr, NotifyUI);

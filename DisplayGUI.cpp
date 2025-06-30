@@ -19,7 +19,6 @@
 #include <unordered_map>
 #include <cctype>
 #include <Sysutils.hpp>
-#include <mutex>
 
 #pragma hdrstop
 
@@ -520,7 +519,6 @@ void __fastcall TForm1::SetMapCenter(double &x, double &y)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 {
-        std::lock_guard<std::mutex> lock(g_glMutex);
         glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -563,7 +561,6 @@ void __fastcall TForm1::ObjectDisplayResize(TObject *Sender)
 {
 	 double Value;
 	//ObjectDisplay->Width=ObjectDisplay->Height;
-        std::lock_guard<std::mutex> lock(g_glMutex);
         glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -576,8 +573,7 @@ void __fastcall TForm1::ObjectDisplayResize(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 {
-  std::lock_guard<std::mutex> lock(g_glMutex);
- Mw1 = Map_w[1].x-Map_w[0].x;
+  Mw1 = Map_w[1].x-Map_w[0].x;
  Mw2 = Map_v[1].x-Map_v[0].x;
  Mh1 = Map_w[1].y-Map_w[0].y;
  Mh2 = Map_v[3].y-Map_v[0].y;
