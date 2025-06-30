@@ -392,6 +392,9 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 
  MouseDown=false;
 
+ // 드래그 리페인트 시간 초기화
+  m_lastDragRepaintTime = GetTickCount();
+
  MapCenterLat=MAP_CENTER_LAT;
  MapCenterLon=MAP_CENTER_LON;
 
@@ -414,9 +417,9 @@ __fastcall TForm1::TForm1(TComponent* Owner)
                              AnsiString("..\\AircraftDB\\airline_names_countries.csv");
     LoadAirlineInfo(airlineFile);
   }
-  m_planeBatch.reserve(5000);
-  m_lineBatch.reserve(5000);
-  m_textBatch.reserve(5000 * 6);
+  m_planeBatch.reserve(8000);
+  m_lineBatch.reserve(8000);
+  m_textBatch.reserve(8000 * 6);
   SetHexTextScale(1.0f);
   SetHexTextBold(true);
 
@@ -710,6 +713,12 @@ void __fastcall TForm1::DrawObjects(void)
         {
           if (Data->HaveLatLon)
           {
+           LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
+           // 화면 밖 항공기는 스킵하여 불필요한 연산을 줄인다
+           if (ScrX < -100 || ScrX > ObjectDisplay->Width + 100 ||
+               ScrY < -100 || ScrY > ObjectDisplay->Height + 100)
+                   continue;
+            ViewableAircraft++;
             // [1] RouteInfo 얻기
             //const RouteInfo* route = FindRouteByCallsign(AnsiString(Data->FlightNum).c_str());
 
@@ -922,9 +931,7 @@ void __fastcall TForm1::DrawObjects(void)
                 }
             }
 
-            ViewableAircraft++;
 
-           LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
            ScrX2 = ScrX;
            ScrY2 = ScrY;
            //DrawPoint(ScrX,ScrY);
@@ -1012,24 +1019,24 @@ void __fastcall TForm1::DrawObjects(void)
 				}
         }
 	   }
-               // 기존 배치 렌더링 대신 개별 스타일 적용
-               for (const auto& line : m_lineBatch) {
-                   // 항공기 타입에 따른 다른 리더 스타일 적용
-                   TADS_B_Aircraft* aircraft = FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
-                   if (aircraft && aircraft_is_military(aircraft->ICAO, NULL)) {
-                       // 군용기는 두꺼운 선
-                       DrawLeaderThick(line.x1, line.y1, line.x2, line.y2, 4.0f);
-                   } else if (aircraft && aircraft_is_helicopter(aircraft->ICAO, NULL)) {
-                       // 헬리콥터는 점선
-                       DrawLeaderDashed(line.x1, line.y1, line.x2, line.y2);
-                   } else {
-                       // 일반 항공기는 화살표
-                       DrawLeaderArrow(line.x1, line.y1, line.x2, line.y2, 8.0f);
-                   }
-               }
+            //    // 기존 배치 렌더링 대신 개별 스타일 적용
+            //    for (const auto& line : m_lineBatch) {
+            //        // 항공기 타입에 따른 다른 리더 스타일 적용
+            //        TADS_B_Aircraft* aircraft = FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
+            //        if (aircraft && aircraft_is_military(aircraft->ICAO, NULL)) {
+            //            // 군용기는 두꺼운 선
+            //            DrawLeaderThick(line.x1, line.y1, line.x2, line.y2, 4.0f);
+            //        } else if (aircraft && aircraft_is_helicopter(aircraft->ICAO, NULL)) {
+            //            // 헬리콥터는 점선
+            //            DrawLeaderDashed(line.x1, line.y1, line.x2, line.y2);
+            //        } else {
+            //            // 일반 항공기는 화살표
+            //            DrawLeaderArrow(line.x1, line.y1, line.x2, line.y2, 8.0f);
+            //        }
+            //    }
                
                // 기존 배치 렌더링 (백업용)
-               // DrawAirplaneLinesInstanced(m_lineBatch);
+               DrawAirplaneLinesInstanced(m_lineBatch);
                DrawAirplaneImagesInstanced(m_planeBatch);
                DrawHexTextInstanced(m_textBatch);
 
@@ -1322,7 +1329,10 @@ void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
 void __fastcall TForm1::ObjectDisplayMouseUp(TObject *Sender,
 	  TMouseButton Button, TShiftState Shift, int X, int Y)
 {
-  if (Button == mbLeft) g_MouseDownMask &= ~LEFT_MOUSE_DOWN;
+    if (Button == mbLeft) {
+    g_MouseDownMask &= ~LEFT_MOUSE_DOWN;
+    ObjectDisplay->Repaint();
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
@@ -1362,7 +1372,11 @@ void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
   {
     if(g_EarthView)
 		g_EarthView->Drag(g_MouseLeftDownX, g_MouseLeftDownY, X,Y, NAV_DRAG_PAN);
-   ObjectDisplay->Repaint();
+   DWORD now = GetTickCount();
+    if (now - m_lastDragRepaintTime >= 60) {
+      ObjectDisplay->Repaint();
+      m_lastDragRepaintTime = now;
+    }
   }
 
 }
