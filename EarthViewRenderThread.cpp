@@ -12,7 +12,8 @@ __fastcall TEarthViewRenderThread::TEarthViewRenderThread(TOpenGLPanel* panel,
     : TThread(false), FPanel(panel), FEarthView(earthView),
       FTileManager(tileManager)
 {
-    FreeOnTerminate = true;
+    // manage destruction manually in the form destructor
+    FreeOnTerminate = false;
 }
 
 void __fastcall TEarthViewRenderThread::RenderTask()
