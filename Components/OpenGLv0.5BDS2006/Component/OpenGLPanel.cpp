@@ -30,8 +30,6 @@
 #include <stdlib.h>
 #include <Printers.hpp>
 #include "OpenGLPanel.h"
-#include "EarthViewRenderThread.h"
-#include <mutex>
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
 // ValidCtrCheck is used to assure that the components created do not have
@@ -347,7 +345,6 @@ void __fastcall TOpenGLPanel::WMCreate(TWMCreate &Message)
      }
  if (FOnInit)
   {
-   std::lock_guard<std::mutex> lock(g_glMutex);
    if (wglMakeCurrent(DisplayDeviceContext,GLRenderingContext)==false)
         ShowMessage("wglMakeCurrent:" + IntToStr((int)GetLastError()));
    if (Font3DEnabled) Create3DFont();
@@ -375,15 +372,12 @@ void __fastcall TOpenGLPanel::WMQueryNewPalette(TWMQueryNewPalette &Message)
          ShowMessage("RealizePalette:"+IntToStr((int)GetLastError()));
          return;
         }
-  {
-    std::lock_guard<std::mutex> lock(g_glMutex);
-    if (wglMakeCurrent(DisplayDeviceContext,GLRenderingContext)==false)
-          {
-           Message.Result=0;
-           return;
-          }
-    wglMakeCurrent(NULL, NULL);
-  }
+  if (wglMakeCurrent(DisplayDeviceContext,GLRenderingContext)==false)
+        {
+         Message.Result=0;
+         return;
+        }
+  wglMakeCurrent(NULL, NULL);
   SelectPalette((HDC)GLRenderingContext,OldPalette,TRUE);
   if (num) InvalidateRect(Handle,NULL,TRUE); // Force Repaint
   Message.Result=num;
@@ -426,7 +420,7 @@ void __fastcall TOpenGLPanel::Paint(void)
   //TCustomPanel::Paint();
   if (FOnPaint)
      {
-     HPALETTE OldPalette=NULL;
+      HPALETTE OldPalette=NULL;
 
       if (Palette)
          {
@@ -437,25 +431,22 @@ void __fastcall TOpenGLPanel::Paint(void)
               return;
              }
         }
-     {
-       std::lock_guard<std::mutex> lock(g_glMutex);
 
-       if (wglMakeCurrent(DisplayDeviceContext,GLRenderingContext)==false)
-          {
-           ShowMessage("wglMakeCurrent:" + IntToStr((int)GetLastError()));
-           return;
-          }
+      if (wglMakeCurrent(DisplayDeviceContext,GLRenderingContext)==false)
+         {
+          ShowMessage("wglMakeCurrent:" + IntToStr((int)GetLastError()));
+          return;
+         }
 
-       FOnPaint(this);
+      FOnPaint(this);
 
-       if ((FSwapBuffers==Auto) && (DoubleBuffer))
-             ::SwapBuffers(DisplayDeviceContext);
+      if ((FSwapBuffers==Auto) && (DoubleBuffer))
+            ::SwapBuffers(DisplayDeviceContext);
 
-       if (OldPalette)
-            SelectPalette(DisplayDeviceContext,OldPalette,TRUE);
+      if (OldPalette)
+           SelectPalette(DisplayDeviceContext,OldPalette,TRUE);
 
-       wglMakeCurrent(NULL, NULL) ;
-     }
+      wglMakeCurrent(NULL, NULL) ;
     }
  return;
 }
@@ -465,14 +456,13 @@ void __fastcall TOpenGLPanel::Resize(void)
   TCustomPanel::Resize();
   if (FOnResize)
      {
-     std::lock_guard<std::mutex> lock(g_glMutex);
-     if (wglMakeCurrent(DisplayDeviceContext,GLRenderingContext)==false)
-         {
-           ShowMessage("wglMakeCurrent:" + IntToStr((int)GetLastError()));
-           return;
-         }
-     FOnResize(this);
-     wglMakeCurrent(NULL, NULL) ;
+      if (wglMakeCurrent(DisplayDeviceContext,GLRenderingContext)==false)
+          {
+            ShowMessage("wglMakeCurrent:" + IntToStr((int)GetLastError()));
+            return;
+          }
+      FOnResize(this);
+      wglMakeCurrent(NULL, NULL) ;
      }
   return;
 }
@@ -483,7 +473,6 @@ void __fastcall TOpenGLPanel::Resize(void)
 //---------------------------------------------------------------------------
 void __fastcall TOpenGLPanel::MakeOpenGLPanelCurrent(void)
 {
- std::lock_guard<std::mutex> lock(g_glMutex);
  if (wglMakeCurrent(DisplayDeviceContext,GLRenderingContext)==false)
     {
      ShowMessage("wglMakeCurrent:" + IntToStr((int)GetLastError()));
@@ -492,7 +481,6 @@ void __fastcall TOpenGLPanel::MakeOpenGLPanelCurrent(void)
 //---------------------------------------------------------------------------
 void __fastcall TOpenGLPanel::MakeOpenGLPanelNotCurrent(void)
 {
-  std::lock_guard<std::mutex> lock(g_glMutex);
   wglMakeCurrent(NULL, NULL);
 }
 //---------------------------------------------------------------------------

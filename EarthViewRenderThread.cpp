@@ -26,6 +26,7 @@ void __fastcall TEarthViewRenderThread::Execute()
     {
         if (FEarthView && FPanel)
         {
+            std::lock_guard<std::mutex> lock(g_glMutex);
             FPanel->MakeOpenGLPanelCurrent();
 
                 if (Form1->DrawMap->Checked)

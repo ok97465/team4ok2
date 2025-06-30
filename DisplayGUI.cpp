@@ -519,6 +519,7 @@ void __fastcall TForm1::SetMapCenter(double &x, double &y)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 {
+    std::lock_guard<std::mutex> lock(g_glMutex);
         glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -559,20 +560,22 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 
 void __fastcall TForm1::ObjectDisplayResize(TObject *Sender)
 {
-	 double Value;
-	//ObjectDisplay->Width=ObjectDisplay->Height;
-        glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glEnable (GL_LINE_STIPPLE);
-        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        if(g_EarthView)
-                g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+    std::lock_guard<std::mutex> lock(g_glMutex);
+    double Value;
+    //ObjectDisplay->Width=ObjectDisplay->Height;
+    glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glEnable (GL_LINE_STIPPLE);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    if(g_EarthView)
+            g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 {
+  std::lock_guard<std::mutex> lock(g_glMutex);
   Mw1 = Map_w[1].x-Map_w[0].x;
  Mw2 = Map_v[1].x-Map_v[0].x;
  Mh1 = Map_w[1].y-Map_w[0].y;
