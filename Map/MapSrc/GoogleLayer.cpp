@@ -168,7 +168,7 @@ void GoogleLayer::RenderRegion(Region *rgn) {
 	}
 
 	for (std::vector<SlaveLayer*>::iterator i = m_SlaveLayers.begin(); i < m_SlaveLayers.end(); i++){
-		// printf("[GoogleLayer][%s] m_SlaveLayers count ----> (%d)\n", __func__,i);
+		printf("[GoogleLayer][%s] m_SlaveLayers count ----> (%d)\n", __func__,i);
 		if ((*i)->GetCap(SLAVELAYERCAP_OVERDRAW))
 			(*i)->Overdraw(rgn);
 	}

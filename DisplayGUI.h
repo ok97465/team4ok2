@@ -38,7 +38,6 @@
 #include "AircraftInfo.h"
 #include "ButtonScroller.h"
 #include "ProximityAssessor.h"
-#include <Windows.h>
 typedef float T_GL_Color[4];
 
 
@@ -338,9 +337,6 @@ public:		// User declarations
 
         // 선택된 항공기의 경로(대권) 좌표 목록
         std::vector<std::vector<std::pair<double,double>>> m_selectedRoutePaths;
-
-		 // 마지막 드래그 리페인트 시각(ms)
-        DWORD m_lastDragRepaintTime;
 
         // --- Playback Speed UI 함수 선언 추가 ---
     void SetupPlaybackSpeedUI();
