@@ -922,6 +922,43 @@ void __fastcall TForm1::DrawObjects(void)
                 }
             }
 
+            // 항공기 카테고리 필터 적용
+            AircraftCategory category = aircraft_get_category(Data->ICAO);
+            bool showAircraft = false;
+            
+            switch(category) {
+                case CATEGORY_COMMERCIAL:
+                    showAircraft = CommercialCheckBox->Checked;
+                    break;
+                case CATEGORY_CARGO:
+                    showAircraft = CargoCheckBox->Checked;
+                    break;
+                case CATEGORY_HELICOPTER:
+                    showAircraft = HelicopterCheckBox->Checked;
+                    break;
+                case CATEGORY_MILITARY:
+                    showAircraft = MilitaryCheckBox->Checked;
+                    break;
+                case CATEGORY_BUSINESS_JET:
+                    showAircraft = BusinessJetCheckBox->Checked;
+                    break;
+                case CATEGORY_GLIDER:
+                    showAircraft = GliderCheckBox->Checked;
+                    break;
+                case CATEGORY_ULTRALIGHT:
+                    showAircraft = UltralightCheckBox->Checked;
+                    break;
+                case CATEGORY_GENERAL_AVIATION:
+                case CATEGORY_UNKNOWN:
+                default:
+                    showAircraft = GeneralAviationCheckBox->Checked;
+                    break;
+            }
+            
+            if (!showAircraft) {
+                continue;
+            }
+
             ViewableAircraft++;
 
            LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
@@ -2561,49 +2598,20 @@ double TrackBarPosToSpeed(int pos) {
 // --- Playback Speed UI Setup ---
 void TForm1::SetupPlaybackSpeedUI()
 {
-    // --- 기존 트랙바 삭제 및 드롭다운(ComboBox)으로 대체 ---
-    if (PlaybackSpeedTrackBar) {
-        delete PlaybackSpeedTrackBar;
-        PlaybackSpeedTrackBar = nullptr;
-    }
-    if (PlaybackSpeedLabel) {
-        delete PlaybackSpeedLabel;
-        PlaybackSpeedLabel = nullptr;
-    }
+    // .dfm에서 생성된 UI를 초기화
     if (PlaybackSpeedComboBox) {
-        delete PlaybackSpeedComboBox;
-        PlaybackSpeedComboBox = nullptr;
+        PlaybackSpeedComboBox->ItemIndex = 0;
+        // 이벤트 핸들러 동적 할당
+        PlaybackSpeedComboBox->OnChange = PlaybackSpeedComboBoxChange;
     }
-    
-    // ComboBox 생성
-    PlaybackSpeedComboBox = new TComboBox(this);
-    PlaybackSpeedComboBox->Parent = this;
-    PlaybackSpeedComboBox->Left = 20;
-    PlaybackSpeedComboBox->Top = 80;
-    PlaybackSpeedComboBox->Width = 80;
-    PlaybackSpeedComboBox->Style = csDropDownList;
-    PlaybackSpeedComboBox->Items->Add("1x");
-    PlaybackSpeedComboBox->Items->Add("2x");
-    PlaybackSpeedComboBox->Items->Add("3x");
-    PlaybackSpeedComboBox->ItemIndex = 0;
-    
-    // 라벨
-    PlaybackSpeedLabel = new TLabel(this);
-    PlaybackSpeedLabel->Parent = this;
-    PlaybackSpeedLabel->Left = PlaybackSpeedComboBox->Left + PlaybackSpeedComboBox->Width + 10;
-    PlaybackSpeedLabel->Top = PlaybackSpeedComboBox->Top + 2;
-    PlaybackSpeedLabel->Caption = "재생 속도";
-    PlaybackSpeedLabel->Font->Size = 10;
-    PlaybackSpeedLabel->Font->Color = clBlack;
-    PlaybackSpeedLabel->Show();
-    
-    // 이벤트 핸들러 할당
-    PlaybackSpeedComboBox->OnChange = PlaybackSpeedComboBoxChange;
     
     // 최초 1회 적용
     if (FRawDataHandler) FRawDataHandler->SetPlaybackSpeed(1.0);
     if (FSBSDataHandler) FSBSDataHandler->SetPlaybackSpeed(1.0);
-    PlaybackSpeedLabel->Caption = "재생 속도: 1x";
+    
+    if (PlaybackSpeedLabel) {
+        PlaybackSpeedLabel->Caption = "Playback Speed: 1x";
+    }
 }
 
 void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
@@ -2619,7 +2627,7 @@ void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
     if (FSBSDataHandler) FSBSDataHandler->SetPlaybackSpeed(speed);
     
     if (PlaybackSpeedLabel) {
-        PlaybackSpeedLabel->Caption = "재생 속도: " + FloatToStrF(speed, ffGeneral, 3, 2) + "x";
+        PlaybackSpeedLabel->Caption = "Playback Speed: " + FloatToStrF(speed, ffGeneral, 3, 2) + "x";
     }
 }
 //---------------------------------------------------------------------------
@@ -2812,6 +2820,12 @@ void __fastcall TForm1::AltitudeFilterTrackBarChange(TObject *Sender)
     AltitudeFilterLabel->Caption = "Altitude: " + IntToStr(minAlt) + " ~ " + IntToStr(maxAlt) + " ft";
     
     // 화면 다시 그리기 (필터 적용)
+    ObjectDisplay->Repaint();
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::AircraftCategoryFilterChange(TObject *Sender)
+{
+    // 항공기 카테고리 필터 변경 시 화면 다시 그리기
     ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------

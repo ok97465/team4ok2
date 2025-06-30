@@ -4,14 +4,13 @@
 
 #include "AircraftDB.h"
 #include "csv.h"
+#include <string.h>  // strstr 함수를 위해 필요
+#include <stdio.h>   // printf, snprintf 함수를 위해 필요
+#include <vcl.h>     // VCL 타입들을 위해 필요
 
 #define DIM(array)         (sizeof(array) / sizeof(array[0]))
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
-const char *aircraft_get_country (uint32_t addr, bool get_short);
-bool aircraft_is_helicopter (uint32_t addr, const char **type_ptr);
-const char *aircraft_get_military (uint32_t addr);
-bool aircraft_is_military (uint32_t addr, const char **country);
 
 ght_hash_table_t *AircraftDBHashTable=NULL;
 //---------------------------------------------------------------------------
@@ -461,7 +460,7 @@ static bool is_helicopter_type (const char *type)
      return (false);
 
   for (i = 0; i < DIM(helli_types); i++)
-      if (!stricmp(type, helli_types[i]))
+      if (!_stricmp(type, helli_types[i]))
          return (true);
   return (false);
 }
@@ -502,4 +501,214 @@ const char *aircraft_get_military (uint32_t addr)
      snprintf (buf+sz, sizeof(buf)-sz, " (%s)", cntry);
   return (buf);
 }
+//---------------------------------------------------------------------------
+/**
+ * 항공기 타입코드로 상업용 항공기인지 확인
+ */
+bool aircraft_is_commercial(uint32_t addr)
+{
+  const TAircraftData *a;
+  a = (TAircraftData *) ght_get(AircraftDBHashTable, sizeof(addr), &addr);
+  
+  if (!a || a->Fields[AC_DB_TypeCode].IsEmpty())
+     return false;
+     
+  const char* typeCode = a->Fields[AC_DB_TypeCode].c_str();
+  
+  // 대형 여객기 타입코드들
+  if (strstr(typeCode, "B737") || strstr(typeCode, "B738") || strstr(typeCode, "B739") ||
+      strstr(typeCode, "B777") || strstr(typeCode, "B787") || strstr(typeCode, "B763") || 
+      strstr(typeCode, "B764") || strstr(typeCode, "A320") || strstr(typeCode, "A321") ||
+      strstr(typeCode, "A319") || strstr(typeCode, "A330") || strstr(typeCode, "A350") ||
+      strstr(typeCode, "A380") || strstr(typeCode, "B747"))
+  {
+    // F가 끝에 붙어있으면 화물기
+    int len = strlen(typeCode);
+    if (len > 0 && typeCode[len-1] == 'F')
+      return false;
+    return true;
+  }
+  
+  return false;
+}
+
+//---------------------------------------------------------------------------
+/**
+ * 항공기 타입코드로 화물기인지 확인
+ */
+bool aircraft_is_cargo(uint32_t addr)
+{
+  const TAircraftData *a;
+  a = (TAircraftData *) ght_get(AircraftDBHashTable, sizeof(addr), &addr);
+  
+  if (!a || a->Fields[AC_DB_TypeCode].IsEmpty())
+     return false;
+     
+  const char* typeCode = a->Fields[AC_DB_TypeCode].c_str();
+  
+  // F 접미사가 있는 화물기들
+  int len = strlen(typeCode);
+  if (len > 0 && typeCode[len-1] == 'F')
+    return true;
+    
+  // 화물 전용 기종들
+  if (strstr(typeCode, "B744F") || strstr(typeCode, "B763F") || strstr(typeCode, "B752F") ||
+      strstr(typeCode, "MD11F") || strstr(typeCode, "A306F") || strstr(typeCode, "A332F"))
+    return true;
+    
+  return false;
+}
+
+//---------------------------------------------------------------------------
+/**
+ * 항공기 타입코드로 비즈니스 제트인지 확인
+ */
+bool aircraft_is_business_jet(uint32_t addr)
+{
+  const TAircraftData *a;
+  a = (TAircraftData *) ght_get(AircraftDBHashTable, sizeof(addr), &addr);
+  
+  if (!a || a->Fields[AC_DB_TypeCode].IsEmpty())
+     return false;
+     
+  const char* typeCode = a->Fields[AC_DB_TypeCode].c_str();
+  
+  // Citation 시리즈 (Cessna 비즈니스 제트)
+  if (strstr(typeCode, "C25") || strstr(typeCode, "C56") || strstr(typeCode, "C68") ||
+      strstr(typeCode, "C750") || strstr(typeCode, "C55") || strstr(typeCode, "CJ") ||
+      strstr(typeCode, "CITATION"))
+    return true;
+    
+  // Gulfstream 시리즈
+  if (strstr(typeCode, "G450") || strstr(typeCode, "G550") || strstr(typeCode, "G650") ||
+      strstr(typeCode, "GLF"))
+    return true;
+    
+  // Learjet 시리즈
+  if (strstr(typeCode, "LJ") || strstr(typeCode, "LEAR"))
+    return true;
+    
+  // Falcon 시리즈
+  if (strstr(typeCode, "F900") || strstr(typeCode, "FA7X") || strstr(typeCode, "FA50"))
+    return true;
+    
+  // Embraer 비즈니스 제트
+  if (strstr(typeCode, "E55P") || strstr(typeCode, "E50P") || strstr(typeCode, "PHENOM"))
+    return true;
+    
+  // 기타 비즈니스 제트 (ICAO 항공기 타입이 L2J인 경우)
+  if (!a->Fields[AC_DB_ICAOAircraftType].IsEmpty())
+  {
+    const char* icaoType = a->Fields[AC_DB_ICAOAircraftType].c_str();
+    if (strcmp(icaoType, "L2J") == 0)
+      return true;
+  }
+    
+  return false;
+}
+
+//---------------------------------------------------------------------------
+/**
+ * 글라이더인지 확인
+ */
+bool aircraft_is_glider(uint32_t addr)
+{
+  const TAircraftData *a;
+  a = (TAircraftData *) ght_get(AircraftDBHashTable, sizeof(addr), &addr);
+  
+  if (!a)
+     return false;
+     
+  // 타입코드로 글라이더 확인
+  if (!a->Fields[AC_DB_TypeCode].IsEmpty())
+  {
+    const char* typeCode = a->Fields[AC_DB_TypeCode].c_str();
+    if (strstr(typeCode, "GLID") || strstr(typeCode, "ASK") || strstr(typeCode, "DG") ||
+        strstr(typeCode, "VENTUS") || strstr(typeCode, "DISCUS"))
+      return true;
+  }
+     
+  // ICAO 항공기 타입으로 글라이더 확인 (G로 시작하는 것들)
+  if (!a->Fields[AC_DB_ICAOAircraftType].IsEmpty())
+  {
+    const char* icaoType = a->Fields[AC_DB_ICAOAircraftType].c_str();
+    if (icaoType[0] == 'G')
+      return true;
+  }
+
+  return false;
+}
+
+//---------------------------------------------------------------------------
+/**
+ * 초경량 항공기인지 확인
+ */
+bool aircraft_is_ultralight(uint32_t addr)
+{
+  const TAircraftData *a;
+  a = (TAircraftData *) ght_get(AircraftDBHashTable, sizeof(addr), &addr);
+  
+  if (!a)
+     return false;
+     
+  // 타입코드로 초경량 항공기 확인
+  if (!a->Fields[AC_DB_TypeCode].IsEmpty())
+  {
+    const char* typeCode = a->Fields[AC_DB_TypeCode].c_str();
+    if (strstr(typeCode, "ULAC") || strstr(typeCode, "PARA") || strstr(typeCode, "BALL") ||
+        strstr(typeCode, "KITFOX") || strstr(typeCode, "QUICKSILVER") || 
+        strstr(typeCode, "CHALLENGER") || strstr(typeCode, "RANS"))
+      return true;
+  }
+     
+  // 모델명으로 초경량 항공기 확인
+  if (!a->Fields[AC_DB_Model].IsEmpty())
+  {
+    const char* model = a->Fields[AC_DB_Model].c_str();
+    if (strstr(model, "Hot Air Balloon") || strstr(model, "PEGASUS") ||
+        strstr(model, "CHASER") || strstr(model, "Impulse"))
+      return true;
+  }
+
+  return false;
+}
+
+//---------------------------------------------------------------------------
+/**
+ * 항공기의 카테고리를 반환
+ */
+AircraftCategory aircraft_get_category(uint32_t addr)
+{
+  // 헬리콥터 체크 (최우선)
+  if (aircraft_is_helicopter(addr, NULL))
+    return CATEGORY_HELICOPTER;
+    
+  // 군용기 체크
+  if (aircraft_is_military(addr, NULL))
+    return CATEGORY_MILITARY;
+    
+  // 글라이더 체크
+  if (aircraft_is_glider(addr))
+    return CATEGORY_GLIDER;
+    
+  // 초경량 항공기 체크
+  if (aircraft_is_ultralight(addr))
+    return CATEGORY_ULTRALIGHT;
+    
+  // 화물기 체크
+  if (aircraft_is_cargo(addr))
+    return CATEGORY_CARGO;
+    
+  // 비즈니스 제트 체크
+  if (aircraft_is_business_jet(addr))
+    return CATEGORY_BUSINESS_JET;
+    
+  // 상업용 항공기 체크
+  if (aircraft_is_commercial(addr))
+    return CATEGORY_COMMERCIAL;
+    
+  // 나머지는 일반 항공기
+  return CATEGORY_GENERAL_AVIATION;
+}
+
 //---------------------------------------------------------------------------

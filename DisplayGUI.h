@@ -75,6 +75,10 @@ class TForm1 : public TForm
 __published:	// IDE-managed Components
 	TMainMenu *MainMenu1;
 	TPanel *RightPanel;
+	TPageControl *RightPanelTabControl;
+	TTabSheet *AircraftInfoTab;
+	TTabSheet *ControlsFiltersTab;
+	TTabSheet *DataSourcesTab;
 	TMenuItem *File1;
 	TMenuItem *Exit1;
 	TTimer *Timer1;
@@ -95,6 +99,7 @@ __published:	// IDE-managed Components
 	TButton *Cancel;
 	TButton *RawConnectButton;
 	TLabel *Label16;
+	TLabel *Label16_MapSettings;
 	TSaveDialog *RecordRawSaveDialog;
 	TOpenDialog *PlaybackRawDialog;
 	TCheckBox *CycleImages;
@@ -187,6 +192,18 @@ __published:	// IDE-managed Components
     TTrackBar *AltitudeMaxTrackBar;
     TLabel *SpeedFilterLabel;
     TLabel *AltitudeFilterLabel;
+    // --- 항공기 카테고리 필터 UI ---
+    TPanel *AircraftCategoryPanel;
+    TLabel *AircraftCategoryLabel;
+    TCheckBox *CommercialCheckBox;
+    TCheckBox *CargoCheckBox;
+    TCheckBox *HelicopterCheckBox;
+    TCheckBox *MilitaryCheckBox;
+    TCheckBox *GeneralAviationCheckBox;
+    TCheckBox *BusinessJetCheckBox;
+    TCheckBox *GliderCheckBox;
+    TCheckBox *UltralightCheckBox;
+    void __fastcall AircraftCategoryFilterChange(TObject *Sender);
     void __fastcall SpeedFilterTrackBarChange(TObject *Sender);
     void __fastcall AltitudeFilterTrackBarChange(TObject *Sender);
 	void __fastcall ApiCallTimerTimer(TObject *Sender);
