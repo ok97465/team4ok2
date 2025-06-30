@@ -29,6 +29,14 @@ void __fastcall TEarthViewRenderThread::Execute()
             {
                 std::lock_guard<std::mutex> lock(g_glMutex);
                 FPanel->MakeOpenGLPanelCurrent();
+
+                if (Form1->DrawMap->Checked)
+                    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+                else
+                    glClearColor(0.37f, 0.37f, 0.37f, 0.0f);
+
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
                 FEarthView->Animate();
                 FEarthView->Render(Form1->DrawMap->Checked);
                 if (FTileManager)

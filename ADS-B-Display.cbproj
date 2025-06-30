@@ -453,6 +453,12 @@
             <DependentOn>TriangulatPoly.h</DependentOn>
             <BuildOrder>32</BuildOrder>
         </CppCompile>
+        <CppCompile Include="EarthViewRenderThread.cpp">
+            <BuildOrder>74</BuildOrder>
+        </CppCompile>
+        <None Include="EarthViewRenderThread.h">
+            <BuildOrder>74</BuildOrder>
+        </None>
         <FormResources Include="AreaDialog.dfm"/>
         <FormResources Include="DisplayGUI.dfm"/>
         <BuildConfiguration Include="Base">
