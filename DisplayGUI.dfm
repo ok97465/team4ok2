@@ -61,6 +61,19 @@ object Form1: TForm1
       TabOrder = 0
       object AircraftInfoTab: TTabSheet
         Caption = 'Info'
+        object PlaybackSpeedLabel: TLabel
+          Left = 8
+          Top = 464
+          Width = 92
+          Height = 13
+          Caption = 'Playback Speed:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
         object Panel5: TPanel
           Left = 3
           Top = 3
@@ -199,7 +212,7 @@ object Form1: TForm1
           Left = 3
           Top = 82
           Width = 234
-          Height = 269
+          Height = 348
           BevelInner = bvLowered
           BevelKind = bkFlat
           TabOrder = 1
@@ -284,7 +297,7 @@ object Form1: TForm1
           end
           object TrkLastUpdateTimeLabel: TLabel
             Left = 120
-            Top = 168
+            Top = 171
             Width = 72
             Height = 13
             Caption = '00:00:00:000'
@@ -297,7 +310,7 @@ object Form1: TForm1
           end
           object Label14: TLabel
             Left = 5
-            Top = 169
+            Top = 172
             Width = 109
             Height = 13
             Caption = 'LAST UPDATE TIME:'
@@ -440,7 +453,7 @@ object Form1: TForm1
           end
           object LabelAirlineName: TLabel
             Left = 5
-            Top = 182
+            Top = 193
             Width = 39
             Height = 13
             Caption = 'Airline:'
@@ -453,7 +466,7 @@ object Form1: TForm1
           end
           object AirlineNameLabel: TLabel
             Left = 65
-            Top = 181
+            Top = 192
             Width = 21
             Height = 13
             Caption = 'N/A'
@@ -466,7 +479,7 @@ object Form1: TForm1
           end
           object LabelAirlineCountry: TLabel
             Left = 5
-            Top = 194
+            Top = 214
             Width = 48
             Height = 13
             Caption = 'Country:'
@@ -479,7 +492,7 @@ object Form1: TForm1
           end
           object AirlineCountryLabel: TLabel
             Left = 65
-            Top = 195
+            Top = 215
             Width = 21
             Height = 13
             Caption = 'N/A'
@@ -492,7 +505,7 @@ object Form1: TForm1
           end
           object LabelModel: TLabel
             Left = 5
-            Top = 206
+            Top = 235
             Width = 37
             Height = 13
             Caption = 'Model:'
@@ -505,7 +518,7 @@ object Form1: TForm1
           end
           object AircraftModelLabel: TLabel
             Left = 65
-            Top = 206
+            Top = 235
             Width = 21
             Height = 13
             Caption = 'N/A'
@@ -531,7 +544,7 @@ object Form1: TForm1
           end
           object Label20: TLabel
             Left = 5
-            Top = 220
+            Top = 255
             Width = 40
             Height = 13
             Caption = 'ROUTE:'
@@ -544,11 +557,12 @@ object Form1: TForm1
           end
           object RouteInfoMemo: TMemo
             Left = 66
-            Top = 218
+            Top = 253
             Width = 150
             Height = 69
             TabStop = False
             BorderStyle = bsNone
+            Color = clWindow
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
@@ -556,7 +570,6 @@ object Form1: TForm1
             Font.Style = [fsBold]
             Lines.Strings = (
               'N/A')
-            ParentColor = True
             ParentFont = False
             ParentShowHint = False
             ReadOnly = True
@@ -566,31 +579,18 @@ object Form1: TForm1
         end
         object BigQueryCheckBox: TCheckBox
           Left = 8
-          Top = 357
+          Top = 436
           Width = 124
           Height = 17
           Caption = 'BigQuery Upload'
           TabOrder = 2
           OnClick = BigQueryCheckBoxClick
         end
-        object PlaybackSpeedLabel: TLabel
-          Left = 8
-          Top = 385
-          Width = 65
-          Height = 13
-          Caption = 'Playback Speed:'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
-        end
         object PlaybackSpeedComboBox: TComboBox
           Left = 100
-          Top = 382
+          Top = 461
           Width = 60
-          Height = 21
+          Height = 20
           Style = csDropDownList
           ItemIndex = 0
           TabOrder = 3
@@ -604,6 +604,110 @@ object Form1: TForm1
       object ControlsFiltersTab: TTabSheet
         Caption = 'Filter'
         ImageIndex = 1
+        object Label28: TLabel
+          Left = 80
+          Top = 70
+          Width = 80
+          Height = 14
+          Caption = 'Aircraft Filter'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold, fsUnderline]
+          ParentFont = False
+        end
+        object Label25: TLabel
+          Left = 24
+          Top = 91
+          Width = 36
+          Height = 13
+          Caption = 'Airline'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object Label26: TLabel
+          Left = 104
+          Top = 91
+          Width = 33
+          Height = 13
+          Caption = 'Origin'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object Label27: TLabel
+          Left = 168
+          Top = 91
+          Width = 65
+          Height = 13
+          Caption = 'Destination'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object Label15: TLabel
+          Left = 80
+          Top = 140
+          Width = 98
+          Height = 13
+          Caption = 'Areas Of Interest'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object SpeedFilterLabel: TLabel
+          Left = 5
+          Top = 365
+          Width = 126
+          Height = 13
+          Caption = 'Speed: 0 ~ 1000 knots'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object AltitudeFilterLabel: TLabel
+          Left = 5
+          Top = 425
+          Width = 120
+          Height = 13
+          Caption = 'Altitude: 0 ~ 60000 ft'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object AircraftCategoryLabel: TLabel
+          Left = 5
+          Top = 485
+          Width = 101
+          Height = 13
+          Caption = 'Aircraft Category:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
         object DrawMap: TCheckBox
           Left = 5
           Top = 10
@@ -671,58 +775,6 @@ object Form1: TForm1
           TabOrder = 4
           OnClick = PurgeButtonClick
         end
-        object Label28: TLabel
-          Left = 80
-          Top = 70
-          Width = 80
-          Height = 14
-          Caption = 'Aircraft Filter'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -12
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold, fsUnderline]
-          ParentFont = False
-        end
-        object Label25: TLabel
-          Left = 24
-          Top = 91
-          Width = 36
-          Height = 13
-          Caption = 'Airline'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
-        end
-        object Label26: TLabel
-          Left = 104
-          Top = 91
-          Width = 33
-          Height = 13
-          Caption = 'Origin'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
-        end
-        object Label27: TLabel
-          Left = 168
-          Top = 91
-          Width = 65
-          Height = 13
-          Caption = 'Destination'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
-        end
         object FilterOriginEdit: TEdit
           Left = 95
           Top = 106
@@ -746,19 +798,6 @@ object Form1: TForm1
           Height = 20
           TabOrder = 7
           OnChange = FilterDestinationEditChange
-        end
-        object Label15: TLabel
-          Left = 80
-          Top = 140
-          Width = 98
-          Height = 13
-          Caption = 'Areas Of Interest'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
         end
         object AreaListView: TListView
           Left = 5
@@ -835,29 +874,14 @@ object Form1: TForm1
           TabOrder = 13
           OnClick = FilterPolygonOnlyCheckBoxClick
         end
-        object SpeedFilterLabel: TLabel
-          Left = 5
-          Top = 365
-          Width = 200
-          Height = 20
-          Caption = 'Speed: 0 ~ 1000 knots'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
-        end
         object SpeedMinTrackBar: TTrackBar
           Left = 5
           Top = 385
           Width = 110
           Height = 30
-          Min = 0
           Max = 1000
           Frequency = 50
-          Position = 0
-          TabOrder = 15
+          TabOrder = 14
           OnChange = SpeedFilterTrackBarChange
         end
         object SpeedMaxTrackBar: TTrackBar
@@ -865,36 +889,20 @@ object Form1: TForm1
           Top = 385
           Width = 110
           Height = 30
-          Min = 0
           Max = 1000
           Frequency = 50
           Position = 1000
-          TabOrder = 16
+          TabOrder = 15
           OnChange = SpeedFilterTrackBarChange
-        end
-        object AltitudeFilterLabel: TLabel
-          Left = 5
-          Top = 425
-          Width = 200
-          Height = 20
-          Caption = 'Altitude: 0 ~ 60000 ft'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
         end
         object AltitudeMinTrackBar: TTrackBar
           Left = 5
           Top = 445
           Width = 110
           Height = 30
-          Min = 0
           Max = 60000
           Frequency = 2000
-          Position = 0
-          TabOrder = 17
+          TabOrder = 16
           OnChange = AltitudeFilterTrackBarChange
         end
         object AltitudeMaxTrackBar: TTrackBar
@@ -902,25 +910,11 @@ object Form1: TForm1
           Top = 445
           Width = 110
           Height = 30
-          Min = 0
           Max = 60000
           Frequency = 2000
           Position = 60000
-          TabOrder = 18
+          TabOrder = 17
           OnChange = AltitudeFilterTrackBarChange
-        end
-        object AircraftCategoryLabel: TLabel
-          Left = 5
-          Top = 485
-          Width = 120
-          Height = 20
-          Caption = 'Aircraft Category:'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
         end
         object CommercialCheckBox: TCheckBox
           Left = 5
@@ -930,7 +924,7 @@ object Form1: TForm1
           Caption = 'Commercial'
           Checked = True
           State = cbChecked
-          TabOrder = 19
+          TabOrder = 18
           OnClick = AircraftCategoryFilterChange
         end
         object CargoCheckBox: TCheckBox
@@ -941,7 +935,7 @@ object Form1: TForm1
           Caption = 'Cargo'
           Checked = True
           State = cbChecked
-          TabOrder = 20
+          TabOrder = 19
           OnClick = AircraftCategoryFilterChange
         end
         object HelicopterCheckBox: TCheckBox
@@ -952,7 +946,7 @@ object Form1: TForm1
           Caption = 'Helicopter'
           Checked = True
           State = cbChecked
-          TabOrder = 21
+          TabOrder = 20
           OnClick = AircraftCategoryFilterChange
         end
         object MilitaryCheckBox: TCheckBox
@@ -963,7 +957,7 @@ object Form1: TForm1
           Caption = 'Military'
           Checked = True
           State = cbChecked
-          TabOrder = 22
+          TabOrder = 21
           OnClick = AircraftCategoryFilterChange
         end
         object GeneralAviationCheckBox: TCheckBox
@@ -974,7 +968,7 @@ object Form1: TForm1
           Caption = 'General Aviation'
           Checked = True
           State = cbChecked
-          TabOrder = 23
+          TabOrder = 22
           OnClick = AircraftCategoryFilterChange
         end
         object BusinessJetCheckBox: TCheckBox
@@ -985,7 +979,7 @@ object Form1: TForm1
           Caption = 'Business Jet'
           Checked = True
           State = cbChecked
-          TabOrder = 24
+          TabOrder = 23
           OnClick = AircraftCategoryFilterChange
         end
         object GliderCheckBox: TCheckBox
@@ -1007,13 +1001,26 @@ object Form1: TForm1
           Caption = 'Ultralight'
           Checked = True
           State = cbChecked
-          TabOrder = 26
+          TabOrder = 24
           OnClick = AircraftCategoryFilterChange
         end
       end
       object DataSourcesTab: TTabSheet
         Caption = 'Data source'
         ImageIndex = 2
+        object Label16_MapSettings: TLabel
+          Left = 5
+          Top = 246
+          Width = 74
+          Height = 13
+          Caption = 'Map Settings'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
         object RawConnectButton: TButton
           Left = 5
           Top = 10
@@ -1188,7 +1195,7 @@ object Form1: TForm1
           Width = 100
           Height = 20
           Style = csDropDownList
-          TabOrder = 10
+          TabOrder = 9
           OnChange = MapComboBoxChange
           Items.Strings = (
             'Google Maps'
@@ -1196,19 +1203,6 @@ object Form1: TForm1
             'IFS Low'
             'IFS High'
             'OpenStreetMap')
-        end
-        object Label16_MapSettings: TLabel
-          Left = 5
-          Top = 246
-          Width = 55
-          Height = 13
-          Caption = 'Map Settings'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
         end
       end
     end
@@ -1336,6 +1330,7 @@ object Form1: TForm1
     OnInit = ObjectDisplayInit
     OnResize = ObjectDisplayResize
     OnPaint = ObjectDisplayPaint
+    ExplicitLeft = -1
     object ConflictListView: TListView
       Left = 0
       Top = 940
@@ -1367,7 +1362,7 @@ object Form1: TForm1
           Width = 80
         end>
       GridLines = True
-      TabOrder = 14
+      TabOrder = 0
       ViewStyle = vsReport
     end
   end
