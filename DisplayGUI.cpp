@@ -11,6 +11,7 @@
 #include <fileapi.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <gl/glext.h>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -76,14 +77,48 @@ static std::thread *g_MapThread = nullptr;
 static std::atomic<bool> g_MapThreadRunning(false);
 static std::atomic<bool> g_MapReady(false);
 static std::mutex g_MapMutex;
+static bool g_FBOLoaded = false;
+static PFNGLGENFRAMEBUFFERSPROC pglGenFramebuffers = nullptr;
+static PFNGLDELETEFRAMEBUFFERSPROC pglDeleteFramebuffers = nullptr;
+static PFNGLBINDFRAMEBUFFERPROC pglBindFramebuffer = nullptr;
+static PFNGLFRAMEBUFFERTEXTURE2DPROC pglFramebufferTexture2D = nullptr;
+static void *GetAnyGLFuncAddress(const char *name);
+static void LoadFBOExtensions();
 static void MapRenderThreadFunc();
 static void StartMapThread();
 static void StopMapThread();
- //---------------------------------------------------------------------------
- static void RunPythonScript(AnsiString scriptPath,AnsiString args);
- static bool DeleteFilesWithExtension(AnsiString dirPath, AnsiString extension);
- static int FinshARTCCBoundary(void);
- //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+static void *GetAnyGLFuncAddress(const char *name)
+{
+#ifdef _WIN32
+    void *p = (void*)wglGetProcAddress(name);
+    if(!p)
+    {
+        static HMODULE ogl = GetModuleHandleA("opengl32.dll");
+        if(ogl) p = (void*)GetProcAddress(ogl, name);
+    }
+    return p;
+#else
+    return (void*)glXGetProcAddressARB((const GLubyte*)name);
+#endif
+}
+
+static void LoadFBOExtensions()
+{
+    if(g_FBOLoaded) return;
+#define LOAD_PROC(type, name) name = (type)GetAnyGLFuncAddress(#name);
+    LOAD_PROC(PFNGLGENFRAMEBUFFERSPROC, pglGenFramebuffers);
+    LOAD_PROC(PFNGLDELETEFRAMEBUFFERSPROC, pglDeleteFramebuffers);
+    LOAD_PROC(PFNGLBINDFRAMEBUFFERPROC, pglBindFramebuffer);
+    LOAD_PROC(PFNGLFRAMEBUFFERTEXTURE2DPROC, pglFramebufferTexture2D);
+#undef LOAD_PROC
+    g_FBOLoaded = true;
+}
+
+static void RunPythonScript(AnsiString scriptPath,AnsiString args);
+static bool DeleteFilesWithExtension(AnsiString dirPath, AnsiString extension);
+static int FinshARTCCBoundary(void);
+//---------------------------------------------------------------------------
 
 static char *stristr(const char *String, const char *Pattern);
 static const char * strnistr(const char * pszSource, DWORD dwLength, const char * pszFind) ;
@@ -491,7 +526,7 @@ __fastcall TForm1::~TForm1()
   AssessmentTimer->Enabled=false;
   StopMapThread();
   if (g_MapFBO) {
-    glDeleteFramebuffers(1, &g_MapFBO);
+    pglDeleteFramebuffers(1, &g_MapFBO);
     g_MapFBO = 0;
   }
   if (g_MapTexture) {
@@ -2051,7 +2086,7 @@ void __fastcall TForm1::LoadMap(int Type)
     if (g_MapTexture)
         glDeleteTextures(1, &g_MapTexture);
     if (g_MapFBO)
-        glDeleteFramebuffers(1, &g_MapFBO);
+        pglDeleteFramebuffers(1, &g_MapFBO);
 
     glGenTextures(1, &g_MapTexture);
     glBindTexture(GL_TEXTURE_2D, g_MapTexture);
@@ -2060,10 +2095,11 @@ void __fastcall TForm1::LoadMap(int Type)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glGenFramebuffers(1, &g_MapFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, g_MapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_MapTexture, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    LoadFBOExtensions();
+    pglGenFramebuffers(1, &g_MapFBO);
+    pglBindFramebuffer(GL_FRAMEBUFFER, g_MapFBO);
+    pglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_MapTexture, 0);
+    pglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     StartMapThread();
 }
@@ -2078,7 +2114,7 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
   Timer2->Enabled = false;
 
   StopMapThread();
-  if (g_MapFBO) { glDeleteFramebuffers(1, &g_MapFBO); g_MapFBO = 0; }
+  if (g_MapFBO) { pglDeleteFramebuffers(1, &g_MapFBO); g_MapFBO = 0; }
   if (g_MapTexture) { glDeleteTextures(1, &g_MapTexture); g_MapTexture = 0; }
 
   // 해제 순서: 생성의 역순
@@ -2257,14 +2293,14 @@ static void MapRenderThreadFunc() {
     while (g_MapThreadRunning) {
         {
             std::lock_guard<std::mutex> lock(g_MapMutex);
-            if (g_EarthView) {
-                glBindFramebuffer(GL_FRAMEBUFFER, g_MapFBO);
+            if (Form1->g_EarthView) {
+                pglBindFramebuffer(GL_FRAMEBUFFER, g_MapFBO);
                 glViewport(0,0,Form1->ObjectDisplay->Width, Form1->ObjectDisplay->Height);
                 glClearColor(0.0f,0.0f,0.0f,0.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                g_EarthView->Animate();
-                g_EarthView->Render(Form1->DrawMap->Checked);
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                Form1->g_EarthView->Animate();
+                Form1->g_EarthView->Render(Form1->DrawMap->Checked);
+                pglBindFramebuffer(GL_FRAMEBUFFER, 0);
                 g_MapReady = true;
         }
         }

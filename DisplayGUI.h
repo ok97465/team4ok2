@@ -38,9 +38,6 @@
 #include "AircraftInfo.h"
 #include "ButtonScroller.h"
 #include "ProximityAssessor.h"
-#include <thread>
-#include <atomic>
-#include <mutex>
 #include <Windows.h>
 typedef float T_GL_Color[4];
 
@@ -311,10 +308,6 @@ public:		// User declarations
 	MasterLayer	      	      *g_MasterLayer;
 	TileManager		          *g_GETileManager;
 	EarthView		          *g_EarthView;
-        std::thread                   *g_MapThread;
-        std::atomic<bool>             g_MapThreadRunning;
-        std::atomic<bool>             g_MapReady;
-        std::mutex                    g_MapMutex;
 	double                     MapCenterLat,MapCenterLon;
 	int			               g_MouseLeftDownX;
 	int			               g_MouseLeftDownY;
