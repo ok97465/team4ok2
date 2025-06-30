@@ -39,6 +39,7 @@
 #include "ButtonScroller.h"
 #include "ProximityAssessor.h"
 #include <Windows.h>
+class TEarthViewRenderThread;
 typedef float T_GL_Color[4];
 
 
@@ -341,6 +342,8 @@ public:		// User declarations
 
 		 // 마지막 드래그 리페인트 시각(ms)
         DWORD m_lastDragRepaintTime;
+
+        TEarthViewRenderThread* FEarthViewThread;
 
         // --- Playback Speed UI 함수 선언 추가 ---
     void SetupPlaybackSpeedUI();

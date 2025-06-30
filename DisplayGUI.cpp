@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <cctype>
 #include <Sysutils.hpp>
+#include <mutex>
 
 #pragma hdrstop
 
@@ -37,6 +38,8 @@
 #include "hex_font.h"
 #include "AircraftApi.h"
 #include "AircraftApiThread.h"
+#include "EarthViewRenderThread.h"
+extern std::mutex g_glMutex;
 #include "ntds2d.h"
 #include "LogHandler.h"
 
@@ -390,6 +393,8 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   AreaTemp=NULL;
   Areas= new TList;
 
+  FEarthViewThread = nullptr;
+
  MouseDown=false;
 
  // 드래그 리페인트 시간 초기화
@@ -403,9 +408,11 @@ __fastcall TForm1::TForm1(TComponent* Owner)
  //MapComboBox->ItemIndex=SkyVector_VFR;
  //MapComboBox->ItemIndex=SkyVector_IFR_Low;
  //MapComboBox->ItemIndex=SkyVector_IFR_High;
- LoadMap(MapComboBox->ItemIndex);
+  LoadMap(MapComboBox->ItemIndex);
 
- g_EarthView->m_Eye.h /= pow(1.3,18);//pow(1.3,43);
+  FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay);
+
+  g_EarthView->m_Eye.h /= pow(1.3,18);//pow(1.3,43);
  SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
  TimeToGoTrackBar->Position=120;
  BigQueryCSV=NULL;
@@ -473,6 +480,12 @@ void __fastcall TForm1::ApiCallTimerTimer(TObject *Sender)
 //---------------------------------------------------------------------------
 __fastcall TForm1::~TForm1()
 {
+ if (FEarthViewThread) {
+   FEarthViewThread->Terminate();
+   FEarthViewThread->WaitFor();
+   delete FEarthViewThread;
+   FEarthViewThread = nullptr;
+ }
  Timer1->Enabled=false;
  Timer2->Enabled=false;
  AssessmentTimer->Enabled=false;
@@ -505,11 +518,12 @@ void __fastcall TForm1::SetMapCenter(double &x, double &y)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 {
-	glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glEnable (GL_LINE_STIPPLE);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        std::lock_guard<std::mutex> lock(g_glMutex);
+        glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glEnable (GL_LINE_STIPPLE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     NumSpriteImages = MakeAirplaneImages();
     MakeAirportImages();
@@ -543,31 +557,20 @@ void __fastcall TForm1::ObjectDisplayResize(TObject *Sender)
 {
 	 double Value;
 	//ObjectDisplay->Width=ObjectDisplay->Height;
-	glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glEnable (GL_LINE_STIPPLE);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	if(g_EarthView)
-		g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+        std::lock_guard<std::mutex> lock(g_glMutex);
+        glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glEnable (GL_LINE_STIPPLE);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        if(g_EarthView)
+                g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 {
-
- if (DrawMap->Checked)glClearColor(0.0,0.0,0.0,0.0);
- else	glClearColor(BG_INTENSITY,BG_INTENSITY,BG_INTENSITY,0.0);
-
- glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
- if (g_EarthView)
- {
-	g_EarthView->Animate();
-	g_EarthView->Render(DrawMap->Checked);
- }
- if( g_GETileManager)
-  g_GETileManager->Cleanup();
+  std::lock_guard<std::mutex> lock(g_glMutex);
  Mw1 = Map_w[1].x-Map_w[0].x;
  Mw2 = Map_v[1].x-Map_v[0].x;
  Mh1 = Map_w[1].y-Map_w[0].y;
@@ -2012,9 +2015,16 @@ void __fastcall TForm1::LoadMap(int Type)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
 {
-  double    m_Eyeh = g_EarthView ? g_EarthView->m_Eye.h : 0.0;
-  double    m_Eyex = g_EarthView ? g_EarthView->m_Eye.x : 0.0;
-  double    m_Eyey = g_EarthView ? g_EarthView->m_Eye.y : 0.0;
+    double    m_Eyeh = g_EarthView ? g_EarthView->m_Eye.h : 0.0;
+    double    m_Eyex = g_EarthView ? g_EarthView->m_Eye.x : 0.0;
+    double    m_Eyey = g_EarthView ? g_EarthView->m_Eye.y : 0.0;
+
+    if (FEarthViewThread) {
+        FEarthViewThread->Terminate();
+        FEarthViewThread->WaitFor();
+        delete FEarthViewThread;
+        FEarthViewThread = nullptr;
+    }
 
   Timer1->Enabled = false;
   Timer2->Enabled = false;
@@ -2048,13 +2058,15 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
   if (MapComboBox->ItemIndex == 0)      LoadMap(GoogleMaps);
   else if (MapComboBox->ItemIndex == 1) LoadMap(SkyVector_VFR);
   else if (MapComboBox->ItemIndex == 2) LoadMap(SkyVector_IFR_Low);
-  else if (MapComboBox->ItemIndex == 3) LoadMap(SkyVector_IFR_High);
-  else if (MapComboBox->ItemIndex == 4) LoadMap(OpenStreetMap);
+    else if (MapComboBox->ItemIndex == 3) LoadMap(SkyVector_IFR_High);
+    else if (MapComboBox->ItemIndex == 4) LoadMap(OpenStreetMap);
 
-  if (g_EarthView) {
-	g_EarthView->m_Eye.h = m_Eyeh;
-	g_EarthView->m_Eye.x = m_Eyex;
-	g_EarthView->m_Eye.y = m_Eyey;
+    FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay);
+
+    if (g_EarthView) {
+        g_EarthView->m_Eye.h = m_Eyeh;
+        g_EarthView->m_Eye.x = m_Eyex;
+        g_EarthView->m_Eye.y = m_Eyey;
   }
   Timer1->Enabled = true;
   Timer2->Enabled = true;
