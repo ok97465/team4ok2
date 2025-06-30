@@ -48,5 +48,25 @@ bool aircraft_is_helicopter(uint32_t addr, const char **type_ptr);
 const char *aircraft_get_military(uint32_t addr);
 bool aircraft_is_military(uint32_t addr, const char **country);
 
+// 항공기 카테고리 분류 함수들
+enum AircraftCategory {
+    CATEGORY_COMMERCIAL = 0,      // 대형 상업용 항공기 (B737, A320 등)
+    CATEGORY_CARGO = 1,           // 화물기
+    CATEGORY_HELICOPTER = 2,      // 헬리콥터
+    CATEGORY_MILITARY = 3,        // 군용기
+    CATEGORY_BUSINESS_JET = 4,    // 비즈니스 제트
+    CATEGORY_GENERAL_AVIATION = 5, // 일반 항공기 (소형 개인용)
+    CATEGORY_GLIDER = 6,          // 글라이더
+    CATEGORY_ULTRALIGHT = 7,      // 초경량 항공기
+    CATEGORY_UNKNOWN = 8
+};
+
+AircraftCategory aircraft_get_category(uint32_t addr);
+bool aircraft_is_commercial(uint32_t addr);
+bool aircraft_is_cargo(uint32_t addr);
+bool aircraft_is_business_jet(uint32_t addr);
+bool aircraft_is_glider(uint32_t addr);
+bool aircraft_is_ultralight(uint32_t addr);
+
 //---------------------------------------------------------------------------
 #endif

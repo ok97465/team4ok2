@@ -922,6 +922,43 @@ void __fastcall TForm1::DrawObjects(void)
                 }
             }
 
+            // 항공기 카테고리 필터 적용
+            AircraftCategory category = aircraft_get_category(Data->ICAO);
+            bool showAircraft = false;
+            
+            switch(category) {
+                case CATEGORY_COMMERCIAL:
+                    showAircraft = CommercialCheckBox->Checked;
+                    break;
+                case CATEGORY_CARGO:
+                    showAircraft = CargoCheckBox->Checked;
+                    break;
+                case CATEGORY_HELICOPTER:
+                    showAircraft = HelicopterCheckBox->Checked;
+                    break;
+                case CATEGORY_MILITARY:
+                    showAircraft = MilitaryCheckBox->Checked;
+                    break;
+                case CATEGORY_BUSINESS_JET:
+                    showAircraft = BusinessJetCheckBox->Checked;
+                    break;
+                case CATEGORY_GLIDER:
+                    showAircraft = GliderCheckBox->Checked;
+                    break;
+                case CATEGORY_ULTRALIGHT:
+                    showAircraft = UltralightCheckBox->Checked;
+                    break;
+                case CATEGORY_GENERAL_AVIATION:
+                case CATEGORY_UNKNOWN:
+                default:
+                    showAircraft = GeneralAviationCheckBox->Checked;
+                    break;
+            }
+            
+            if (!showAircraft) {
+                continue;
+            }
+
             ViewableAircraft++;
 
            LatLon2XY(Data->Latitude,Data->Longitude, ScrX, ScrY);
@@ -2818,6 +2855,12 @@ void __fastcall TForm1::AltitudeFilterTrackBarChange(TObject *Sender)
     AltitudeFilterLabel->Caption = "Altitude: " + IntToStr(minAlt) + " ~ " + IntToStr(maxAlt) + " ft";
     
     // 화면 다시 그리기 (필터 적용)
+    ObjectDisplay->Repaint();
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::AircraftCategoryFilterChange(TObject *Sender)
+{
+    // 항공기 카테고리 필터 변경 시 화면 다시 그리기
     ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------

@@ -188,6 +188,18 @@ __published:	// IDE-managed Components
     TTrackBar *AltitudeMaxTrackBar;
     TLabel *SpeedFilterLabel;
     TLabel *AltitudeFilterLabel;
+    // --- 항공기 카테고리 필터 UI ---
+    TPanel *AircraftCategoryPanel;
+    TLabel *AircraftCategoryLabel;
+    TCheckBox *CommercialCheckBox;
+    TCheckBox *CargoCheckBox;
+    TCheckBox *HelicopterCheckBox;
+    TCheckBox *MilitaryCheckBox;
+    TCheckBox *GeneralAviationCheckBox;
+    TCheckBox *BusinessJetCheckBox;
+    TCheckBox *GliderCheckBox;
+    TCheckBox *UltralightCheckBox;
+    void __fastcall AircraftCategoryFilterChange(TObject *Sender);
     void __fastcall SpeedFilterTrackBarChange(TObject *Sender);
     void __fastcall AltitudeFilterTrackBarChange(TObject *Sender);
 	void __fastcall ApiCallTimerTimer(TObject *Sender);

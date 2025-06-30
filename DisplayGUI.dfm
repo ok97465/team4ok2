@@ -1206,11 +1206,122 @@ object Form1: TForm1
       Font.Style = [fsBold]
       ParentFont = False
     end
+    object AircraftCategoryPanel: TPanel
+      Left = 10
+      Top = 85
+      Width = 460
+      Height = 80
+      BevelOuter = bvRaised
+      Color = clWhite
+      ParentBackground = False
+      TabOrder = 5
+    end
+    object AircraftCategoryLabel: TLabel
+      Left = 20
+      Top = 90
+      Width = 120
+      Height = 20
+      Caption = 'Aircraft Category:'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object CommercialCheckBox: TCheckBox
+      Left = 20
+      Top = 115
+      Width = 80
+      Height = 17
+      Caption = 'Commercial'
+      Checked = True
+      State = cbChecked
+      TabOrder = 6
+      OnClick = AircraftCategoryFilterChange
+    end
+    object CargoCheckBox: TCheckBox
+      Left = 110
+      Top = 115
+      Width = 60
+      Height = 17
+      Caption = 'Cargo'
+      Checked = True
+      State = cbChecked
+      TabOrder = 7
+      OnClick = AircraftCategoryFilterChange
+    end
+    object HelicopterCheckBox: TCheckBox
+      Left = 180
+      Top = 115
+      Width = 80
+      Height = 17
+      Caption = 'Helicopter'
+      Checked = True
+      State = cbChecked
+      TabOrder = 8
+      OnClick = AircraftCategoryFilterChange
+    end
+    object MilitaryCheckBox: TCheckBox
+      Left = 270
+      Top = 115
+      Width = 60
+      Height = 17
+      Caption = 'Military'
+      Checked = True
+      State = cbChecked
+      TabOrder = 9
+      OnClick = AircraftCategoryFilterChange
+    end
+    object GeneralAviationCheckBox: TCheckBox
+      Left = 340
+      Top = 115
+      Width = 100
+      Height = 17
+      Caption = 'General Aviation'
+      Checked = True
+      State = cbChecked
+      TabOrder = 10
+      OnClick = AircraftCategoryFilterChange
+    end
+    object BusinessJetCheckBox: TCheckBox
+      Left = 20
+      Top = 140
+      Width = 80
+      Height = 17
+      Caption = 'Business Jet'
+      Checked = True
+      State = cbChecked
+      TabOrder = 11
+      OnClick = AircraftCategoryFilterChange
+    end
+    object GliderCheckBox: TCheckBox
+      Left = 110
+      Top = 140
+      Width = 60
+      Height = 17
+      Caption = 'Glider'
+      Checked = True
+      State = cbChecked
+      TabOrder = 12
+      OnClick = AircraftCategoryFilterChange
+    end
+    object UltralightCheckBox: TCheckBox
+      Left = 180
+      Top = 140
+      Width = 80
+      Height = 17
+      Caption = 'Ultralight'
+      Checked = True
+      State = cbChecked
+      TabOrder = 13
+      OnClick = AircraftCategoryFilterChange
+    end
     object ConflictListView: TListView
       Left = 0
-      Top = 890
+      Top = 940
       Width = 423
-      Height = 150
+      Height = 100
       Columns = <
         item
           Caption = 'Aircraft 1'
@@ -1237,7 +1348,7 @@ object Form1: TForm1
           Width = 80
         end>
       GridLines = True
-      TabOrder = 5
+      TabOrder = 14
       ViewStyle = vsReport
     end
   end
