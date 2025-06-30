@@ -19,10 +19,6 @@
 #include <Vcl.ComCtrls.hpp> // For TTrackBar
 #include <unordered_map>
 #include <cctype>
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <chrono>
 #include <Sysutils.hpp>
 
 #pragma hdrstop
@@ -73,10 +69,7 @@
 TForm1 *Form1;
 static unsigned int g_MapTexture = 0;
 static unsigned int g_MapFBO = 0;
-static std::thread *g_MapThread = nullptr;
-static std::atomic<bool> g_MapThreadRunning(false);
-static std::atomic<bool> g_MapReady(false);
-static std::mutex g_MapMutex;
+static bool g_MapDirty = true;
 static bool g_FBOLoaded = false;
 static PFNGLGENFRAMEBUFFERSPROC pglGenFramebuffers = nullptr;
 static PFNGLDELETEFRAMEBUFFERSPROC pglDeleteFramebuffers = nullptr;
@@ -84,41 +77,13 @@ static PFNGLBINDFRAMEBUFFERPROC pglBindFramebuffer = nullptr;
 static PFNGLFRAMEBUFFERTEXTURE2DPROC pglFramebufferTexture2D = nullptr;
 static void *GetAnyGLFuncAddress(const char *name);
 static void LoadFBOExtensions();
-static void MapRenderThreadFunc();
-static void StartMapThread();
-static void StopMapThread();
-//---------------------------------------------------------------------------
-static void *GetAnyGLFuncAddress(const char *name)
-{
-#ifdef _WIN32
-    void *p = (void*)wglGetProcAddress(name);
-    if(!p)
-    {
-        static HMODULE ogl = GetModuleHandleA("opengl32.dll");
-        if(ogl) p = (void*)GetProcAddress(ogl, name);
-    }
-    return p;
-#else
-    return (void*)glXGetProcAddressARB((const GLubyte*)name);
-#endif
-}
-
-static void LoadFBOExtensions()
-{
-    if(g_FBOLoaded) return;
-#define LOAD_PROC(type, name) name = (type)GetAnyGLFuncAddress(#name);
-    LOAD_PROC(PFNGLGENFRAMEBUFFERSPROC, pglGenFramebuffers);
-    LOAD_PROC(PFNGLDELETEFRAMEBUFFERSPROC, pglDeleteFramebuffers);
-    LOAD_PROC(PFNGLBINDFRAMEBUFFERPROC, pglBindFramebuffer);
-    LOAD_PROC(PFNGLFRAMEBUFFERTEXTURE2DPROC, pglFramebufferTexture2D);
-#undef LOAD_PROC
-    g_FBOLoaded = true;
-}
-
-static void RunPythonScript(AnsiString scriptPath,AnsiString args);
-static bool DeleteFilesWithExtension(AnsiString dirPath, AnsiString extension);
-static int FinshARTCCBoundary(void);
-//---------------------------------------------------------------------------
+static void SetupMapCache(int width, int height);
+static void InvalidateMap();
+ //---------------------------------------------------------------------------
+ static void RunPythonScript(AnsiString scriptPath,AnsiString args);
+ static bool DeleteFilesWithExtension(AnsiString dirPath, AnsiString extension);
+ static int FinshARTCCBoundary(void);
+ //---------------------------------------------------------------------------
 
 static char *stristr(const char *String, const char *Pattern);
 static const char * strnistr(const char * pszSource, DWORD dwLength, const char * pszFind) ;
@@ -523,17 +488,16 @@ __fastcall TForm1::~TForm1()
 {
  Timer1->Enabled=false;
  Timer2->Enabled=false;
-  AssessmentTimer->Enabled=false;
-  StopMapThread();
-  if (g_MapFBO) {
+ AssessmentTimer->Enabled=false;
+ if (g_MapFBO) {
     pglDeleteFramebuffers(1, &g_MapFBO);
     g_MapFBO = 0;
-  }
-  if (g_MapTexture) {
+ }
+ if (g_MapTexture) {
     glDeleteTextures(1, &g_MapTexture);
     g_MapTexture = 0;
-  }
-  delete g_EarthView;
+ }
+ delete g_EarthView;
  if (g_GETileManager) delete g_GETileManager;
  delete g_MasterLayer;
  delete g_Storage;
@@ -577,17 +541,12 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 	MakeTrackHook();
 	InitAirplaneInstancing();
 	InitAirplaneLinesInstancing();
-	InitHexTextInstancing();
+        InitHexTextInstancing();
         if(g_EarthView)
                 g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
-
-        if (g_MapTexture) {
-                glBindTexture(GL_TEXTURE_2D, g_MapTexture);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ObjectDisplay->Width, ObjectDisplay->Height, 0,
-                             GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        }
-	glPushAttrib (GL_LINE_BIT);
-	glPopAttrib ();
+        SetupMapCache(ObjectDisplay->Width, ObjectDisplay->Height);
+        glPushAttrib (GL_LINE_BIT);
+        glPopAttrib ();
     LOG_INFO_F(LogHandler::CAT_GENERAL, "OpenGL Version: %s", glGetString(GL_VERSION));
 	 // API 로딩 비동기 호출
     new TLoadApiDataThread();
@@ -611,9 +570,10 @@ void __fastcall TForm1::ObjectDisplayResize(TObject *Sender)
 	glEnable(GL_BLEND);
 	glEnable (GL_LINE_STIPPLE);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	if(g_EarthView)
-		g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        if(g_EarthView)
+                g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+        SetupMapCache(ObjectDisplay->Width, ObjectDisplay->Height);
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
@@ -624,7 +584,18 @@ void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 
  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
- if (DrawMap->Checked && g_MapReady) {
+ if (DrawMap->Checked && g_EarthView) {
+        if (!g_MapTexture || !g_MapFBO)
+                SetupMapCache(ObjectDisplay->Width, ObjectDisplay->Height);
+        if (g_MapDirty) {
+                pglBindFramebuffer(GL_FRAMEBUFFER, g_MapFBO);
+                glViewport(0,0,ObjectDisplay->Width,ObjectDisplay->Height);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                g_EarthView->Animate();
+                g_EarthView->Render(true);
+                pglBindFramebuffer(GL_FRAMEBUFFER, 0);
+                g_MapDirty = false;
+        }
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, g_MapTexture);
         glBegin(GL_QUADS);
@@ -635,7 +606,6 @@ void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
         glEnd();
         glDisable(GL_TEXTURE_2D);
  } else if (g_EarthView) {
-        std::lock_guard<std::mutex> lock(g_MapMutex);
         g_EarthView->Animate();
         g_EarthView->Render(DrawMap->Checked);
  }
@@ -1350,8 +1320,10 @@ void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
 	 g_MouseLeftDownX = X;
 	 g_MouseLeftDownY = Y;
 	 g_MouseDownMask |= LEFT_MOUSE_DOWN ;
-	 if(g_EarthView)
-	 	g_EarthView->StartDrag(X, Y, NAV_DRAG_PAN);
+         if(g_EarthView) {
+                g_EarthView->StartDrag(X, Y, NAV_DRAG_PAN);
+                InvalidateMap();
+         }
 	}
   }
  else if (Button==mbRight)
@@ -1443,8 +1415,10 @@ void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
 
   if (g_MouseDownMask & LEFT_MOUSE_DOWN)
   {
-    if(g_EarthView)
-		g_EarthView->Drag(g_MouseLeftDownX, g_MouseLeftDownY, X,Y, NAV_DRAG_PAN);
+    if(g_EarthView) {
+                g_EarthView->Drag(g_MouseLeftDownX, g_MouseLeftDownY, X,Y, NAV_DRAG_PAN);
+                InvalidateMap();
+    }
    DWORD now = GetTickCount();
     if (now - m_lastDragRepaintTime >= 60) {
       ObjectDisplay->Repaint();
@@ -1457,7 +1431,8 @@ void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
 void __fastcall TForm1::ResetXYOffset(void)
 {
  if(g_EarthView)
- 	SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
+        SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
+ InvalidateMap();
  ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
@@ -1583,7 +1558,8 @@ int __fastcall TForm1::XY2LatLon2(int x, int y,double &lat,double &lon )
 void __fastcall TForm1::ZoomInClick(TObject *Sender)
 {
   if(g_EarthView)
-  	g_EarthView->SingleMovement(NAV_ZOOM_IN);
+        g_EarthView->SingleMovement(NAV_ZOOM_IN);
+  InvalidateMap();
   ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
@@ -1591,7 +1567,8 @@ void __fastcall TForm1::ZoomInClick(TObject *Sender)
 void __fastcall TForm1::ZoomOutClick(TObject *Sender)
 {
  if(g_EarthView)
-	g_EarthView->SingleMovement(NAV_ZOOM_OUT);
+        g_EarthView->SingleMovement(NAV_ZOOM_OUT);
+ InvalidateMap();
 
  ObjectDisplay->Repaint();
 }
@@ -1822,12 +1799,13 @@ void __fastcall TForm1::DeleteAllAreas(void)
 void __fastcall TForm1::FormMouseWheel(TObject *Sender, TShiftState Shift,
 	  int WheelDelta, TPoint &MousePos, bool &Handled)
 {
- if(g_EarthView){
-	if (WheelDelta>0)
-	  g_EarthView->SingleMovement(NAV_ZOOM_IN);
- 	else g_EarthView->SingleMovement(NAV_ZOOM_OUT);
-  	  ObjectDisplay->Repaint();
- }
+if(g_EarthView){
+        if (WheelDelta>0)
+          g_EarthView->SingleMovement(NAV_ZOOM_IN);
+        else g_EarthView->SingleMovement(NAV_ZOOM_OUT);
+        InvalidateMap();
+        ObjectDisplay->Repaint();
+}
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -2081,27 +2059,8 @@ void __fastcall TForm1::LoadMap(int Type)
     g_MasterLayer = new GoogleLayer(g_GETileManager);
     g_EarthView = new FlatEarthView(g_MasterLayer);
     g_EarthView->Resize(ObjectDisplay->Width, ObjectDisplay->Height);
-
-    // initialize FBO and texture for asynchronous map rendering
-    if (g_MapTexture)
-        glDeleteTextures(1, &g_MapTexture);
-    if (g_MapFBO)
-        pglDeleteFramebuffers(1, &g_MapFBO);
-
-    glGenTextures(1, &g_MapTexture);
-    glBindTexture(GL_TEXTURE_2D, g_MapTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ObjectDisplay->Width, ObjectDisplay->Height, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    LoadFBOExtensions();
-    pglGenFramebuffers(1, &g_MapFBO);
-    pglBindFramebuffer(GL_FRAMEBUFFER, g_MapFBO);
-    pglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_MapTexture, 0);
-    pglBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    StartMapThread();
+    SetupMapCache(ObjectDisplay->Width, ObjectDisplay->Height);
+    InvalidateMap();
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
@@ -2113,7 +2072,6 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
   Timer1->Enabled = false;
   Timer2->Enabled = false;
 
-  StopMapThread();
   if (g_MapFBO) { pglDeleteFramebuffers(1, &g_MapFBO); g_MapFBO = 0; }
   if (g_MapTexture) { glDeleteTextures(1, &g_MapTexture); g_MapTexture = 0; }
 
@@ -2150,9 +2108,11 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
   else if (MapComboBox->ItemIndex == 4) LoadMap(OpenStreetMap);
 
   if (g_EarthView) {
-	g_EarthView->m_Eye.h = m_Eyeh;
-	g_EarthView->m_Eye.x = m_Eyex;
-	g_EarthView->m_Eye.y = m_Eyey;
+        g_EarthView->m_Eye.h = m_Eyeh;
+        g_EarthView->m_Eye.x = m_Eyex;
+        g_EarthView->m_Eye.y = m_Eyey;
+        SetupMapCache(ObjectDisplay->Width, ObjectDisplay->Height);
+        InvalidateMap();
   }
   Timer1->Enabled = true;
   Timer2->Enabled = true;
@@ -2283,48 +2243,61 @@ static bool DeleteFilesWithExtension(AnsiString dirPath, AnsiString extension)
 		}
 	} while (FindNextFileA(hFind, &findData) != 0);
 
-        FindClose(hFind);
-        return true;
+       FindClose(hFind);
+       return true;
 }
 
-// Map rendering thread implementation
-static void MapRenderThreadFunc() {
-    Form1->ObjectDisplay->MakeOpenGLPanelCurrent();
-    while (g_MapThreadRunning) {
-        {
-            std::lock_guard<std::mutex> lock(g_MapMutex);
-            if (Form1->g_EarthView) {
-                pglBindFramebuffer(GL_FRAMEBUFFER, g_MapFBO);
-                glViewport(0,0,Form1->ObjectDisplay->Width, Form1->ObjectDisplay->Height);
-                glClearColor(0.0f,0.0f,0.0f,0.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                Form1->g_EarthView->Animate();
-                Form1->g_EarthView->Render(Form1->DrawMap->Checked);
-                pglBindFramebuffer(GL_FRAMEBUFFER, 0);
-                g_MapReady = true;
-        }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+static void *GetAnyGLFuncAddress(const char *name)
+{
+#ifdef _WIN32
+    void *p = (void*)wglGetProcAddress(name);
+    if(!p)
+    {
+        static HMODULE ogl = GetModuleHandleA("opengl32.dll");
+        if(ogl) p = (void*)GetProcAddress(ogl, name);
     }
-    Form1->ObjectDisplay->MakeOpenGLPanelNotCurrent();
+    return p;
+#else
+    return (void*)glXGetProcAddressARB((const GLubyte*)name);
+#endif
 }
 
-static void StartMapThread() {
-    if (g_MapThreadRunning)
-        return;
-    g_MapThreadRunning = true;
-    g_MapThread = new std::thread(MapRenderThreadFunc);
+static void LoadFBOExtensions()
+{
+    if(g_FBOLoaded) return;
+#define LOAD_PROC(type, name) name = (type)GetAnyGLFuncAddress(#name);
+    LOAD_PROC(PFNGLGENFRAMEBUFFERSPROC, pglGenFramebuffers);
+    LOAD_PROC(PFNGLDELETEFRAMEBUFFERSPROC, pglDeleteFramebuffers);
+    LOAD_PROC(PFNGLBINDFRAMEBUFFERPROC, pglBindFramebuffer);
+    LOAD_PROC(PFNGLFRAMEBUFFERTEXTURE2DPROC, pglFramebufferTexture2D);
+#undef LOAD_PROC
+    g_FBOLoaded = true;
 }
 
-static void StopMapThread() {
-    if (!g_MapThreadRunning)
-        return;
-    g_MapThreadRunning = false;
-    if (g_MapThread) {
-        g_MapThread->join();
-        delete g_MapThread;
-        g_MapThread = nullptr;
+static void SetupMapCache(int width, int height)
+{
+    LoadFBOExtensions();
+    if(!g_MapTexture)
+    {
+        glGenTextures(1, &g_MapTexture);
+        glBindTexture(GL_TEXTURE_2D, g_MapTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
+    if(!g_MapFBO)
+        pglGenFramebuffers(1, &g_MapFBO);
+
+    glBindTexture(GL_TEXTURE_2D, g_MapTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    pglBindFramebuffer(GL_FRAMEBUFFER, g_MapFBO);
+    pglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_MapTexture, 0);
+    pglBindFramebuffer(GL_FRAMEBUFFER, 0);
+    g_MapDirty = true;
+}
+
+static void InvalidateMap()
+{
+    g_MapDirty = true;
 }
 static bool IsFirstRow=true;
 static bool CallBackInit=false;
@@ -2908,6 +2881,7 @@ void __fastcall TForm1::CenterMapOnPair(unsigned int icao1, unsigned int icao2)
             MapCenterLat = centerLat;
             MapCenterLon = centerLon;
             SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
+            InvalidateMap();
         }
     }
 }
