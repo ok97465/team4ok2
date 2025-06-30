@@ -1105,7 +1105,7 @@ object Form1: TForm1
       end
     end
   end
-  object ObjectDisplay: TOpenGLPanel
+  object ObjectDisplay: TSafeOpenGLPanel
     Left = 0
     Top = 0
     Width = 978

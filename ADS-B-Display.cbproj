@@ -459,6 +459,12 @@
         <None Include="EarthViewRenderThread.h">
             <BuildOrder>74</BuildOrder>
         </None>
+        <CppCompile Include="SafeOpenGLPanel.cpp">
+            <BuildOrder>75</BuildOrder>
+        </CppCompile>
+        <None Include="SafeOpenGLPanel.h">
+            <BuildOrder>75</BuildOrder>
+        </None>
         <FormResources Include="AreaDialog.dfm"/>
         <FormResources Include="DisplayGUI.dfm"/>
         <BuildConfiguration Include="Base">

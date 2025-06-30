@@ -8,6 +8,7 @@
 #include <StdCtrls.hpp>
 #include <Forms.hpp>
 #include "Components\OpenGLv0.5BDS2006\Component\OpenGLPanel.h"
+#include "SafeOpenGLPanel.h"
 #include <ComCtrls.hpp>
 #include <ExtCtrls.hpp>
 #include <Menus.hpp>
@@ -79,8 +80,8 @@ __published:	// IDE-managed Components
 	TPanel *RightPanel;
 	TMenuItem *File1;
 	TMenuItem *Exit1;
-	TTimer *Timer1;
-	TOpenGLPanel *ObjectDisplay;
+        TTimer *Timer1;
+        TSafeOpenGLPanel *ObjectDisplay;
 	TPanel *Panel1;
 	TPanel *Panel3;
 	TButton *ZoomIn;
