@@ -71,6 +71,7 @@ static unsigned int g_MapTexture = 0;
 static unsigned int g_MapFBO = 0;
 static bool g_MapDirty = true;
 static bool g_FBOLoaded = false;
+static bool g_FBOAvailable = false; // all required FBO functions loaded
 static PFNGLGENFRAMEBUFFERSPROC pglGenFramebuffers = nullptr;
 static PFNGLDELETEFRAMEBUFFERSPROC pglDeleteFramebuffers = nullptr;
 static PFNGLBINDFRAMEBUFFERPROC pglBindFramebuffer = nullptr;
@@ -489,7 +490,7 @@ __fastcall TForm1::~TForm1()
  Timer1->Enabled=false;
  Timer2->Enabled=false;
  AssessmentTimer->Enabled=false;
- if (g_MapFBO) {
+ if (g_FBOAvailable && g_MapFBO) {
     pglDeleteFramebuffers(1, &g_MapFBO);
     g_MapFBO = 0;
  }
@@ -584,7 +585,7 @@ void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 
  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
- if (DrawMap->Checked && g_EarthView) {
+ if (DrawMap->Checked && g_EarthView && g_FBOAvailable) {
         if (!g_MapTexture || !g_MapFBO)
                 SetupMapCache(ObjectDisplay->Width, ObjectDisplay->Height);
         if (g_MapDirty) {
@@ -608,7 +609,7 @@ void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
  } else if (g_EarthView) {
         g_EarthView->Animate();
         g_EarthView->Render(DrawMap->Checked);
- }
+}
  if( g_GETileManager)
   g_GETileManager->Cleanup();
  Mw1 = Map_w[1].x-Map_w[0].x;
@@ -2072,8 +2073,14 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
   Timer1->Enabled = false;
   Timer2->Enabled = false;
 
-  if (g_MapFBO) { pglDeleteFramebuffers(1, &g_MapFBO); g_MapFBO = 0; }
-  if (g_MapTexture) { glDeleteTextures(1, &g_MapTexture); g_MapTexture = 0; }
+  if (g_FBOAvailable && g_MapFBO) {
+    pglDeleteFramebuffers(1, &g_MapFBO);
+    g_MapFBO = 0;
+  }
+  if (g_MapTexture) {
+    glDeleteTextures(1, &g_MapTexture);
+    g_MapTexture = 0;
+  }
 
   // 해제 순서: 생성의 역순
   if (g_EarthView) {
@@ -2272,11 +2279,16 @@ static void LoadFBOExtensions()
     LOAD_PROC(PFNGLFRAMEBUFFERTEXTURE2DPROC, pglFramebufferTexture2D);
 #undef LOAD_PROC
     g_FBOLoaded = true;
+    g_FBOAvailable = pglGenFramebuffers && pglDeleteFramebuffers &&
+                     pglBindFramebuffer && pglFramebufferTexture2D;
 }
 
 static void SetupMapCache(int width, int height)
 {
     LoadFBOExtensions();
+    if(!g_FBOAvailable)
+        return;
+
     if(!g_MapTexture)
     {
         glGenTextures(1, &g_MapTexture);
@@ -2284,8 +2296,11 @@ static void SetupMapCache(int width, int height)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
-    if(!g_MapFBO)
+    if(!g_MapFBO && pglGenFramebuffers)
         pglGenFramebuffers(1, &g_MapFBO);
+
+    if(!g_MapFBO)
+        return;
 
     glBindTexture(GL_TEXTURE_2D, g_MapTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
