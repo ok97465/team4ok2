@@ -344,6 +344,8 @@ public:		// User declarations
         DWORD m_lastDragRepaintTime;
 
         TEarthViewRenderThread* FEarthViewThread;
+        bool FIgnoreMapChange;
+        bool FGLInitialized;
 
         // --- Playback Speed UI 함수 선언 추가 ---
     void SetupPlaybackSpeedUI();

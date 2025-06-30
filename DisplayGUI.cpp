@@ -39,7 +39,6 @@
 #include "AircraftApi.h"
 #include "AircraftApiThread.h"
 #include "EarthViewRenderThread.h"
-extern std::mutex g_glMutex;
 #include "ntds2d.h"
 #include "LogHandler.h"
 
@@ -394,6 +393,8 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   Areas= new TList;
 
   FEarthViewThread = nullptr;
+  FIgnoreMapChange = true;
+  FGLInitialized = false;
 
  MouseDown=false;
 
@@ -408,9 +409,8 @@ __fastcall TForm1::TForm1(TComponent* Owner)
  //MapComboBox->ItemIndex=SkyVector_VFR;
  //MapComboBox->ItemIndex=SkyVector_IFR_Low;
  //MapComboBox->ItemIndex=SkyVector_IFR_High;
-  LoadMap(MapComboBox->ItemIndex);
-
-  FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay, g_EarthView, g_GETileManager);
+ FIgnoreMapChange = false;
+ LoadMap(MapComboBox->ItemIndex);
 
   g_EarthView->m_Eye.h /= pow(1.3,18);//pow(1.3,43);
  SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
@@ -480,12 +480,14 @@ void __fastcall TForm1::ApiCallTimerTimer(TObject *Sender)
 //---------------------------------------------------------------------------
 __fastcall TForm1::~TForm1()
 {
- if (FEarthViewThread) {
-   FEarthViewThread->Terminate();
-   FEarthViewThread->WaitFor();
-   delete FEarthViewThread;
-   FEarthViewThread = nullptr;
- }
+  if (FEarthViewThread) {
+    FEarthViewThread->Terminate();
+    FEarthViewThread->WaitFor();
+    delete FEarthViewThread;
+    FEarthViewThread = nullptr;
+  }
+  FIgnoreMapChange = true;
+  FGLInitialized = false;
  Timer1->Enabled=false;
  Timer2->Enabled=false;
  AssessmentTimer->Enabled=false;
@@ -550,6 +552,10 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
     ApiCallTimer->Enabled = true;
 
     InitRouteAirportMaps();
+
+    FGLInitialized = true;
+    if (!FEarthViewThread && g_EarthView)
+        FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay, g_EarthView, g_GETileManager);
 }
 //---------------------------------------------------------------------------
 
@@ -2015,6 +2021,9 @@ void __fastcall TForm1::LoadMap(int Type)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
 {
+    if (FIgnoreMapChange)
+        return;
+
     double    m_Eyeh = g_EarthView ? g_EarthView->m_Eye.h : 0.0;
     double    m_Eyex = g_EarthView ? g_EarthView->m_Eye.x : 0.0;
     double    m_Eyey = g_EarthView ? g_EarthView->m_Eye.y : 0.0;
@@ -2061,7 +2070,8 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
     else if (MapComboBox->ItemIndex == 3) LoadMap(SkyVector_IFR_High);
     else if (MapComboBox->ItemIndex == 4) LoadMap(OpenStreetMap);
 
-    FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay, g_EarthView, g_GETileManager);
+    if (FGLInitialized && g_EarthView)
+        FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay, g_EarthView, g_GETileManager);
 
     if (g_EarthView) {
         g_EarthView->m_Eye.h = m_Eyeh;
