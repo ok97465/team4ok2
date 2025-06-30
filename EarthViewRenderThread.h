@@ -13,6 +13,7 @@ private:
     TOpenGLPanel* FPanel;
     EarthView* FEarthView;
     TileManager* FTileManager;
+    void __fastcall NotifyUI();
 protected:
     void __fastcall Execute() override;
 public:

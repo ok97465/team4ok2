@@ -15,6 +15,11 @@ __fastcall TEarthViewRenderThread::TEarthViewRenderThread(TOpenGLPanel* panel,
     FreeOnTerminate = true;
 }
 
+void __fastcall TEarthViewRenderThread::NotifyUI()
+{
+    Form1->ObjectDisplay->Repaint();
+}
+
 void __fastcall TEarthViewRenderThread::Execute()
 {
     while (!Terminated)
@@ -30,9 +35,7 @@ void __fastcall TEarthViewRenderThread::Execute()
                     FTileManager->Cleanup();
                 FPanel->MakeOpenGLPanelNotCurrent();
             }
-            TThread::Synchronize(nullptr, [](){
-                Form1->ObjectDisplay->Repaint();
-            });
+            TThread::Synchronize(nullptr, NotifyUI);
         }
         Sleep(30);
     }
