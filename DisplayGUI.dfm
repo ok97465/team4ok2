@@ -835,21 +835,6 @@ object Form1: TForm1
           TabOrder = 13
           OnClick = FilterPolygonOnlyCheckBoxClick
         end
-        object FilterWaypointsOnlyCheckBox: TCheckBox
-          Left = 5
-          Top = 333
-          Width = 188
-          Height = 17
-          Caption = 'Waypoint area only'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
-          TabOrder = 14
-          OnClick = FilterWaypointsOnlyCheckBoxClick
-        end
         object SpeedFilterLabel: TLabel
           Left = 5
           Top = 365
