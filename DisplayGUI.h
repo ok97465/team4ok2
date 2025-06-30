@@ -184,8 +184,7 @@ __published:	// IDE-managed Components
 	TLabel *Label28;
 	TTimer *AssessmentTimer;
 	TListView *ConflictListView;
-	TCheckBox *FilterPolygonOnlyCheckBox; // 다각형 내 비행기만 표시하는 체크박스
-	TCheckBox *FilterWaypointsOnlyCheckBox; // 정의된 경유지 내 비행기만 표시하는 체크박스
+	TCheckBox *FilterPolygonOnlyCheckBox; // 정의된 경유지 내 비행기만 표시하는 체크박스
 	// --- 속도/고도 필터 UI ---
     TTrackBar *SpeedMinTrackBar;
     TTrackBar *SpeedMaxTrackBar;
@@ -255,7 +254,6 @@ __published:	// IDE-managed Components
 	void __fastcall AssessmentTimerTimer(TObject *Sender);
 	void __fastcall OnAssessmentComplete(TObject *Sender);
 	void __fastcall FilterPolygonOnlyCheckBoxClick(TObject *Sender); // 다각형 필터 체크박스 이벤트
-	void __fastcall FilterWaypointsOnlyCheckBoxClick(TObject *Sender); // 경유지 필터 체크박스 이벤트
 
 private:	// User declarations
 	TCPDataHandler *FRawDataHandler;

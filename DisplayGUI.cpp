@@ -1049,24 +1049,24 @@ void __fastcall TForm1::DrawObjects(void)
 				}
         }
 	   }
-            //    // 기존 배치 렌더링 대신 개별 스타일 적용
-            //    for (const auto& line : m_lineBatch) {
-            //        // 항공기 타입에 따른 다른 리더 스타일 적용
-            //        TADS_B_Aircraft* aircraft = FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
-            //        if (aircraft && aircraft_is_military(aircraft->ICAO, NULL)) {
-            //            // 군용기는 두꺼운 선
-            //            DrawLeaderThick(line.x1, line.y1, line.x2, line.y2, 4.0f);
-            //        } else if (aircraft && aircraft_is_helicopter(aircraft->ICAO, NULL)) {
-            //            // 헬리콥터는 점선
-            //            DrawLeaderDashed(line.x1, line.y1, line.x2, line.y2);
-            //        } else {
-            //            // 일반 항공기는 화살표
-            //            DrawLeaderArrow(line.x1, line.y1, line.x2, line.y2, 8.0f);
-            //        }
-            //    }
+               // 기존 배치 렌더링 대신 개별 스타일 적용
+               for (const auto& line : m_lineBatch) {
+                   // 항공기 타입에 따른 다른 리더 스타일 적용
+                   TADS_B_Aircraft* aircraft = FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
+                   if (aircraft && aircraft_is_military(aircraft->ICAO, NULL)) {
+                       // 군용기는 두꺼운 선
+                       DrawLeaderThick(line.x1, line.y1, line.x2, line.y2, 4.0f);
+                   } else if (aircraft && aircraft_is_helicopter(aircraft->ICAO, NULL)) {
+                       // 헬리콥터는 점선
+                       DrawLeaderDashed(line.x1, line.y1, line.x2, line.y2);
+                   } else {
+                       // 일반 항공기는 화살표
+                       DrawLeaderArrow(line.x1, line.y1, line.x2, line.y2, 8.0f);
+                   }
+               }
                
                // 기존 배치 렌더링 (백업용)
-               DrawAirplaneLinesInstanced(m_lineBatch);
+               // DrawAirplaneLinesInstanced(m_lineBatch);
                DrawAirplaneImagesInstanced(m_planeBatch);
                DrawHexTextInstanced(m_textBatch);
 
@@ -2582,12 +2582,6 @@ void __fastcall TForm1::FilterDestinationEditChange(TObject *Sender)
 void __fastcall TForm1::FilterPolygonOnlyCheckBoxClick(TObject *Sender)
 {
     filterPolygonOnly = FilterPolygonOnlyCheckBox->Checked;
-    ObjectDisplay->Repaint();
-}
-
-void __fastcall TForm1::FilterWaypointsOnlyCheckBoxClick(TObject *Sender)
-{
-    filterWaypointsOnly = FilterWaypointsOnlyCheckBox->Checked;
     ObjectDisplay->Repaint();
 }
 

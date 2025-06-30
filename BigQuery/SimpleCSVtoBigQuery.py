@@ -11,26 +11,34 @@ DESTINATION_TABLE_ID = "scs-lg-arch-4.SBS_DATA_T4.SBS_DATA_TABLE_T4"
 # --- Configuration for Query Result ---
 output_filename = "result.csv"
 user_query = """
+WITH PredictionResults AS (
+  SELECT
+    DISTINCT pred.* EXCEPT(nearest_centroids_distance),
+    pred.nearest_centroids_distance[OFFSET(0)].DISTANCE AS distance_from_centroid
+  FROM
+    ML.PREDICT(
+      MODEL `scs-lg-arch-4.SBS_DATA_T4.altitude_kmeans_model`,
+      (
+        SELECT
+          SAFE_CAST(Altitude AS FLOAT64) AS Altitude,
+          SAFE_CAST(Latitude AS FLOAT64) AS Latitude,
+          SAFE_CAST(Longitude AS FLOAT64) AS Longitude,
+          HexIdent,
+          TIMESTAMP(DATETIME(Date_MSG_Generated, Time_MSG_Generated), 'UTC') AS timestamp_utc
+        FROM
+          `scs-lg-arch-4.SBS_DATA_T4.SBS_DATA_TABLE_T4`
+        WHERE
+          TIMESTAMP(DATETIME(Date_MSG_Generated, Time_MSG_Generated), 'UTC') >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR)
+          AND SAFE_CAST(Altitude AS FLOAT64) IS NOT NULL AND Altitude > 0
+      )
+    ) AS pred
+)
 SELECT
-  pred.* EXCEPT(nearest_centroids_distance),
-  pred.nearest_centroids_distance[OFFSET(0)].DISTANCE AS distance_from_centroid
+  *
 FROM
-  ML.PREDICT(
-    MODEL `scs-lg-arch-4.SBS_DATA_T4.altitude_kmeans_model`,
-    (
-      SELECT
-        SAFE_CAST(Altitude AS FLOAT64) AS Altitude,
-        SAFE_CAST(Latitude AS FLOAT64) AS Latitude,
-        SAFE_CAST(Longitude AS FLOAT64) AS Longitude,
-        HexIdent,
-        TIMESTAMP(DATETIME(Date_MSG_Generated, Time_MSG_Generated), 'UTC') AS timestamp_utc
-      FROM
-        `scs-lg-arch-4.SBS_DATA_T4.SBS_DATA_TABLE_T4`
-      WHERE
-        Date_MSG_Generated = CURRENT_DATE()
-        AND SAFE_CAST(Altitude AS FLOAT64) IS NOT NULL AND Altitude > 0
-    )
-  ) AS pred
+  PredictionResults
+WHERE
+  distance_from_centroid >= 20 -- 여기에서 WHERE 절을 사용하여 필터링합니다.
 ORDER BY
   distance_from_centroid DESC
 LIMIT 10;
