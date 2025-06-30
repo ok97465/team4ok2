@@ -170,7 +170,7 @@ object Form1: TForm1
       end
       object Label25: TLabel
         Left = 24
-        Top = 621
+        Top = 626
         Width = 36
         Height = 13
         Caption = 'Airline'
@@ -183,7 +183,7 @@ object Form1: TForm1
       end
       object Label26: TLabel
         Left = 104
-        Top = 621
+        Top = 626
         Width = 33
         Height = 13
         Caption = 'Origin'
@@ -196,7 +196,7 @@ object Form1: TForm1
       end
       object Label27: TLabel
         Left = 168
-        Top = 621
+        Top = 626
         Width = 65
         Height = 13
         Caption = 'Destination'
@@ -1020,7 +1020,7 @@ object Form1: TForm1
       end
       object FilterOriginEdit: TEdit
         Left = 95
-        Top = 636
+        Top = 644
         Width = 57
         Height = 20
         TabOrder = 21
@@ -1028,7 +1028,7 @@ object Form1: TForm1
       end
       object FilterAirlineEdit: TEdit
         Left = 16
-        Top = 636
+        Top = 644
         Width = 57
         Height = 20
         TabOrder = 22
@@ -1036,7 +1036,7 @@ object Form1: TForm1
       end
       object FilterDestinationEdit: TEdit
         Left = 174
-        Top = 636
+        Top = 644
         Width = 57
         Height = 20
         TabOrder = 23
@@ -1056,21 +1056,6 @@ object Form1: TForm1
         ParentFont = False
         TabOrder = 24
         OnClick = FilterPolygonOnlyCheckBoxClick
-      end
-      object FilterWaypointsOnlyCheckBox: TCheckBox
-        Left = 5
-        Top = 657
-        Width = 188
-        Height = 17
-        Caption = 'Waypoint area only'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -11
-        Font.Name = 'Tahoma'
-        Font.Style = [fsBold]
-        ParentFont = False
-        TabOrder = 25
-        OnClick = FilterWaypointsOnlyCheckBoxClick
       end
     end
     object Panel2: TPanel
@@ -1132,59 +1117,11 @@ object Form1: TForm1
     OnInit = ObjectDisplayInit
     OnResize = ObjectDisplayResize
     OnPaint = ObjectDisplayPaint
-	object SpeedMinTrackBar: TTrackBar
-      Left = 20
-      Top = 10
-      Width = 200
-      Height = 30
-      Min = 0
-      Max = 1000
-      Frequency = 50
-      Position = 0
-      TabOrder = 1
-      OnChange = SpeedFilterTrackBarChange
-    end
-    object SpeedMaxTrackBar: TTrackBar
-      Left = 240
-      Top = 10
-      Width = 200
-      Height = 30
-      Min = 0
-      Max = 1000
-      Frequency = 50
-      Position = 1000
-      TabOrder = 2
-      OnChange = SpeedFilterTrackBarChange
-    end
-    object AltitudeMinTrackBar: TTrackBar
-      Left = 20
-      Top = 50
-      Width = 200
-      Height = 30
-      Min = 0
-      Max = 60000
-      Frequency = 2000
-      Position = 0
-      TabOrder = 3
-      OnChange = AltitudeFilterTrackBarChange
-    end
-    object AltitudeMaxTrackBar: TTrackBar
-      Left = 240
-      Top = 50
-      Width = 200
-      Height = 30
-      Min = 0
-      Max = 60000
-      Frequency = 2000
-      Position = 60000
-      TabOrder = 4
-      OnChange = AltitudeFilterTrackBarChange
-    end
     object SpeedFilterLabel: TLabel
       Left = 460
       Top = 15
-      Width = 200
-      Height = 20
+      Width = 126
+      Height = 13
       Caption = 'Speed: 0 ~ 1000 knots'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
@@ -1196,8 +1133,8 @@ object Form1: TForm1
     object AltitudeFilterLabel: TLabel
       Left = 460
       Top = 55
-      Width = 200
-      Height = 20
+      Width = 120
+      Height = 13
       Caption = 'Altitude: 0 ~ 60000 ft'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
@@ -1205,6 +1142,48 @@ object Form1: TForm1
       Font.Name = 'Tahoma'
       Font.Style = [fsBold]
       ParentFont = False
+    end
+    object SpeedMinTrackBar: TTrackBar
+      Left = 20
+      Top = 10
+      Width = 200
+      Height = 30
+      Max = 1000
+      Frequency = 50
+      TabOrder = 0
+      OnChange = SpeedFilterTrackBarChange
+    end
+    object SpeedMaxTrackBar: TTrackBar
+      Left = 240
+      Top = 10
+      Width = 200
+      Height = 30
+      Max = 1000
+      Frequency = 50
+      Position = 1000
+      TabOrder = 1
+      OnChange = SpeedFilterTrackBarChange
+    end
+    object AltitudeMinTrackBar: TTrackBar
+      Left = 20
+      Top = 50
+      Width = 200
+      Height = 30
+      Max = 60000
+      Frequency = 2000
+      TabOrder = 2
+      OnChange = AltitudeFilterTrackBarChange
+    end
+    object AltitudeMaxTrackBar: TTrackBar
+      Left = 240
+      Top = 50
+      Width = 200
+      Height = 30
+      Max = 60000
+      Frequency = 2000
+      Position = 60000
+      TabOrder = 4
+      OnChange = AltitudeFilterTrackBarChange
     end
     object ConflictListView: TListView
       Left = 0
@@ -1237,7 +1216,7 @@ object Form1: TForm1
           Width = 80
         end>
       GridLines = True
-      TabOrder = 5
+      TabOrder = 3
       ViewStyle = vsReport
     end
   end

@@ -2548,12 +2548,6 @@ void __fastcall TForm1::FilterPolygonOnlyCheckBoxClick(TObject *Sender)
     ObjectDisplay->Repaint();
 }
 
-void __fastcall TForm1::FilterWaypointsOnlyCheckBoxClick(TObject *Sender)
-{
-    filterWaypointsOnly = FilterWaypointsOnlyCheckBox->Checked;
-    ObjectDisplay->Repaint();
-}
-
 // Helper: Map trackbar position to playback speed (e.g., 1=0.5x, 2=1x, 3=2x, 4=4x)
 double TrackBarPosToSpeed(int pos) {
     switch (pos) {
