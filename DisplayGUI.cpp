@@ -2604,49 +2604,20 @@ double TrackBarPosToSpeed(int pos) {
 // --- Playback Speed UI Setup ---
 void TForm1::SetupPlaybackSpeedUI()
 {
-    // --- 기존 트랙바 삭제 및 드롭다운(ComboBox)으로 대체 ---
-    if (PlaybackSpeedTrackBar) {
-        delete PlaybackSpeedTrackBar;
-        PlaybackSpeedTrackBar = nullptr;
-    }
-    if (PlaybackSpeedLabel) {
-        delete PlaybackSpeedLabel;
-        PlaybackSpeedLabel = nullptr;
-    }
+    // .dfm에서 생성된 UI를 초기화
     if (PlaybackSpeedComboBox) {
-        delete PlaybackSpeedComboBox;
-        PlaybackSpeedComboBox = nullptr;
+        PlaybackSpeedComboBox->ItemIndex = 0;
+        // 이벤트 핸들러 동적 할당
+        PlaybackSpeedComboBox->OnChange = PlaybackSpeedComboBoxChange;
     }
-    
-    // ComboBox 생성
-    PlaybackSpeedComboBox = new TComboBox(this);
-    PlaybackSpeedComboBox->Parent = this;
-    PlaybackSpeedComboBox->Left = 20;
-    PlaybackSpeedComboBox->Top = 80;
-    PlaybackSpeedComboBox->Width = 80;
-    PlaybackSpeedComboBox->Style = csDropDownList;
-    PlaybackSpeedComboBox->Items->Add("1x");
-    PlaybackSpeedComboBox->Items->Add("2x");
-    PlaybackSpeedComboBox->Items->Add("3x");
-    PlaybackSpeedComboBox->ItemIndex = 0;
-    
-    // 라벨
-    PlaybackSpeedLabel = new TLabel(this);
-    PlaybackSpeedLabel->Parent = this;
-    PlaybackSpeedLabel->Left = PlaybackSpeedComboBox->Left + PlaybackSpeedComboBox->Width + 10;
-    PlaybackSpeedLabel->Top = PlaybackSpeedComboBox->Top + 2;
-    PlaybackSpeedLabel->Caption = "재생 속도";
-    PlaybackSpeedLabel->Font->Size = 10;
-    PlaybackSpeedLabel->Font->Color = clBlack;
-    PlaybackSpeedLabel->Show();
-    
-    // 이벤트 핸들러 할당
-    PlaybackSpeedComboBox->OnChange = PlaybackSpeedComboBoxChange;
     
     // 최초 1회 적용
     if (FRawDataHandler) FRawDataHandler->SetPlaybackSpeed(1.0);
     if (FSBSDataHandler) FSBSDataHandler->SetPlaybackSpeed(1.0);
-    PlaybackSpeedLabel->Caption = "재생 속도: 1x";
+    
+    if (PlaybackSpeedLabel) {
+        PlaybackSpeedLabel->Caption = "Playback Speed: 1x";
+    }
 }
 
 void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
@@ -2662,7 +2633,7 @@ void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
     if (FSBSDataHandler) FSBSDataHandler->SetPlaybackSpeed(speed);
     
     if (PlaybackSpeedLabel) {
-        PlaybackSpeedLabel->Caption = "재생 속도: " + FloatToStrF(speed, ffGeneral, 3, 2) + "x";
+        PlaybackSpeedLabel->Caption = "Playback Speed: " + FloatToStrF(speed, ffGeneral, 3, 2) + "x";
     }
 }
 //---------------------------------------------------------------------------

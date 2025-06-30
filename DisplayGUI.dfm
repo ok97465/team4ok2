@@ -573,6 +573,33 @@ object Form1: TForm1
           TabOrder = 2
           OnClick = BigQueryCheckBoxClick
         end
+        object PlaybackSpeedLabel: TLabel
+          Left = 8
+          Top = 385
+          Width = 65
+          Height = 13
+          Caption = 'Playback Speed:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object PlaybackSpeedComboBox: TComboBox
+          Left = 100
+          Top = 382
+          Width = 60
+          Height = 21
+          Style = csDropDownList
+          ItemIndex = 0
+          TabOrder = 3
+          Text = '1x'
+          Items.Strings = (
+            '1x'
+            '2x'
+            '3x')
+        end
       end
       object ControlsFiltersTab: TTabSheet
         Caption = 'Filter'
