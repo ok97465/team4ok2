@@ -35,7 +35,9 @@ void __fastcall TEarthViewRenderThread::Execute()
                     FTileManager->Cleanup();
                 FPanel->MakeOpenGLPanelNotCurrent();
             }
-            TThread::Synchronize(nullptr, NotifyUI);
+            // Queue the repaint instead of blocking the thread with Synchronize
+            // so termination doesn't deadlock while waiting for the mutex.
+            TThread::Queue(nullptr, NotifyUI);
         }
         Sleep(30);
     }
