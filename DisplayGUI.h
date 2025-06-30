@@ -298,6 +298,9 @@ public:		// User declarations
         void __fastcall DrawCrosshair();
         void __fastcall DrawAreaGraphics();
         void __fastcall DrawAircraftGraphics(int &viewable);
+        void __fastcall BuildAircraftBatches(int &viewable);
+        void __fastcall RenderLeaderLines();
+        void __fastcall RenderAircraftAndHex();
         void __fastcall DrawExtraInfo(int viewable);
         void __fastcall DeleteAllAreas(void);
 	void __fastcall Purge(void);

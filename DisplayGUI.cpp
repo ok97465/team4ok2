@@ -687,7 +687,7 @@ void __fastcall TForm1::DrawAreaGraphics()
          }
 }
 
-void __fastcall TForm1::DrawAircraftGraphics(int &viewable)
+void __fastcall TForm1::BuildAircraftBatches(int &viewable)
 {
         const void *Key;
         ght_iterator_t iterator;
@@ -995,6 +995,40 @@ void __fastcall TForm1::DrawAircraftGraphics(int &viewable)
                                 }
         }
            }
+}
+
+void __fastcall TForm1::DrawAircraftGraphics(int &viewable)
+{
+#ifdef MEASURE_PERFORMANCE
+        auto start = std::chrono::steady_clock::now();
+#endif
+        BuildAircraftBatches(viewable);
+#ifdef MEASURE_PERFORMANCE
+        auto end = std::chrono::steady_clock::now();
+        std::cout << "  BuildAircraftBatches: " <<
+            std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+            << " ms" << std::endl;
+        start = std::chrono::steady_clock::now();
+#endif
+        RenderLeaderLines();
+#ifdef MEASURE_PERFORMANCE
+        end = std::chrono::steady_clock::now();
+        std::cout << "  RenderLeaderLines: " <<
+            std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+            << " ms" << std::endl;
+        start = std::chrono::steady_clock::now();
+#endif
+        RenderAircraftAndHex();
+#ifdef MEASURE_PERFORMANCE
+        end = std::chrono::steady_clock::now();
+        std::cout << "  RenderAircraftAndHex: " <<
+            std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+            << " ms" << std::endl;
+#endif
+}
+
+void __fastcall TForm1::RenderLeaderLines()
+{
                for (const auto& line : m_lineBatch) {
                    TADS_B_Aircraft* aircraft = FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
                    if (aircraft && aircraft_is_military(aircraft->ICAO, NULL)) {
@@ -1005,7 +1039,10 @@ void __fastcall TForm1::DrawAircraftGraphics(int &viewable)
                        DrawLeaderArrow(line.x1, line.y1, line.x2, line.y2, 8.0f);
                    }
                }
+}
 
+void __fastcall TForm1::RenderAircraftAndHex()
+{
                DrawAirplaneImagesInstanced(m_planeBatch);
                DrawHexTextInstanced(m_textBatch);
 }
