@@ -50,7 +50,7 @@ void __fastcall TEarthViewRenderThread::Execute()
     while (!Terminated)
     {
         RenderTask();
-        TThread::Synchronize(nullptr, NotifyUI);
+        TThread::Queue(nullptr, NotifyUI);
         Sleep(30);
     }
 }
