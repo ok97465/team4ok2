@@ -410,7 +410,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
  //MapComboBox->ItemIndex=SkyVector_IFR_High;
   LoadMap(MapComboBox->ItemIndex);
 
-  FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay);
+  FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay, g_EarthView, g_GETileManager);
 
   g_EarthView->m_Eye.h /= pow(1.3,18);//pow(1.3,43);
  SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
@@ -2061,7 +2061,7 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
     else if (MapComboBox->ItemIndex == 3) LoadMap(SkyVector_IFR_High);
     else if (MapComboBox->ItemIndex == 4) LoadMap(OpenStreetMap);
 
-    FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay);
+    FEarthViewThread = new TEarthViewRenderThread(ObjectDisplay, g_EarthView, g_GETileManager);
 
     if (g_EarthView) {
         g_EarthView->m_Eye.h = m_Eyeh;

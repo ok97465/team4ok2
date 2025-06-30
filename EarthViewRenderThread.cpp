@@ -6,8 +6,11 @@
 
 std::mutex g_glMutex;
 
-__fastcall TEarthViewRenderThread::TEarthViewRenderThread(TOpenGLPanel* panel)
-    : TThread(false), FPanel(panel)
+__fastcall TEarthViewRenderThread::TEarthViewRenderThread(TOpenGLPanel* panel,
+                                                         EarthView* earthView,
+                                                         TileManager* tileManager)
+    : TThread(false), FPanel(panel), FEarthView(earthView),
+      FTileManager(tileManager)
 {
     FreeOnTerminate = true;
 }
@@ -16,15 +19,15 @@ void __fastcall TEarthViewRenderThread::Execute()
 {
     while (!Terminated)
     {
-        if (g_EarthView && FPanel)
+        if (FEarthView && FPanel)
         {
             {
                 std::lock_guard<std::mutex> lock(g_glMutex);
                 FPanel->MakeOpenGLPanelCurrent();
-                g_EarthView->Animate();
-                g_EarthView->Render(Form1->DrawMap->Checked);
-                if (g_GETileManager)
-                    g_GETileManager->Cleanup();
+                FEarthView->Animate();
+                FEarthView->Render(Form1->DrawMap->Checked);
+                if (FTileManager)
+                    FTileManager->Cleanup();
                 FPanel->MakeOpenGLPanelNotCurrent();
             }
             TThread::Synchronize(nullptr, [](){
