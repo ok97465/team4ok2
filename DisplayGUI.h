@@ -75,6 +75,10 @@ class TForm1 : public TForm
 __published:	// IDE-managed Components
 	TMainMenu *MainMenu1;
 	TPanel *RightPanel;
+	TPageControl *RightPanelTabControl;
+	TTabSheet *AircraftInfoTab;
+	TTabSheet *ControlsFiltersTab;
+	TTabSheet *DataSourcesTab;
 	TMenuItem *File1;
 	TMenuItem *Exit1;
 	TTimer *Timer1;
@@ -95,6 +99,7 @@ __published:	// IDE-managed Components
 	TButton *Cancel;
 	TButton *RawConnectButton;
 	TLabel *Label16;
+	TLabel *Label16_MapSettings;
 	TSaveDialog *RecordRawSaveDialog;
 	TOpenDialog *PlaybackRawDialog;
 	TCheckBox *CycleImages;
