@@ -9,7 +9,7 @@
 #include "TextureTile.h"
 #include "TileStorage.h"
 
-#define DEFAULT_MAX_TEXTURES 100
+#define DEFAULT_MAX_TEXTURES 1000
 
 /**
  * Tile manager.
