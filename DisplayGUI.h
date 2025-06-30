@@ -294,8 +294,12 @@ public:		// User declarations
 	void __fastcall LatLon2XY(double lat,double lon, double &x, double &y);
 	int __fastcall  XY2LatLon2(int x, int y,double &lat,double &lon );
 	void __fastcall HookTrack(int X, int Y,bool CPA_Hook);
-	void __fastcall DrawObjects(void);
-	void __fastcall DeleteAllAreas(void);
+        void __fastcall DrawObjects(void);
+        void __fastcall DrawCrosshair();
+        void __fastcall DrawAreaGraphics();
+        void __fastcall DrawAircraftGraphics(int &viewable);
+        void __fastcall DrawExtraInfo(int viewable);
+        void __fastcall DeleteAllAreas(void);
 	void __fastcall Purge(void);
 	void __fastcall SendCotMessage(AnsiString IP_address, unsigned short Port,char *Buffer,DWORD Length);
 	void __fastcall RegisterWithCoTRouter(void);
