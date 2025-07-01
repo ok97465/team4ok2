@@ -234,18 +234,18 @@ uint32_t createRGB(uint8_t r, uint8_t g, uint8_t b)
 }
 //---------------------------------------------------------------------------
 uint32_t PopularColors[] = {
-	  createRGB(255, 0, 0),      // Red
-	  createRGB(0, 255, 0),      // Green
-	  createRGB(0, 0, 255),      // Blue
-	  createRGB(255, 255, 0),   // Yellow
-	  createRGB(255, 165, 0),   // Orange
-	  createRGB(255, 192, 203), // Pink
-	  createRGB(0, 255, 255),   // Cyan
-	  createRGB(255, 0, 255),  // Magenta
-	  createRGB(255,255, 255),    // White
-	  //createRGB(0, 0, 0),        // Black
-	  createRGB(128,128,128),      // Gray
-	  createRGB(165,42,42)    // Brown
+    createRGB(255, 0, 0),      // Red
+    createRGB(0, 255, 0),      // Green
+    createRGB(0, 0, 255),      // Blue
+    createRGB(255, 255, 0),   // Yellow
+    createRGB(255, 165, 0),   // Orange
+    createRGB(255, 192, 203), // Pink
+    createRGB(0, 255, 255),   // Cyan
+    createRGB(255, 0, 255),  // Magenta
+    createRGB(255,255, 255),    // White
+    //createRGB(0, 0, 0),        // Black
+    createRGB(128,128,128),      // Gray
+    createRGB(165,42,42)    // Brown
   };
 
   int NumColors = sizeof(PopularColors) / sizeof(PopularColors[0]);
@@ -257,10 +257,10 @@ uint32_t PopularColors[] = {
 {
    union{
      struct{
-	 System::Byte Red;
-	 System::Byte Green;
-	 System::Byte Blue;
-	 System::Byte Alpha;
+   System::Byte Red;
+   System::Byte Green;
+   System::Byte Blue;
+   System::Byte Alpha;
      };
      struct{
      TColor Cl;
@@ -274,36 +274,36 @@ uint32_t PopularColors[] = {
 //---------------------------------------------------------------------------
 static const char * strnistr(const char * pszSource, DWORD dwLength, const char * pszFind)
 {
-	DWORD        dwIndex   = 0;
-	DWORD        dwStrLen  = 0;
-	const char * pszSubStr = NULL;
+  DWORD        dwIndex   = 0;
+  DWORD        dwStrLen  = 0;
+  const char * pszSubStr = NULL;
 
-	// check for valid arguments
-	if (!pszSource || !pszFind)
-	{
-		return pszSubStr;
-	}
+  // check for valid arguments
+  if (!pszSource || !pszFind)
+  {
+    return pszSubStr;
+  }
 
-	dwStrLen = strlen(pszFind);
+  dwStrLen = strlen(pszFind);
 
-	// can pszSource possibly contain pszFind?
-	if (dwStrLen > dwLength)
-	{
-		return pszSubStr;
-	}
+  // can pszSource possibly contain pszFind?
+  if (dwStrLen > dwLength)
+  {
+    return pszSubStr;
+  }
 
-	while (dwIndex <= dwLength - dwStrLen)
-	{
-		if (0 == strnicmp(pszSource + dwIndex, pszFind, dwStrLen))
-		{
-			pszSubStr = pszSource + dwIndex;
-			break;
-		}
+  while (dwIndex <= dwLength - dwStrLen)
+  {
+    if (0 == strnicmp(pszSource + dwIndex, pszFind, dwStrLen))
+    {
+      pszSubStr = pszSource + dwIndex;
+      break;
+    }
 
-		dwIndex ++;
-	}
+    dwIndex ++;
+  }
 
-	return pszSubStr;
+  return pszSubStr;
 }
 //---------------------------------------------------------------------------
 static char *stristr(const char *String, const char *Pattern)
@@ -361,7 +361,7 @@ void __fastcall TForm1::InitRouteAirportMaps()
 
 //---------------------------------------------------------------------------
 __fastcall TForm1::TForm1(TComponent* Owner)
-	: TForm(Owner)
+  : TForm(Owner)
 {
   // LogHandler 초기화
   LogHandler::Initialize();
@@ -420,19 +420,19 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   SetHexTextScale(1.0f);
   SetHexTextBold(true);
 
-  	// Raw 데이터 핸들러 생성 및 콜백 연결
-	FRawDataHandler = new TCPDataHandler(this);
-	FRawDataHandler->OnDataReceived = [this](const AnsiString& data){ this->HandleRawData(data); };
-	FRawDataHandler->OnConnected = [this](){ this->HandleRawConnected(); };
-	FRawDataHandler->OnDisconnected = [this](const String& reason){ this->HandleRawDisconnected(reason); };
-	FRawDataHandler->OnReconnecting = [this](){ this->HandleRawReconnecting(); };
+    // Raw 데이터 핸들러 생성 및 콜백 연결
+  FRawDataHandler = new TCPDataHandler(this);
+  FRawDataHandler->OnDataReceived = [this](const AnsiString& data){ this->HandleRawData(data); };
+  FRawDataHandler->OnConnected = [this](){ this->HandleRawConnected(); };
+  FRawDataHandler->OnDisconnected = [this](const String& reason){ this->HandleRawDisconnected(reason); };
+  FRawDataHandler->OnReconnecting = [this](){ this->HandleRawReconnecting(); };
 
-	// SBS 데이터 핸들러 생성 및 콜백 연결
-	FSBSDataHandler = new TCPDataHandler(this);
-	FSBSDataHandler->OnDataReceived = [this](const AnsiString& data){ this->HandleSBSData(data); };
-	FSBSDataHandler->OnConnected = [this](){ this->HandleSBSConnected(); };
-	FSBSDataHandler->OnDisconnected = [this](const String& reason){ this->HandleSBSDisconnected(reason); };
-	FSBSDataHandler->OnReconnecting = [this](){ this->HandleSBSReconnecting(); };
+  // SBS 데이터 핸들러 생성 및 콜백 연결
+  FSBSDataHandler = new TCPDataHandler(this);
+  FSBSDataHandler->OnDataReceived = [this](const AnsiString& data){ this->HandleSBSData(data); };
+  FSBSDataHandler->OnConnected = [this](){ this->HandleSBSConnected(); };
+  FSBSDataHandler->OnDisconnected = [this](const String& reason){ this->HandleSBSDisconnected(reason); };
+  FSBSDataHandler->OnReconnecting = [this](){ this->HandleSBSReconnecting(); };
 
   FAircraftModel = new AircraftDataModel();
   FRawButtonScroller = new TButtonScroller(RawConnectButton);
@@ -502,28 +502,28 @@ void __fastcall TForm1::SetMapCenter(double &x, double &y)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 {
-	glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glEnable (GL_LINE_STIPPLE);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+  glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glEnable (GL_LINE_STIPPLE);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  //glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     NumSpriteImages = MakeAirplaneImages();
     MakeAirportImages();
-	MakeAirTrackFriend();
-	MakeAirTrackHostile();
-	MakeAirTrackUnknown();
-	MakePoint();
-	MakeTrackHook();
-	InitAirplaneInstancing();
-	InitAirplaneLinesInstancing();
-	InitHexTextInstancing();
-	if(g_EarthView)
-		g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
-	glPushAttrib (GL_LINE_BIT);
-	glPopAttrib ();
+  MakeAirTrackFriend();
+  MakeAirTrackHostile();
+  MakeAirTrackUnknown();
+  MakePoint();
+  MakeTrackHook();
+  InitAirplaneInstancing();
+  InitAirplaneLinesInstancing();
+  InitHexTextInstancing();
+  if(g_EarthView)
+    g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+  glPushAttrib (GL_LINE_BIT);
+  glPopAttrib ();
     LOG_INFO_F(LogHandler::CAT_GENERAL, "OpenGL Version: %s", glGetString(GL_VERSION));
-	 // API 로딩 비동기 호출
+   // API 로딩 비동기 호출
     new TLoadApiDataThread();
 
     // 1시간마다 주기 호출 설정
@@ -538,16 +538,16 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
 
 void __fastcall TForm1::ObjectDisplayResize(TObject *Sender)
 {
-	 double Value;
-	//ObjectDisplay->Width=ObjectDisplay->Height;
-	glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glEnable (GL_LINE_STIPPLE);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	if(g_EarthView)
-		g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+   double Value;
+  //ObjectDisplay->Width=ObjectDisplay->Height;
+  glViewport(0,0,(GLsizei)ObjectDisplay->Width,(GLsizei)ObjectDisplay->Height);
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glEnable (GL_LINE_STIPPLE);
+  //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+  if(g_EarthView)
+    g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
@@ -560,8 +560,8 @@ void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 
  if (g_EarthView)
  {
-	g_EarthView->Animate();
-	g_EarthView->Render(DrawMap->Checked);
+  g_EarthView->Animate();
+  g_EarthView->Render(DrawMap->Checked);
  }
  if( g_GETileManager)
   g_GETileManager->Cleanup();
@@ -688,7 +688,7 @@ void TForm1::DrawDefinedAreas()
   }
 }
 
-bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route)
+bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route, AircraftCategory category)
 {
   if ((!filterAirline.IsEmpty() || !filterOrigin.IsEmpty() || !filterDestination.IsEmpty()) && route == nullptr)
     return false;
@@ -851,7 +851,7 @@ bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route
       return false;
   }
 
-  AircraftCategory category = aircraft_get_category(Data->ICAO);
+  // AircraftCategory category = aircraft_get_category(Data->ICAO);
   bool showAircraft = false;
   switch(category)
   {
@@ -896,7 +896,8 @@ void TForm1::BuildAircraftBatches(int &ViewableAircraft)
         continue;
     }
 
-    if (!ShouldDisplayAircraft(Data, route))
+    AircraftCategory category = aircraft_get_category(Data->ICAO);
+    if (!ShouldDisplayAircraft(Data, route, category))
       continue;
 
     ViewableAircraft++;
@@ -947,7 +948,7 @@ void TForm1::BuildAircraftBatches(int &ViewableAircraft)
       else if (Data->Altitude < 10000) inst.scale = 2.0f;
     }
     inst.heading = Data->Heading;
-    inst.imageNum = SelectAircraftIcon(Data);
+    inst.imageNum = static_cast<int>(category); // category enum값을 imageNum에 직접 할당
     inst.color[0] = color[0]; inst.color[1] = color[1]; inst.color[2] = color[2]; inst.color[3] = color[3];
     m_planeBatch.push_back(inst);
 
@@ -1220,23 +1221,23 @@ bool TForm1::IsRouteMatched(const RouteInfo* route) const {
 
 
 void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
-	  TMouseButton Button, TShiftState Shift, int X, int Y)
+    TMouseButton Button, TShiftState Shift, int X, int Y)
 {
 
  if (Button==mbLeft)
    {
-	if (Shift.Contains(ssCtrl))
-	{
+  if (Shift.Contains(ssCtrl))
+  {
 
-	}
-	else
-	{
-	 g_MouseLeftDownX = X;
-	 g_MouseLeftDownY = Y;
-	 g_MouseDownMask |= LEFT_MOUSE_DOWN ;
-	 if(g_EarthView)
-	 	g_EarthView->StartDrag(X, Y, NAV_DRAG_PAN);
-	}
+  }
+  else
+  {
+   g_MouseLeftDownX = X;
+   g_MouseLeftDownY = Y;
+   g_MouseDownMask |= LEFT_MOUSE_DOWN ;
+   if(g_EarthView)
+    g_EarthView->StartDrag(X, Y, NAV_DRAG_PAN);
+  }
   }
  else if (Button==mbRight)
   {
@@ -1266,11 +1267,11 @@ void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
     lastRightClickX = X;
     lastRightClickY = Y;
     
-	if (AreaTemp->NumPoints<MAX_AREA_POINTS)
-	{
-	  AddPoint(X, Y);
-	}
-	else ShowMessage("Max Area Points Reached");
+  if (AreaTemp->NumPoints<MAX_AREA_POINTS)
+  {
+    AddPoint(X, Y);
+  }
+  else ShowMessage("Max Area Points Reached");
    }
   else
    {
@@ -1284,13 +1285,13 @@ void __fastcall TForm1::ObjectDisplayMouseDown(TObject *Sender,
 //---------------------------------------------------------------------------
 
 void __fastcall TForm1::ObjectDisplayMouseUp(TObject *Sender,
-	  TMouseButton Button, TShiftState Shift, int X, int Y)
+    TMouseButton Button, TShiftState Shift, int X, int Y)
 {
   if (Button == mbLeft) g_MouseDownMask &= ~LEFT_MOUSE_DOWN;
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
-	  TShiftState Shift, int X, int Y)
+    TShiftState Shift, int X, int Y)
 {
  int X1,Y1;
  double VLat,VLon;
@@ -1298,7 +1299,7 @@ void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
  Y1=(ObjectDisplay->Height-1)-Y;
  X1=X;
  if  ((X1>=Map_v[0].x) && (X1<=Map_v[1].x) &&
-	  (Y1>=Map_v[0].y) && (Y1<=Map_v[3].y))
+    (Y1>=Map_v[0].y) && (Y1<=Map_v[3].y))
 
   {
    pfVec3 Point;
@@ -1311,21 +1312,21 @@ void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
    Point[2]=0.0;
 
    for (i = 0; i < Areas->Count; i++)
-	 {
-	   TArea *Area = (TArea *)Areas->Items[i];
-	   if (PointInPolygon(Area->Points,Area->NumPoints,Point))
-	   {
+   {
+     TArea *Area = (TArea *)Areas->Items[i];
+     if (PointInPolygon(Area->Points,Area->NumPoints,Point))
+     {
 #if 0
-		  MsgLog->Lines->Add("In Polygon "+ Area->Name);
+      MsgLog->Lines->Add("In Polygon "+ Area->Name);
 #endif
        }
-	 }
+   }
   }
 
   if (g_MouseDownMask & LEFT_MOUSE_DOWN)
   {
     if(g_EarthView)
-		g_EarthView->Drag(g_MouseLeftDownX, g_MouseLeftDownY, X,Y, NAV_DRAG_PAN);
+    g_EarthView->Drag(g_MouseLeftDownX, g_MouseLeftDownY, X,Y, NAV_DRAG_PAN);
    ObjectDisplay->Repaint();
   }
 
@@ -1334,7 +1335,7 @@ void __fastcall TForm1::ObjectDisplayMouseMove(TObject *Sender,
 void __fastcall TForm1::ResetXYOffset(void)
 {
  if(g_EarthView)
- 	SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
+  SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
  ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
@@ -1350,11 +1351,11 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
  if (XY2LatLon2(X,Y,Lat,Lon)==0)
  {
 
-	AreaTemp->Points[AreaTemp->NumPoints][1]=Lat;
-	AreaTemp->Points[AreaTemp->NumPoints][0]=Lon;
-	AreaTemp->Points[AreaTemp->NumPoints][2]=0.0;
-	AreaTemp->NumPoints++;
-	ObjectDisplay->Repaint();
+  AreaTemp->Points[AreaTemp->NumPoints][1]=Lat;
+  AreaTemp->Points[AreaTemp->NumPoints][0]=Lon;
+  AreaTemp->Points[AreaTemp->NumPoints][2]=0.0;
+  AreaTemp->NumPoints++;
+  ObjectDisplay->Repaint();
  }
  }
 //---------------------------------------------------------------------------
@@ -1373,7 +1374,7 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
   X1=X;
 
   if  ((X1<Map_v[0].x) || (X1>Map_v[1].x) ||
-	   (Y1<Map_v[0].y) || (Y1>Map_v[3].y)) return;
+     (Y1<Map_v[0].y) || (Y1>Map_v[3].y)) return;
 
   VLat=atan(sinh(M_PI * (2 * (Map_w[1].y-(yf*(Map_v[3].y-Y1))))))*(180.0 / M_PI);
   VLon=(Map_w[1].x-(xf*(Map_v[1].x-X1)))*360.0;
@@ -1381,56 +1382,56 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
   MinRange=16.0;
 
   for(Data = FAircraftModel->GetFirstAircraft(&iterator, &Key);
-			  Data; Data = FAircraftModel->GetNextAircraft(&iterator, &Key))
-	{
-	  if (Data->HaveLatLon)
-	  {
-	   dlat= VLat-Data->Latitude;
-	   dlon= VLon-Data->Longitude;
-	   Range=sqrt(dlat*dlat+dlon*dlon);
-	   if (Range<MinRange)
-	   {
-		Current_ICAO=Data->ICAO;
-		MinRange=Range;
-	   }
-	  }
-	}
-	if (MinRange< 0.2)
-	{
-	  TADS_B_Aircraft * ADS_B_Aircraft = FAircraftModel->FindAircraftByICAO(Current_ICAO);
-	  if (ADS_B_Aircraft)
-	  {
-		if (!CPA_Hook)
-		{
-		 TrackHook.Valid_CC=true;
-		 TrackHook.ICAO_CC=ADS_B_Aircraft->ICAO;
-		 LOG_DEBUG_F(LogHandler::CAT_GENERAL, "Selected aircraft info: %s", GetAircraftDBInfo(ADS_B_Aircraft->ICAO));
+        Data; Data = FAircraftModel->GetNextAircraft(&iterator, &Key))
+  {
+    if (Data->HaveLatLon)
+    {
+     dlat= VLat-Data->Latitude;
+     dlon= VLon-Data->Longitude;
+     Range=sqrt(dlat*dlat+dlon*dlon);
+     if (Range<MinRange)
+     {
+    Current_ICAO=Data->ICAO;
+    MinRange=Range;
+     }
+    }
+  }
+  if (MinRange< 0.2)
+  {
+    TADS_B_Aircraft * ADS_B_Aircraft = FAircraftModel->FindAircraftByICAO(Current_ICAO);
+    if (ADS_B_Aircraft)
+    {
+    if (!CPA_Hook)
+    {
+     TrackHook.Valid_CC=true;
+     TrackHook.ICAO_CC=ADS_B_Aircraft->ICAO;
+     LOG_DEBUG_F(LogHandler::CAT_GENERAL, "Selected aircraft info: %s", GetAircraftDBInfo(ADS_B_Aircraft->ICAO));
      OnAircraftSelected(ADS_B_Aircraft->ICAO);
-		}
-		else
-		{
-		 TrackHook.Valid_CPA=true;
-		 TrackHook.ICAO_CPA=ADS_B_Aircraft->ICAO;
+    }
+    else
+    {
+     TrackHook.Valid_CPA=true;
+     TrackHook.ICAO_CPA=ADS_B_Aircraft->ICAO;
         }
 ;
-	  }
+    }
 
-	}
-	else
-		{
-		 if (!CPA_Hook)
-		  {
-		   TrackHook.Valid_CC=false;
+  }
+  else
+    {
+     if (!CPA_Hook)
+      {
+       TrackHook.Valid_CC=false;
            m_selectedRoutePaths.clear();
            UpdateCloseControlPanel(nullptr, nullptr);
-		  }
-		 else
-		   {
-			TrackHook.Valid_CPA=false;
-			CpaTimeValue->Caption="None";
-	        CpaDistanceValue->Caption="None";
+      }
+     else
+       {
+      TrackHook.Valid_CPA=false;
+      CpaTimeValue->Caption="None";
+          CpaDistanceValue->Caption="None";
            }
-		}
+    }
 
  }
 //---------------------------------------------------------------------------
@@ -1449,7 +1450,7 @@ int __fastcall TForm1::XY2LatLon2(int x, int y,double &lat,double &lon )
   X1=x;
 
   if  ((X1<Map_v[0].x) || (X1>Map_v[1].x) ||
-	   (Y1<Map_v[0].y) || (Y1>Map_v[3].y)) return -1;
+     (Y1<Map_v[0].y) || (Y1>Map_v[3].y)) return -1;
 
   lat=atan(sinh(M_PI * (2 * (Map_w[1].y-(yf*(Map_v[3].y-Y1))))))*(180.0 / M_PI);
   lon=(Map_w[1].x-(xf*(Map_v[1].x-X1)))*360.0;
@@ -1460,7 +1461,7 @@ int __fastcall TForm1::XY2LatLon2(int x, int y,double &lat,double &lon )
 void __fastcall TForm1::ZoomInClick(TObject *Sender)
 {
   if(g_EarthView)
-  	g_EarthView->SingleMovement(NAV_ZOOM_IN);
+    g_EarthView->SingleMovement(NAV_ZOOM_IN);
   ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
@@ -1468,7 +1469,7 @@ void __fastcall TForm1::ZoomInClick(TObject *Sender)
 void __fastcall TForm1::ZoomOutClick(TObject *Sender)
 {
  if(g_EarthView)
-	g_EarthView->SingleMovement(NAV_ZOOM_OUT);
+  g_EarthView->SingleMovement(NAV_ZOOM_OUT);
 
  ObjectDisplay->Repaint();
 }
@@ -1533,26 +1534,26 @@ void __fastcall TForm1::CompleteClick(TObject *Sender)
   int or1=orientation2D_Polygon( AreaTemp->Points,AreaTemp->NumPoints);
   if (or1==0)
    {
-	ShowMessage("Degenerate Polygon");
+  ShowMessage("Degenerate Polygon");
     CancelClick(NULL);
-	return;
+  return;
    }
   if (or1==CLOCKWISE)
   {
-	DWORD i;
+  DWORD i;
 
-	memcpy(AreaTemp->PointsAdj,AreaTemp->Points,sizeof(AreaTemp->Points));
-	for (i = 0; i <AreaTemp->NumPoints; i++)
-	 {
-	   memcpy(AreaTemp->Points[i],
-			 AreaTemp->PointsAdj[AreaTemp->NumPoints-1-i],sizeof( pfVec3));
-	 }
+  memcpy(AreaTemp->PointsAdj,AreaTemp->Points,sizeof(AreaTemp->Points));
+  for (i = 0; i <AreaTemp->NumPoints; i++)
+   {
+     memcpy(AreaTemp->Points[i],
+       AreaTemp->PointsAdj[AreaTemp->NumPoints-1-i],sizeof( pfVec3));
+   }
   }
   if (checkComplex( AreaTemp->Points,AreaTemp->NumPoints))
    {
-	ShowMessage("Polygon is Complex");
-	CancelClick(NULL);
-	return;
+  ShowMessage("Polygon is Complex");
+  CancelClick(NULL);
+  return;
    }
 
   AreaConfirm->ShowDialog();
@@ -1564,27 +1565,27 @@ void __fastcall TForm1::AreaListViewSelectItem(TObject *Sender, TListItem *Item,
    DWORD Count;
    TArea *AreaS=(TArea *)Item->Data;
    bool HaveSelected=false;
-	Count=Areas->Count;
-	for (unsigned int i = 0; i < Count; i++)
-	 {
-	   TArea *Area = (TArea *)Areas->Items[i];
-	   if (Area==AreaS)
-	   {
-		if (Item->Selected)
-		{
-		 Area->Selected=true;
-		 HaveSelected=true;
-		}
-		else
-		 Area->Selected=false;
-	   }
-	   else
-		 Area->Selected=false;
+  Count=Areas->Count;
+  for (unsigned int i = 0; i < Count; i++)
+   {
+     TArea *Area = (TArea *)Areas->Items[i];
+     if (Area==AreaS)
+     {
+    if (Item->Selected)
+    {
+     Area->Selected=true;
+     HaveSelected=true;
+    }
+    else
+     Area->Selected=false;
+     }
+     else
+     Area->Selected=false;
 
-	 }
-	if (HaveSelected)  Delete->Enabled=true;
-	else Delete->Enabled=false;
-	ObjectDisplay->Repaint();
+   }
+  if (HaveSelected)  Delete->Enabled=true;
+  else Delete->Enabled=false;
+  ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::DeleteClick(TObject *Sender)
@@ -1593,35 +1594,35 @@ void __fastcall TForm1::DeleteClick(TObject *Sender)
 
  while (i < AreaListView->Items->Count)
   {
-	if (AreaListView->Items->Item[i]->Selected)
-	{
-	 TArea *Area;
-	 int Index;
+  if (AreaListView->Items->Item[i]->Selected)
+  {
+   TArea *Area;
+   int Index;
 
-	 Area=(TArea *)AreaListView->Items->Item[i]->Data;
-	 for (Index = 0; Index < Areas->Count; Index++)
-	 {
-	  if (Area==Areas->Items[Index])
-	  {
-	   Areas->Delete(Index);
-	   AreaListView->Items->Item[i]->Delete();
-	   TTriangles *Tri=Area->Triangles;
-	   while(Tri)
-	   {
-		TTriangles *temp=Tri;
-		Tri=Tri->next;
-		free(temp->indexList);
-		free(temp);
-	   }
-	   delete Area;
-	   break;
-	  }
-	 }
-	}
-	else
-	{
-	  ++i;
-	}
+   Area=(TArea *)AreaListView->Items->Item[i]->Data;
+   for (Index = 0; Index < Areas->Count; Index++)
+   {
+    if (Area==Areas->Items[Index])
+    {
+     Areas->Delete(Index);
+     AreaListView->Items->Item[i]->Delete();
+     TTriangles *Tri=Area->Triangles;
+     while(Tri)
+     {
+    TTriangles *temp=Tri;
+    Tri=Tri->next;
+    free(temp->indexList);
+    free(temp);
+     }
+     delete Area;
+     break;
+    }
+   }
+  }
+  else
+  {
+    ++i;
+  }
   }
  //if (Areas->Count>0)  Delete->Enabled=true;
  //else   Delete->Enabled=false;
@@ -1630,7 +1631,7 @@ void __fastcall TForm1::DeleteClick(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::AreaListViewCustomDrawItem(TCustomListView *Sender,
-	  TListItem *Item, TCustomDrawState State, bool &DefaultDraw)
+    TListItem *Item, TCustomDrawState State, bool &DefaultDraw)
 {
    TRect   R;
    int Left;
@@ -1646,19 +1647,19 @@ void __fastcall TForm1::AreaListViewCustomDrawItem(TCustomListView *Sender,
  Left = AreaListView->Column[0]->Width;
 
   for(int   i=0   ;i<Item->SubItems->Count;i++)
-	 {
-	  R=Item->DisplayRect(drBounds);
-	  R.Left=R.Left+Left;
-	   TArea *Area=(TArea *)Item->Data;
-	  AreaListView->Canvas->Brush->Color=Area->Color;
-	  AreaListView->Canvas->FillRect(R);
-	 }
+   {
+    R=Item->DisplayRect(drBounds);
+    R.Left=R.Left+Left;
+     TArea *Area=(TArea *)Item->Data;
+    AreaListView->Canvas->Brush->Color=Area->Color;
+    AreaListView->Canvas->FillRect(R);
+   }
 
   if (Item->Selected)
-	 {
-	  R=Item->DisplayRect(drBounds);
-	  AreaListView->Canvas->DrawFocusRect(R);
-	 }
+   {
+    R=Item->DisplayRect(drBounds);
+    AreaListView->Canvas->DrawFocusRect(R);
+   }
    DefaultDraw=false;
 }
 //---------------------------------------------------------------------------
@@ -1669,41 +1670,41 @@ void __fastcall TForm1::DeleteAllAreas(void)
  while (AreaListView->Items->Count)
   {
 
-	 TArea *Area;
-	 int Index;
+   TArea *Area;
+   int Index;
 
-	 Area=(TArea *)AreaListView->Items->Item[i]->Data;
-	 for (Index = 0; Index < Areas->Count; Index++)
-	 {
-	  if (Area==Areas->Items[Index])
-	  {
-	   Areas->Delete(Index);
-	   AreaListView->Items->Item[i]->Delete();
-	   TTriangles *Tri=Area->Triangles;
-	   while(Tri)
-	   {
-		TTriangles *temp=Tri;
-		Tri=Tri->next;
-		free(temp->indexList);
-		free(temp);
-	   }
-	   delete Area;
-	   break;
-	  }
-	 }
+   Area=(TArea *)AreaListView->Items->Item[i]->Data;
+   for (Index = 0; Index < Areas->Count; Index++)
+   {
+    if (Area==Areas->Items[Index])
+    {
+     Areas->Delete(Index);
+     AreaListView->Items->Item[i]->Delete();
+     TTriangles *Tri=Area->Triangles;
+     while(Tri)
+     {
+    TTriangles *temp=Tri;
+    Tri=Tri->next;
+    free(temp->indexList);
+    free(temp);
+     }
+     delete Area;
+     break;
+    }
+   }
   }
 
  ObjectDisplay->Repaint();
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::FormMouseWheel(TObject *Sender, TShiftState Shift,
-	  int WheelDelta, TPoint &MousePos, bool &Handled)
+    int WheelDelta, TPoint &MousePos, bool &Handled)
 {
  if(g_EarthView){
-	if (WheelDelta>0)
-	  g_EarthView->SingleMovement(NAV_ZOOM_IN);
- 	else g_EarthView->SingleMovement(NAV_ZOOM_OUT);
-  	  ObjectDisplay->Repaint();
+  if (WheelDelta>0)
+    g_EarthView->SingleMovement(NAV_ZOOM_IN);
+  else g_EarthView->SingleMovement(NAV_ZOOM_OUT);
+      ObjectDisplay->Repaint();
  }
 }
 //---------------------------------------------------------------------------
@@ -1718,7 +1719,7 @@ void __fastcall TForm1::HandleRawData(const AnsiString& data)
 // Raw 연결 성공 시
 void __fastcall TForm1::HandleRawConnected()
 {
-	FRawButtonScroller->UpdateCaption("Raw Disconnect");
+  FRawButtonScroller->UpdateCaption("Raw Disconnect");
     RawPlaybackButton->Enabled = false;
 }
 
@@ -1726,7 +1727,7 @@ void __fastcall TForm1::HandleRawConnected()
 // Raw 연결 종료 시
 void __fastcall TForm1::HandleRawDisconnected(const String& reason)
 {
-	FRawButtonScroller->UpdateCaption("Raw Connect");
+  FRawButtonScroller->UpdateCaption("Raw Connect");
     RawPlaybackButton->Enabled = true;
 
     // 파일 재생 중이었다면 관련 상태도 초기화
@@ -1741,13 +1742,13 @@ void __fastcall TForm1::HandleRawDisconnected(const String& reason)
 void __fastcall TForm1::HandleRawReconnecting()
 {
     // UI를 "재연결 중" 상태로 업데이트
-	FRawButtonScroller->UpdateCaption("Reconnecting... (Cancel)");
+  FRawButtonScroller->UpdateCaption("Reconnecting... (Cancel)");
     RawPlaybackButton->Enabled = false;
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::RawConnectButtonClick(TObject *Sender)
 {
-	if (!FRawDataHandler->IsActive())
+  if (!FRawDataHandler->IsActive())
     {
 		FRawButtonScroller->UpdateCaption("Connecting... (Cancel)");
         FRawDataHandler->Connect(RawIpAddress->Text, 30002, TConnectionType::Raw);
@@ -1777,7 +1778,7 @@ void __fastcall TForm1::RawRecordButtonClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::RawPlaybackButtonClick(TObject *Sender)
 {
-	if (!FRawDataHandler->IsActive())
+  if (!FRawDataHandler->IsActive())
     {
         if (PlaybackRawDialog->Execute())
         {
@@ -1801,7 +1802,7 @@ void __fastcall TForm1::CycleImagesClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SBSConnectButtonClick(TObject *Sender)
 {
-	if (!FSBSDataHandler->IsActive())
+  if (!FSBSDataHandler->IsActive())
     {
         FSBSDataHandler->Connect(SBSIpAddress->Text, 5002, TConnectionType::SBS);
     }
@@ -1842,18 +1843,18 @@ void __fastcall TForm1::HandleSBSData(const AnsiString& data)
         }
     }
 
-	FAircraftModel->ProcessSbsMessage(data, CycleImages->Checked, NumSpriteImages);
+  FAircraftModel->ProcessSbsMessage(data, CycleImages->Checked, NumSpriteImages);
 }
 
 void __fastcall TForm1::HandleSBSConnected()
 {
-	FSBSButtonScroller->UpdateCaption("SBS Disconnect");
+  FSBSButtonScroller->UpdateCaption("SBS Disconnect");
     SBSPlaybackButton->Enabled = false;
 }
 
 void __fastcall TForm1::HandleSBSDisconnected(const String& reason)
 {
-	FSBSButtonScroller->UpdateCaption("SBS Connect");
+  FSBSButtonScroller->UpdateCaption("SBS Connect");
     SBSPlaybackButton->Enabled = true;
      if (PlayBackSBSStream) {
         delete PlayBackSBSStream;
@@ -1865,9 +1866,9 @@ void __fastcall TForm1::HandleSBSDisconnected(const String& reason)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::HandleSBSReconnecting()
 {
-	// UI를 "재연결 중" 상태로 업데이트
-	FSBSButtonScroller->UpdateCaption("Reconnecting... (Cancel)");
-	SBSPlaybackButton->Enabled = false;
+  // UI를 "재연결 중" 상태로 업데이트
+  FSBSButtonScroller->UpdateCaption("Reconnecting... (Cancel)");
+  SBSPlaybackButton->Enabled = false;
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SBSRecordButtonClick(TObject *Sender)
@@ -1896,7 +1897,7 @@ void __fastcall TForm1::SBSRecordButtonClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SBSPlaybackButtonClick(TObject *Sender)
 {
-	if (!FSBSDataHandler->IsActive())
+  if (!FSBSDataHandler->IsActive())
     {
         if (PlaybackSBSDialog->Execute())
         {
@@ -1925,9 +1926,9 @@ void __fastcall TForm1::LoadMap(int Type)
 {
     // 1. Provider 생성
     AnsiString HomeDir = ExtractFilePath(ExtractFileDir(Application->ExeName));
-	provider = MAPFactory::Create(static_cast<MapType>(Type), HomeDir.c_str(), LoadMapFromInternet);
+  provider = MAPFactory::Create(static_cast<MapType>(Type), HomeDir.c_str(), LoadMapFromInternet);
 
-	if (!provider) {
+  if (!provider) {
         LOG_ERROR(LogHandler::CAT_MAP, "Failed to create map provider - Unknown map type");
         throw Sysutils::Exception("Unknown map type");
     }
@@ -1938,22 +1939,22 @@ void __fastcall TForm1::LoadMap(int Type)
     
     if (mkdir(cachedir.c_str()) != 0 && errno != EEXIST) {
         LOG_ERROR_F(LogHandler::CAT_MAP, "Failed to create cache directory: %s", cachedir.c_str());
-	    throw Sysutils::Exception("Can not create cache directory");
+      throw Sysutils::Exception("Can not create cache directory");
     }
 
     g_Storage = new FilesystemStorage(cachedir, true);
-	g_Keyhole = new KeyholeConnection(provider->GetURI());
-	g_Keyhole->SetFetchTileCallback([p = provider.get()](TilePtr tile, KeyholeConnection* conn) {
-		if (!p) {
-			LOG_ERROR(LogHandler::CAT_MAP, "Provider is nullptr in tile fetch callback");
-			return;
-		}
+  g_Keyhole = new KeyholeConnection(provider->GetURI());
+  g_Keyhole->SetFetchTileCallback([p = provider.get()](TilePtr tile, KeyholeConnection* conn) {
+    if (!p) {
+      LOG_ERROR(LogHandler::CAT_MAP, "Provider is nullptr in tile fetch callback");
+      return;
+    }
         //printf("[Callback] LAMDA invoked!\n");
-		p->FetchTile(tile, conn);
-	});
-	g_Keyhole->SetSaveStorage(g_Storage);
-	g_Storage->SetNextLoadStorage(g_Keyhole);
-	
+    p->FetchTile(tile, conn);
+  });
+  g_Keyhole->SetSaveStorage(g_Storage);
+  g_Storage->SetNextLoadStorage(g_Keyhole);
+  
     g_GETileManager = new TileManager(g_Storage);
     g_MasterLayer = new GoogleLayer(g_GETileManager);
     g_EarthView = new FlatEarthView(g_MasterLayer);
@@ -2002,9 +2003,9 @@ void __fastcall TForm1::MapComboBoxChange(TObject *Sender)
   else if (MapComboBox->ItemIndex == 4) LoadMap(OpenStreetMap);
 
   if (g_EarthView) {
-	g_EarthView->m_Eye.h = m_Eyeh;
-	g_EarthView->m_Eye.x = m_Eyex;
-	g_EarthView->m_Eye.y = m_Eyey;
+  g_EarthView->m_Eye.h = m_Eyeh;
+  g_EarthView->m_Eye.x = m_Eyex;
+  g_EarthView->m_Eye.y = m_Eyey;
   }
   Timer1->Enabled = true;
   Timer2->Enabled = true;
@@ -2015,9 +2016,9 @@ void __fastcall TForm1::BigQueryCheckBoxClick(TObject *Sender)
 {
  if (BigQueryCheckBox->State==cbChecked) CreateBigQueryCSV();
  else {
-	   CloseBigQueryCSV();
-	   RunPythonScript(BigQueryPythonScript,BigQueryPath+" "+BigQueryCSVFileName);
-	  }
+     CloseBigQueryCSV();
+     RunPythonScript(BigQueryPythonScript,BigQueryPath+" "+BigQueryCSVFileName);
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::CreateBigQueryCSV(void)
@@ -2028,12 +2029,12 @@ void __fastcall TForm1::CreateBigQueryCSV(void)
     BigQueryFileCount++;
     BigQueryCSV=new TStreamWriter(HomeDir+"..\\BigQuery\\"+BigQueryCSVFileName, false);
     if (BigQueryCSV==NULL)
-	  {
-		ShowMessage("Cannot Open BigQuery CSV File "+HomeDir+"..\\BigQuery\\"+BigQueryCSVFileName);
+    {
+    ShowMessage("Cannot Open BigQuery CSV File "+HomeDir+"..\\BigQuery\\"+BigQueryCSVFileName);
         BigQueryCheckBox->State=cbUnchecked;
-	  }
-	AnsiString Header=AnsiString("Message Type,Transmission Type,SessionID,AircraftID,HexIdent,FlightID,Date_MSG_Generated,Time_MSG_Generated,Date_MSG_Logged,Time_MSG_Logged,Callsign,Altitude,GroundSpeed,Track,Latitude,Longitude,VerticalRate,Squawk,Alert,Emergency,SPI,IsOnGround");
-	BigQueryCSV->WriteLine(Header);
+    }
+  AnsiString Header=AnsiString("Message Type,Transmission Type,SessionID,AircraftID,HexIdent,FlightID,Date_MSG_Generated,Time_MSG_Generated,Date_MSG_Logged,Time_MSG_Logged,Callsign,Altitude,GroundSpeed,Track,Latitude,Longitude,VerticalRate,Squawk,Alert,Emergency,SPI,IsOnGround");
+  BigQueryCSV->WriteLine(Header);
 }
 //--------------------------------------------------------------------------
 void __fastcall TForm1::CloseBigQueryCSV(void)
@@ -2045,7 +2046,7 @@ void __fastcall TForm1::CloseBigQueryCSV(void)
     }
 }
 //--------------------------------------------------------------------------
-	 static void RunPythonScript(AnsiString scriptPath,AnsiString args)
+   static void RunPythonScript(AnsiString scriptPath,AnsiString args)
      {
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
@@ -2056,39 +2057,39 @@ void __fastcall TForm1::CloseBigQueryCSV(void)
 
         AnsiString commandLine = "python " + scriptPath+" "+args;
         char* cmdLineCharArray = new char[strlen(commandLine.c_str()) + 1];
-		strcpy(cmdLineCharArray, commandLine.c_str());
-	#define  LOG_PYTHON 1
-	#if LOG_PYTHON
+    strcpy(cmdLineCharArray, commandLine.c_str());
+  #define  LOG_PYTHON 1
+  #if LOG_PYTHON
         //printf("%s\n", cmdLineCharArray);
         SECURITY_ATTRIBUTES sa;
         sa.nLength = sizeof(sa);
-	    sa.lpSecurityDescriptor = NULL;
+      sa.lpSecurityDescriptor = NULL;
         sa.bInheritHandle = TRUE;
-		HANDLE h = CreateFileA(Form1->BigQueryLogFileName.c_str(),
-		FILE_APPEND_DATA,
+    HANDLE h = CreateFileA(Form1->BigQueryLogFileName.c_str(),
+    FILE_APPEND_DATA,
         FILE_SHARE_WRITE | FILE_SHARE_READ,
         &sa,
-		OPEN_ALWAYS,
+    OPEN_ALWAYS,
         FILE_ATTRIBUTE_NORMAL,
-		NULL );
+    NULL );
 
         si.hStdInput = NULL;
-	    si.hStdOutput = h;
-	    si.hStdError = h; // Redirect standard error as well, if needed
-	    si.dwFlags |= STARTF_USESTDHANDLES;
+      si.hStdOutput = h;
+      si.hStdError = h; // Redirect standard error as well, if needed
+      si.dwFlags |= STARTF_USESTDHANDLES;
     #endif
         if (!CreateProcessA(
             nullptr,          // No module name (use command line)
             cmdLineCharArray, // Command line
             nullptr,          // Process handle not inheritable
             nullptr,          // Thread handle not inheritable
-	 #if LOG_PYTHON
+   #if LOG_PYTHON
             TRUE,
      #else
             FALSE,            // Set handle inheritance to FALSE
      #endif
             CREATE_NO_WINDOW, // Don't create a console window
-			nullptr,          // Use parent's environment block
+      nullptr,          // Use parent's environment block
             nullptr,          // Use parent's starting directory
             &si,             // Pointer to STARTUPINFO structure
             &pi))             // Pointer to PROCESS_INFORMATION structure
@@ -2100,8 +2101,8 @@ void __fastcall TForm1::CloseBigQueryCSV(void)
 
         // Optionally, detach from the process
         CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
-		delete[] cmdLineCharArray;
+    CloseHandle(pi.hThread);
+    delete[] cmdLineCharArray;
     }
 
  //--------------------------------------------------------------------------
@@ -2118,25 +2119,25 @@ void __fastcall TForm1::UseSBSLocalClick(TObject *Sender)
 //---------------------------------------------------------------------------
 static bool DeleteFilesWithExtension(AnsiString dirPath, AnsiString extension)
  {
-	AnsiString searchPattern = dirPath + "\\*." + extension;
-	WIN32_FIND_DATAA findData;
+  AnsiString searchPattern = dirPath + "\\*." + extension;
+  WIN32_FIND_DATAA findData;
 
-	HANDLE hFind = FindFirstFileA(searchPattern.c_str(), &findData);
+  HANDLE hFind = FindFirstFileA(searchPattern.c_str(), &findData);
 
-	if (hFind == INVALID_HANDLE_VALUE) {
-		return false; // No files found or error
-	}
+  if (hFind == INVALID_HANDLE_VALUE) {
+    return false; // No files found or error
+  }
 
-	do {
-		AnsiString filePath = dirPath + "\\" + findData.cFileName;
-		if (DeleteFileA(filePath.c_str()) == 0) {
-			FindClose(hFind);
-			return false; // Failed to delete a file
-		}
-	} while (FindNextFileA(hFind, &findData) != 0);
+  do {
+    AnsiString filePath = dirPath + "\\" + findData.cFileName;
+    if (DeleteFileA(filePath.c_str()) == 0) {
+      FindClose(hFind);
+      return false; // Failed to delete a file
+    }
+  } while (FindNextFileA(hFind, &findData) != 0);
 
-	FindClose(hFind);
-	return true;
+  FindClose(hFind);
+  return true;
 }
 static bool IsFirstRow=true;
 static bool CallBackInit=false;
@@ -2153,11 +2154,11 @@ static bool CallBackInit=false;
 
    if (ctx->field_num==0)
    {
-	strcpy(Area,value);
+  strcpy(Area,value);
    }
    else if (ctx->field_num==3)
    {
-	strcpy(Lat,value);
+  strcpy(Lat,value);
    }
    else if (ctx->field_num==4)
    {
@@ -2167,51 +2168,51 @@ static bool CallBackInit=false;
    if (ctx->field_num == (ctx->num_fields - 1))
    {
 
-	float fLat, fLon;
+  float fLat, fLon;
    if (!IsFirstRow)
    {
-	 if (!CallBackInit)
-	 {
-	  strcpy(LastArea,Area);
-	  CallBackInit=true;
-	 }
-	   if(strcmp(LastArea,Area)!=0)
-		{
+   if (!CallBackInit)
+   {
+    strcpy(LastArea,Area);
+    CallBackInit=true;
+   }
+     if(strcmp(LastArea,Area)!=0)
+    {
 
-		 if (FinshARTCCBoundary())
-		   {
-			LOG_ERROR_F(LogHandler::CAT_MAP, "Failed to load area ID: %s", LastArea);
-		   }
-		 else LOG_INFO_F(LogHandler::CAT_MAP, "Successfully loaded area ID: %s", LastArea);
-		 strcpy(LastArea,Area);
-		 }
-	   if (Form1->AreaTemp==NULL)
-		   {
-			Form1->AreaTemp= new TArea;
-			Form1->AreaTemp->NumPoints=0;
-			Form1->AreaTemp->Name=Area;
-			Form1->AreaTemp->Selected=false;
-			Form1->AreaTemp->Triangles=NULL;
-			 LOG_INFO_F(LogHandler::CAT_MAP, "Loading area ID: %s", Area);
-		   }
-	   if (sscanf(Lat,"%2d%2d%2d%2d%c",&Deg,&Min,&Sec,&Hsec,&Dir)!=5)
-		 printf("Latitude Parse Error\n");
-	   fLat=Deg+Min/60.0+Sec/3600.0+Hsec/360000.00;
-	   if (Dir=='S') fLat=-fLat;
+     if (FinshARTCCBoundary())
+       {
+      LOG_ERROR_F(LogHandler::CAT_MAP, "Failed to load area ID: %s", LastArea);
+       }
+     else LOG_INFO_F(LogHandler::CAT_MAP, "Successfully loaded area ID: %s", LastArea);
+     strcpy(LastArea,Area);
+     }
+     if (Form1->AreaTemp==NULL)
+       {
+      Form1->AreaTemp= new TArea;
+      Form1->AreaTemp->NumPoints=0;
+      Form1->AreaTemp->Name=Area;
+      Form1->AreaTemp->Selected=false;
+      Form1->AreaTemp->Triangles=NULL;
+       LOG_INFO_F(LogHandler::CAT_MAP, "Loading area ID: %s", Area);
+       }
+     if (sscanf(Lat,"%2d%2d%2d%2d%c",&Deg,&Min,&Sec,&Hsec,&Dir)!=5)
+     printf("Latitude Parse Error\n");
+     fLat=Deg+Min/60.0+Sec/3600.0+Hsec/360000.00;
+     if (Dir=='S') fLat=-fLat;
 
-	   if (sscanf(Lon,"%3d%2d%2d%2d%c",&Deg,&Min,&Sec,&Hsec,&Dir)!=5)
-		 printf("Longitude Parse Error\n");
-	   fLon=Deg+Min/60.0+Sec/3600.0+Hsec/360000.00;
-	   if (Dir=='W') fLon=-fLon;
-	   //printf("%f, %f\n",fLat,fLon);
-	   if (Form1->AreaTemp->NumPoints<MAX_AREA_POINTS)
-	   {
-		Form1->AreaTemp->Points[Form1->AreaTemp->NumPoints][1]=fLat;
-		Form1->AreaTemp->Points[Form1->AreaTemp->NumPoints][0]=fLon;
-		Form1->AreaTemp->Points[Form1->AreaTemp->NumPoints][2]=0.0;
-		Form1->AreaTemp->NumPoints++;
-	   }
-		else printf("Max Area Points Reached\n");
+     if (sscanf(Lon,"%3d%2d%2d%2d%c",&Deg,&Min,&Sec,&Hsec,&Dir)!=5)
+     printf("Longitude Parse Error\n");
+     fLon=Deg+Min/60.0+Sec/3600.0+Hsec/360000.00;
+     if (Dir=='W') fLon=-fLon;
+     //printf("%f, %f\n",fLat,fLon);
+     if (Form1->AreaTemp->NumPoints<MAX_AREA_POINTS)
+     {
+    Form1->AreaTemp->Points[Form1->AreaTemp->NumPoints][1]=fLat;
+    Form1->AreaTemp->Points[Form1->AreaTemp->NumPoints][0]=fLon;
+    Form1->AreaTemp->Points[Form1->AreaTemp->NumPoints][2]=0.0;
+    Form1->AreaTemp->NumPoints++;
+     }
+    else printf("Max Area Points Reached\n");
 
    }
    if (IsFirstRow) IsFirstRow=false;
@@ -2231,17 +2232,17 @@ bool __fastcall TForm1::LoadARTCCBoundaries(AnsiString FileName)
    CallBackInit=false;
    if (!CSV_open_and_parse_file(&csv_ctx))
     {
-	  LOG_ERROR_F(LogHandler::CAT_MAP, "Parsing of file failed: %s - %s", FileName.c_str(), strerror(errno));
+    LOG_ERROR_F(LogHandler::CAT_MAP, "Parsing of file failed: %s - %s", FileName.c_str(), strerror(errno));
       return (false);
-	}
+  }
    if ((Form1->AreaTemp!=NULL) && (Form1->AreaTemp->NumPoints>0))
    {
      char Area[512];
      strcpy(Area,Form1->AreaTemp->Name.c_str());
      if (FinshARTCCBoundary())
-	    {
+      {
         LOG_ERROR_F(LogHandler::CAT_MAP, "Error finalizing area ID: %s", Area);
-	    }
+      }
         else LOG_INFO_F(LogHandler::CAT_MAP, "Successfully finalized area ID: %s", Area);
    }
    printf("Done\n");
@@ -2258,31 +2259,31 @@ static int FinshARTCCBoundary(void)
   int or1=orientation2D_Polygon( Form1->AreaTemp->Points,Form1->AreaTemp->NumPoints);
   if (or1==0)
    {
-	TArea *Temp;
-	Temp= Form1->AreaTemp;
-	Form1->AreaTemp=NULL;
-	delete  Temp;
-	printf("Degenerate Polygon\n");
-	return(-1);
+  TArea *Temp;
+  Temp= Form1->AreaTemp;
+  Form1->AreaTemp=NULL;
+  delete  Temp;
+  printf("Degenerate Polygon\n");
+  return(-1);
    }
   if (or1==CLOCKWISE)
   {
-	DWORD i;
+  DWORD i;
 
-	memcpy(Form1->AreaTemp->PointsAdj,Form1->AreaTemp->Points,sizeof(Form1->AreaTemp->Points));
-	for (i = 0; i <Form1->AreaTemp->NumPoints; i++)
-	 {
-	   memcpy(Form1->AreaTemp->Points[i],
-			 Form1->AreaTemp->PointsAdj[Form1->AreaTemp->NumPoints-1-i],sizeof( pfVec3));
-	 }
+  memcpy(Form1->AreaTemp->PointsAdj,Form1->AreaTemp->Points,sizeof(Form1->AreaTemp->Points));
+  for (i = 0; i <Form1->AreaTemp->NumPoints; i++)
+   {
+     memcpy(Form1->AreaTemp->Points[i],
+       Form1->AreaTemp->PointsAdj[Form1->AreaTemp->NumPoints-1-i],sizeof( pfVec3));
+   }
   }
   if (checkComplex( Form1->AreaTemp->Points,Form1->AreaTemp->NumPoints))
    {
-	TArea *Temp;
-	Temp= Form1->AreaTemp;
-	Form1->AreaTemp=NULL;
-	delete  Temp;
-	printf("Polygon is Complex\n");
+  TArea *Temp;
+  Temp= Form1->AreaTemp;
+  Form1->AreaTemp=NULL;
+  delete  Temp;
+  printf("Polygon is Complex\n");
     return(-2);
    }
   DWORD Row,Count,i;
@@ -2304,7 +2305,7 @@ static int FinshARTCCBoundary(void)
  }
 
  triangulatePoly(Form1->AreaTemp->Points,Form1->AreaTemp->NumPoints,
-				 &Form1->AreaTemp->Triangles);
+         &Form1->AreaTemp->Triangles);
 
  Form1->AreaTemp->Color=TColor(PopularColors[CurrentColor]);
  CurrentColor++ ;
@@ -2462,7 +2463,7 @@ void __fastcall TForm1::OnAircraftSelected(uint32_t icao)
     const RouteInfo* route = nullptr;
     m_selectedRoutePaths.clear();
 
-	if (ac){
+  if (ac){
         // **배열을 AnsiString으로 변환한 뒤 처리!**
         AnsiString flightNum = AnsiString(ac->FlightNum).Trim().UpperCase();
         auto it = callSignToRoute.find(flightNum.c_str());
@@ -2560,7 +2561,7 @@ void __fastcall TForm1::PlaybackSpeedComboBoxChange(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::AssessmentTimerTimer(TObject *Sender)
 {
-	std::vector<TADS_B_Aircraft*> snapshot_pointers;
+  std::vector<TADS_B_Aircraft*> snapshot_pointers;
     snapshot_pointers.reserve(FAircraftModel->GetAircraftCount());
 
     ght_iterator_t iterator;
@@ -2571,7 +2572,7 @@ void __fastcall TForm1::AssessmentTimerTimer(TObject *Sender)
          aircraft = FAircraftModel->GetNextAircraft(&iterator, &key))
     {
         if (aircraft->HaveLatLon) {
-			snapshot_pointers.push_back(aircraft);
+      snapshot_pointers.push_back(aircraft);
         }
     }
     // 임계값: 수평 1해리, 수직 1000피트
