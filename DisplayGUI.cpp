@@ -17,6 +17,8 @@
 #include <cmath>
 #include <Vcl.ComCtrls.hpp> // For TTrackBar
 #include <unordered_map>
+#include <mutex>
+#include <cstring>
 #include <cctype>
 #include <Sysutils.hpp>
 
@@ -38,6 +40,7 @@
 #include "AircraftApi.h"
 #include "AircraftApiThread.h"
 #include "ntds2d.h"
+#include <memory>
 #include "LogHandler.h"
 
 #define AIRCRAFT_DATABASE_URL   "https://opensky-network.org/datasets/metadata/aircraftDatabase.zip"
@@ -387,6 +390,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   PlayBackRawStream=NULL;
   TrackHook.Valid_CC=false;
   TrackHook.Valid_CPA=false;
+  FRenderThread = nullptr;
 
   AreaTemp=NULL;
   Areas= new TList;
@@ -464,7 +468,30 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   // 필터 변수 초기화
   filterPolygonOnly = false;
   filterWaypointsOnly = false;
-    
+
+  m_renderParams.minSpeed = SpeedMinTrackBar->Position;
+  m_renderParams.maxSpeed = SpeedMaxTrackBar->Position;
+  m_renderParams.minAlt   = AltitudeMinTrackBar->Position;
+  m_renderParams.maxAlt   = AltitudeMaxTrackBar->Position;
+  m_renderParams.airlineFilter  = !filterAirline.IsEmpty();
+  m_renderParams.originFilter   = !filterOrigin.IsEmpty();
+  m_renderParams.destFilter     = !filterDestination.IsEmpty();
+  m_renderParams.filterAirline  = filterAirline;
+  m_renderParams.filterOrigin   = filterOrigin;
+  m_renderParams.filterDestination = filterDestination;
+  m_renderParams.showCommercial      = CommercialCheckBox->Checked;
+  m_renderParams.showCargo           = CargoCheckBox->Checked;
+  m_renderParams.showHelicopter      = HelicopterCheckBox->Checked;
+  m_renderParams.showMilitary        = MilitaryCheckBox->Checked;
+  m_renderParams.showBusinessJet     = BusinessJetCheckBox->Checked;
+  m_renderParams.showGlider          = GliderCheckBox->Checked;
+  m_renderParams.showUltralight      = UltralightCheckBox->Checked;
+  m_renderParams.showGeneralAviation = GeneralAviationCheckBox->Checked;
+  m_renderParams.filterPolygonOnly   = filterPolygonOnly;
+  m_renderParams.filterWaypointsOnly = filterWaypointsOnly;
+
+  FRenderThread = new TAircraftRenderThread(this);
+
   LOG_INFO(LogHandler::CAT_GENERAL, "Initialization complete");
 }
 
@@ -502,6 +529,7 @@ __fastcall TForm1::~TForm1()
   delete FSBSButtonScroller;
   delete FAircraftModel;
   delete FProximityAssessor;
+  if (FRenderThread) { FRenderThread->Terminate(); FRenderThread->WaitFor(); delete FRenderThread; }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SetMapCenter(double &x, double &y)
@@ -878,21 +906,301 @@ bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route
   return showAircraft;
 }
 
+bool TForm1::EvaluateDisplay(const TADS_B_Aircraft* Data, const RouteInfo* route,
+                             AircraftCategory category, const RenderThreadParams& p)
+{
+  if (p.airlineFilter && route)
+  {
+    AnsiString code = route->airlineCode.c_str();
+    if (code.SubString(1, p.filterAirline.Length()) != p.filterAirline)
+      return false;
+  }
+
+  if (p.originFilter && route && !route->airportCodes.empty())
+  {
+    if (AnsiString(route->airportCodes.front().c_str()) != p.filterOrigin)
+      return false;
+  }
+
+  if (p.destFilter && route && !route->airportCodes.empty())
+  {
+    if (AnsiString(route->airportCodes.back().c_str()) != p.filterDestination)
+      return false;
+  }
+
+  if (Data->HaveSpeedAndHeading)
+    if (Data->Speed < p.minSpeed || Data->Speed > p.maxSpeed)
+      return false;
+
+  if (Data->HaveAltitude)
+    if (Data->Altitude < p.minAlt || Data->Altitude > p.maxAlt)
+      return false;
+
+  if (p.filterPolygonOnly && Areas->Count > 0)
+  {
+    bool inAnyPolygon = false;
+    pfVec3 aircraftPoint;
+    aircraftPoint[0] = Data->Longitude;
+    aircraftPoint[1] = Data->Latitude;
+    aircraftPoint[2] = 0.0;
+
+    for (DWORD i = 0; i < Areas->Count; i++)
+    {
+      TArea *Area = (TArea *)Areas->Items[i];
+      if (PointInPolygon(Area->Points, Area->NumPoints, aircraftPoint))
+      {
+        inAnyPolygon = true;
+        break;
+      }
+    }
+
+    if (!inAnyPolygon && Data->HaveSpeedAndHeading)
+    {
+      const double timeIntervals[] = {5.0, 10.0, 15.0};
+      const int numIntervals = sizeof(timeIntervals) / sizeof(timeIntervals[0]);
+      for (int t = 0; t < numIntervals && !inAnyPolygon; t++)
+      {
+        double futureLat, futureLon, junk;
+        double timeInHours = timeIntervals[t] / 60.0;
+        if (VDirect(Data->Latitude, Data->Longitude,
+                   Data->Heading, Data->Speed * timeInHours,
+                   &futureLat, &futureLon, &junk) == OKNOERROR)
+        {
+          pfVec3 futurePoint;
+          futurePoint[0] = futureLon;
+          futurePoint[1] = futureLat;
+          futurePoint[2] = 0.0;
+          for (DWORD i = 0; i < Areas->Count; i++)
+          {
+            TArea *Area = (TArea *)Areas->Items[i];
+            if (PointInPolygon(Area->Points, Area->NumPoints, futurePoint))
+            {
+              inAnyPolygon = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (!inAnyPolygon)
+      return false;
+  }
+
+  if (p.filterWaypointsOnly && route && !route->airportCodes.empty())
+  {
+    bool inWaypointArea = false;
+    pfVec3 aircraftPoint;
+    aircraftPoint[0] = Data->Longitude;
+    aircraftPoint[1] = Data->Latitude;
+    aircraftPoint[2] = 0.0;
+
+    for (size_t i = 0; i < route->airportCodes.size() - 1 && !inWaypointArea; i++)
+    {
+      const AirportInfo* ap1 = nullptr;
+      const AirportInfo* ap2 = nullptr;
+      auto it1 = icaoToAirport.find(route->airportCodes[i]);
+      auto it2 = icaoToAirport.find(route->airportCodes[i + 1]);
+      if (it1 != icaoToAirport.end()) ap1 = it1->second;
+      if (it2 != icaoToAirport.end()) ap2 = it2->second;
+      if (ap1 && ap2)
+      {
+        double lat1 = ap1->latitude, lon1 = ap1->longitude;
+        double lat2 = ap2->latitude, lon2 = ap2->longitude;
+        double midLat = (lat1 + lat2) / 2.0;
+        double midLon = (lon1 + lon2) / 2.0;
+        double distToMid = sqrt(pow(aircraftPoint[1] - midLat, 2) + pow(aircraftPoint[0] - midLon, 2));
+        double routeDist = sqrt(pow(lat2 - lat1, 2) + pow(lon2 - lon1, 2));
+        if (distToMid <= routeDist / 3.0)
+        {
+          inWaypointArea = true;
+          break;
+        }
+      }
+    }
+
+    if (!inWaypointArea && Data->HaveSpeedAndHeading)
+    {
+      const double timeIntervals[] = {5.0, 10.0, 15.0};
+      const int numIntervals = sizeof(timeIntervals) / sizeof(timeIntervals[0]);
+      for (int t = 0; t < numIntervals && !inWaypointArea; t++)
+      {
+        double futureLat, futureLon, junk;
+        double timeInHours = timeIntervals[t] / 60.0;
+        if (VDirect(Data->Latitude, Data->Longitude,
+                   Data->Heading, Data->Speed * timeInHours,
+                   &futureLat, &futureLon, &junk) == OKNOERROR)
+        {
+          for (size_t i = 0; i < route->airportCodes.size() - 1; i++)
+          {
+            const AirportInfo* ap1 = nullptr;
+            const AirportInfo* ap2 = nullptr;
+            auto it1 = icaoToAirport.find(route->airportCodes[i]);
+            auto it2 = icaoToAirport.find(route->airportCodes[i + 1]);
+            if (it1 != icaoToAirport.end()) ap1 = it1->second;
+            if (it2 != icaoToAirport.end()) ap2 = it2->second;
+            if (ap1 && ap2)
+            {
+              double lat1 = ap1->latitude, lon1 = ap1->longitude;
+              double lat2 = ap2->latitude, lon2 = ap2->longitude;
+              double midLat = (lat1 + lat2) / 2.0;
+              double midLon = (lon1 + lon2) / 2.0;
+              double distToMid = sqrt(pow(futureLat - midLat, 2) + pow(futureLon - midLon, 2));
+              double routeDist = sqrt(pow(lat2 - lat1, 2) + pow(lon2 - lon1, 2));
+              if (distToMid <= routeDist / 3.0)
+              {
+                inWaypointArea = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (!inWaypointArea)
+      return false;
+  }
+
+  bool showAircraft = false;
+  switch(category)
+  {
+    case CATEGORY_COMMERCIAL: showAircraft = p.showCommercial; break;
+    case CATEGORY_CARGO: showAircraft = p.showCargo; break;
+    case CATEGORY_HELICOPTER: showAircraft = p.showHelicopter; break;
+    case CATEGORY_MILITARY: showAircraft = p.showMilitary; break;
+    case CATEGORY_BUSINESS_JET: showAircraft = p.showBusinessJet; break;
+    case CATEGORY_GLIDER: showAircraft = p.showGlider; break;
+    case CATEGORY_ULTRALIGHT: showAircraft = p.showUltralight; break;
+    case CATEGORY_GENERAL_AVIATION:
+    case CATEGORY_UNKNOWN:
+    default:
+      showAircraft = p.showGeneralAviation;
+      break;
+  }
+
+  return showAircraft;
+}
+
+__fastcall TAircraftRenderThread::TAircraftRenderThread(TForm1* owner)
+  : TThread(false), FOwner(owner) {}
+
+void __fastcall TAircraftRenderThread::Execute()
+{
+  while(!Terminated)
+  {
+    RenderThreadParams params;
+    {
+      std::lock_guard<std::mutex> lock(FOwner->m_renderInfoMutex);
+      params = FOwner->m_renderParams;
+    }
+
+    std::unordered_map<unsigned int, AircraftRenderInfo> local;
+    const void* Key;
+    ght_iterator_t iterator;
+    TADS_B_Aircraft* Data;
+    for(Data = FOwner->FAircraftModel->GetFirstAircraft(&iterator, &Key);
+        Data; Data = FOwner->FAircraftModel->GetNextAircraft(&iterator, &Key))
+    {
+      AircraftRenderInfo info = {};
+      const RouteInfo* route = nullptr;
+      if (params.airlineFilter || params.originFilter || params.destFilter)
+      {
+        auto it = FOwner->callSignToRoute.find(AnsiString(Data->FlightNum).c_str());
+        route = (it != FOwner->callSignToRoute.end()) ? it->second : nullptr;
+        if (!FOwner->IsRouteMatched(route, params.airlineFilter, params.originFilter, params.destFilter))
+        {
+          local[Data->ICAO] = info;
+          continue;
+        }
+      }
+
+      AircraftCategory category = Data->Category;
+      if (!FOwner->EvaluateDisplay(Data, route, category, params))
+      {
+        local[Data->ICAO] = info;
+        continue;
+      }
+
+      info.show = true;
+      float color[4] = {1.0f,1.0f,1.0f,1.0f};
+      bool isPartOfSelectedPair = (Data->ICAO == FOwner->FSelectedConflictPair.first || Data->ICAO == FOwner->FSelectedConflictPair.second);
+
+      if (aircraft_is_helicopter(Data->ICAO, NULL))
+        { color[0]=0.0f; color[1]=1.0f; color[2]=0.0f; }
+      else if (aircraft_is_military(Data->ICAO, NULL))
+        { color[0]=1.0f; color[1]=0.0f; color[2]=0.0f; }
+
+      if (Data->HaveSpeedAndHeading)
+        color[0]=1.0f, color[1]=0.0f, color[2]=1.0f, color[3]=1.0f;
+      else
+        color[0]=1.0f, color[1]=0.0f, color[2]=0.0f, color[3]=1.0f;
+
+      if (isPartOfSelectedPair)
+        { color[0]=0.0f; color[1]=1.0f; color[2]=1.0f; }
+      else if (FOwner->FConflictMap.count(Data->ICAO))
+        { color[0]=0.0f; color[1]=0.0f; color[2]=1.0f; }
+
+      float scale = 1.5f;
+      if (Data->HaveAltitude)
+      {
+        if (Data->Altitude > 30000) scale = 1.0f;
+        else if (Data->Altitude < 10000) scale = 2.0f;
+      }
+
+      info.scale = scale;
+      info.heading = Data->HaveSpeedAndHeading ? Data->Heading : 0.0f;
+      info.imageNum = static_cast<int>(category);
+      memcpy(info.planeColor, color, sizeof(color));
+      memcpy(info.textColor, color, sizeof(color));
+      info.glyphCount = 0;
+      for(int i=0;i<6 && Data->HexAddr[i]; ++i)
+      {
+        char c = Data->HexAddr[i];
+        if(c>='0' && c<='9') info.glyphs[i] = c-'0';
+        else if(c>='A' && c<='F') info.glyphs[i] = 10 + (c-'A');
+        else info.glyphs[i] = 0;
+        info.glyphCount = i+1;
+      }
+      local[Data->ICAO] = info;
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(FOwner->m_renderInfoMutex);
+      FOwner->m_renderInfoTable.swap(local);
+    }
+
+    TThread::Sleep(200);
+  }
+}
+
 void TForm1::BuildAircraftBatches(int &ViewableAircraft)
 {
   const void *Key;
   ght_iterator_t iterator;
   TADS_B_Aircraft* Data;
-
-  int minSpeed = SpeedMinTrackBar->Position;
-  int maxSpeed = SpeedMaxTrackBar->Position;
-  int minAlt   = AltitudeMinTrackBar->Position;
-  int maxAlt   = AltitudeMaxTrackBar->Position;
-
-  bool airlineFilter   = !filterAirline.IsEmpty();
-  bool originFilter    = !filterOrigin.IsEmpty();
-  bool destFilter      = !filterDestination.IsEmpty();
-  bool anyRouteFilter  = airlineFilter || originFilter || destFilter;
+  {
+    std::lock_guard<std::mutex> lock(m_renderInfoMutex);
+    m_renderParams.minSpeed = SpeedMinTrackBar->Position;
+    m_renderParams.maxSpeed = SpeedMaxTrackBar->Position;
+    m_renderParams.minAlt   = AltitudeMinTrackBar->Position;
+    m_renderParams.maxAlt   = AltitudeMaxTrackBar->Position;
+    m_renderParams.airlineFilter  = !filterAirline.IsEmpty();
+    m_renderParams.originFilter   = !filterOrigin.IsEmpty();
+    m_renderParams.destFilter     = !filterDestination.IsEmpty();
+    m_renderParams.filterAirline  = filterAirline;
+    m_renderParams.filterOrigin   = filterOrigin;
+    m_renderParams.filterDestination = filterDestination;
+    m_renderParams.showCommercial      = CommercialCheckBox->Checked;
+    m_renderParams.showCargo           = CargoCheckBox->Checked;
+    m_renderParams.showHelicopter      = HelicopterCheckBox->Checked;
+    m_renderParams.showMilitary        = MilitaryCheckBox->Checked;
+    m_renderParams.showBusinessJet     = BusinessJetCheckBox->Checked;
+    m_renderParams.showGlider          = GliderCheckBox->Checked;
+    m_renderParams.showUltralight      = UltralightCheckBox->Checked;
+    m_renderParams.showGeneralAviation = GeneralAviationCheckBox->Checked;
+    m_renderParams.filterPolygonOnly   = filterPolygonOnly;
+    m_renderParams.filterWaypointsOnly = filterWaypointsOnly;
+  }
 
   m_planeBatch.clear();
   m_lineBatch.clear();
@@ -909,83 +1217,39 @@ void TForm1::BuildAircraftBatches(int &ViewableAircraft)
         ScrY < Map_v[0].y || ScrY > Map_v[3].y)
       continue;
 
-    const RouteInfo* route = nullptr;
-    if (anyRouteFilter)
-    {
-      auto it = callSignToRoute.find(AnsiString(Data->FlightNum).c_str());
-      route = (it != callSignToRoute.end()) ? it->second : nullptr;
-      if (!IsRouteMatched(route, airlineFilter, originFilter, destFilter))
-        continue;
-    }
-
-    AircraftCategory category = Data->Category;
-    if (!ShouldDisplayAircraft(Data, route, category, minSpeed, maxSpeed, minAlt, maxAlt,
-                               airlineFilter, originFilter, destFilter))
+    auto itInfo = m_renderInfoTable.find(Data->ICAO);
+    if (itInfo == m_renderInfoTable.end() || !itInfo->second.show)
       continue;
+    const AircraftRenderInfo& info = itInfo->second;
 
     ViewableAircraft++;
 
     double ScrX2 = ScrX, ScrY2 = ScrY;
-
-    float color[4] = {1.0f,1.0f,1.0f,1.0f};
-    bool isPartOfSelectedPair = (Data->ICAO == FSelectedConflictPair.first || Data->ICAO == FSelectedConflictPair.second);
-
-    if (aircraft_is_helicopter(Data->ICAO, NULL))
-      { color[0]=0.0f; color[1]=1.0f; color[2]=0.0f; }
-    else if (aircraft_is_military(Data->ICAO, NULL))
-      { color[0]=1.0f; color[1]=0.0f; color[2]=0.0f; }
-
-    if (Data->HaveSpeedAndHeading)
+    if (Data->HaveSpeedAndHeading && TimeToGoCheckBox->State==cbChecked)
     {
-      color[0]=1.0f; color[1]=0.0f; color[2]=1.0f; color[3]=1.0f;
-      if (TimeToGoCheckBox->State==cbChecked)
-      {
-        double lat2,lon2,az2;
-        VDirect(Data->Latitude,Data->Longitude,
-                Data->Heading,Data->Speed*(double)TimeToGoTrackBar->Position/3600.0,&lat2,&lon2,&az2);
-        LatLon2XY(lat2,lon2, ScrX2, ScrY2);
-      }
-    }
-    else
-    {
-      Data->Heading=0.0;
-      color[0]=1.0f; color[1]=0.0f; color[2]=0.0f; color[3]=1.0f;
-    }
-
-    if (isPartOfSelectedPair)
-    {
-      color[0]=0.0f; color[1]=1.0f; color[2]=1.0f;
-    }
-    else if (FConflictMap.count(Data->ICAO))
-    {
-      color[0]=0.0f; color[1]=0.0f; color[2]=1.0f;
+      double lat2,lon2,az2;
+      VDirect(Data->Latitude,Data->Longitude,
+              Data->Heading,Data->Speed*(double)TimeToGoTrackBar->Position/3600.0,&lat2,&lon2,&az2);
+      LatLon2XY(lat2,lon2, ScrX2, ScrY2);
     }
 
     AirplaneInstance inst;
-    inst.x = ScrX; inst.y = ScrY; inst.scale = 1.5f;
-    if (Data->HaveAltitude)
-    {
-      if (Data->Altitude > 30000) inst.scale = 1.0f;
-      else if (Data->Altitude < 10000) inst.scale = 2.0f;
-    }
-    inst.heading = Data->Heading;
-    inst.imageNum = static_cast<int>(category); // category enum값을 imageNum에 직접 할당
-    inst.color[0] = color[0]; inst.color[1] = color[1]; inst.color[2] = color[2]; inst.color[3] = color[3];
+    inst.x = ScrX; inst.y = ScrY; inst.scale = info.scale;
+    inst.heading = info.heading;
+    inst.imageNum = info.imageNum;
+    memcpy(inst.color, info.planeColor, sizeof(inst.color));
     m_planeBatch.push_back(inst);
 
     AirplaneLineInstance line; line.x1 = ScrX; line.y1 = ScrY; line.x2 = ScrX2; line.y2 = ScrY2;
     m_lineBatch.push_back(line);
 
-    for(int i=0; i<6 && Data->HexAddr[i]; ++i)
+    for(int i=0; i<info.glyphCount; ++i)
     {
       HexCharInstance tc;
       tc.x = ScrX + 40 + i * (HEX_FONT_WIDTH - 15) * GetHexTextScale();
       tc.y = ScrY - 10;
-      char c = Data->HexAddr[i];
-      if(c >= '0' && c <= '9') tc.glyph = c - '0';
-      else if(c >= 'A' && c <= 'F') tc.glyph = 10 + (c - 'A');
-      else tc.glyph = 0;
-      tc.color[0] = color[0]; tc.color[1] = color[1]; tc.color[2] = color[2]; tc.color[3] = color[3];
+      tc.glyph = info.glyphs[i];
+      memcpy(tc.color, info.textColor, sizeof(tc.color));
       m_textBatch.push_back(tc);
     }
   }

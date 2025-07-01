@@ -28,6 +28,8 @@
 #include <IdTCPConnection.hpp>
 #include "cspin.h"
 #include <vector>
+#include <unordered_map>
+#include <mutex>
 #include <utility>
 #include "ntds2d.h"
 #include "TCPDataHandler.h"
@@ -69,6 +71,49 @@ typedef struct
  TTriangles *Triangles;
  bool        Selected;
 }TArea;
+
+struct AircraftRenderInfo {
+    bool show;
+    float scale;
+    float heading;
+    int   imageNum;
+    float planeColor[4];
+    float textColor[4];
+    int   glyphs[6];
+    int   glyphCount;
+};
+
+struct RenderThreadParams {
+    int  minSpeed;
+    int  maxSpeed;
+    int  minAlt;
+    int  maxAlt;
+    bool airlineFilter;
+    bool originFilter;
+    bool destFilter;
+    bool showCommercial;
+    bool showCargo;
+    bool showHelicopter;
+    bool showMilitary;
+    bool showBusinessJet;
+    bool showGlider;
+    bool showUltralight;
+    bool showGeneralAviation;
+    bool filterPolygonOnly;
+    bool filterWaypointsOnly;
+    AnsiString filterAirline;
+    AnsiString filterOrigin;
+    AnsiString filterDestination;
+}; 
+
+class TAircraftRenderThread : public TThread {
+private:
+    TForm1* FOwner;
+protected:
+    void __fastcall Execute() override;
+public:
+    __fastcall TAircraftRenderThread(TForm1* owner);
+};
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
@@ -318,6 +363,8 @@ private:	// User declarations
                 bool ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route, AircraftCategory category,
                                             int minSpeed, int maxSpeed, int minAlt, int maxAlt,
                                             bool airlineFilter, bool originFilter, bool destFilter);
+                bool EvaluateDisplay(const TADS_B_Aircraft* Data, const RouteInfo* route,
+                                   AircraftCategory category, const RenderThreadParams& params);
                 void BuildAircraftBatches(int &ViewableAircraft);
                 void RenderAircraftBatches();
                 void UpdateTrackHookDisplay();
@@ -389,6 +436,11 @@ public:		// User declarations
         std::vector<AirplaneInstance> m_planeBatch;
         std::vector<AirplaneLineInstance> m_lineBatch;
         std::vector<HexCharInstance> m_textBatch;
+
+        std::unordered_map<unsigned int, AircraftRenderInfo> m_renderInfoTable;
+        std::mutex m_renderInfoMutex;
+        RenderThreadParams m_renderParams;
+        TAircraftRenderThread* FRenderThread;
 
         // 선택된 항공기의 경로(대권) 좌표 목록
         std::vector<std::vector<std::pair<double,double>>> m_selectedRoutePaths;
