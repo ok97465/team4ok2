@@ -453,7 +453,6 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   FSelectedConflictPair = {0, 0};
 
   // 충돌 필터 초기값 설정
-  m_conflictFilterEnabled = true;
   m_tcpaMinThreshold = 10.0;     // 10초로 변경
   m_tcpaMaxThreshold = 900.0;    // 900초 (15분)
   m_horizontalMinDistance = 0.0;  // 0 NM
@@ -469,6 +468,10 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   m_criticalBlinkState = false;
   m_hasCriticalConflicts = false;
   m_hasHighConflicts = false;
+  
+  // 충돌 항공기 표시 옵션 초기화
+  m_showConflictAircraftAlways = false;
+  m_showOnlyConflictAircraft = false;
   
   // 충돌 필터 UI 초기화
   UpdateConflictFilterLabels();
@@ -722,6 +725,19 @@ bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route
     if (Data->ICAO == FSelectedConflictPair.first || Data->ICAO == FSelectedConflictPair.second) {
       return true; // 다른 필터 무시하고 무조건 표시
     }
+  }
+  
+  // 충돌감지된 항공기인지 확인
+  bool isConflictAircraft = FConflictMap.count(Data->ICAO) > 0;
+  
+  // "충돌감지된 항공기만 표시" 옵션이 활성화된 경우
+  if (m_showOnlyConflictAircraft) {
+    return isConflictAircraft; // 충돌감지된 항공기만 표시
+  }
+  
+  // "충돌감지된 항공기는 필터 관계없이 항상 표시" 옵션이 활성화된 경우
+  if (m_showConflictAircraftAlways && isConflictAircraft) {
+    return true; // 다른 필터 무시하고 무조건 표시
   }
   
   if (airlineFilter && route)
@@ -2619,24 +2635,11 @@ void __fastcall TForm1::AssessmentTimerTimer(TObject *Sender)
         }
     }
     
-    // 충돌 필터 활성화 상태에 따라 임계값 결정
-    double horizontalThreshold, verticalThreshold;
-    int timeThreshold;
-    double minTimeThreshold;
-    
-    if (m_conflictFilterEnabled) {
-        // 사용자가 설정한 충돌 필터 값들을 임계값으로 사용
-        horizontalThreshold = m_horizontalMaxDistance;  // NM
-        verticalThreshold = m_verticalMaxDistance;      // feet
-        timeThreshold = (int)m_tcpaMaxThreshold;        // seconds
-        minTimeThreshold = m_tcpaMinThreshold;          // seconds
-    } else {
-        // 필터 비활성화 시 기본 임계값 사용 (넓은 범위)
-        horizontalThreshold = 5.0;    // 5 NM
-        verticalThreshold = 3000.0;   // 3000 feet
-        timeThreshold = 900;          // 15분
-        minTimeThreshold = 0.0;       // 0초
-    }
+    // 충돌 필터 설정값을 임계값으로 사용
+    double horizontalThreshold = m_horizontalMaxDistance;  // NM
+    double verticalThreshold = m_verticalMaxDistance;      // feet
+    int timeThreshold = (int)m_tcpaMaxThreshold;           // seconds
+    double minTimeThreshold = m_tcpaMinThreshold;          // seconds
     
     FProximityAssessor->startAssessment(snapshot_pointers, horizontalThreshold, verticalThreshold, timeThreshold, minTimeThreshold);
 }
@@ -2917,9 +2920,7 @@ void __fastcall TForm1::TCPAFilterTrackBarChange(TObject *Sender)
     TCPAThresholdLabel->Caption = "TCPA: " + minStr + " ~ " + maxStr;
     
     // TrackBar 값 변경 시 즉시 새로운 충돌 평가 시작
-    if (m_conflictFilterEnabled) {
-        AssessmentTimerTimer(NULL);
-    }
+    AssessmentTimerTimer(NULL);
 }
 
 //---------------------------------------------------------------------------
@@ -2934,9 +2935,7 @@ void __fastcall TForm1::HorizontalDistanceFilterTrackBarChange(TObject *Sender)
         FormatFloat("0.0", m_horizontalMaxDistance) + " NM";
         
     // TrackBar 값 변경 시 즉시 새로운 충돌 평가 시작
-    if (m_conflictFilterEnabled) {
-        AssessmentTimerTimer(NULL);
-    }
+    AssessmentTimerTimer(NULL);
 }
 
 //---------------------------------------------------------------------------
@@ -2950,51 +2949,37 @@ void __fastcall TForm1::VerticalDistanceFilterTrackBarChange(TObject *Sender)
     VerticalDistanceLabel->Caption = "V Dist: 0 ~ " + IntToStr(maxDist) + " ft";
     
     // TrackBar 값 변경 시 즉시 새로운 충돌 평가 시작
-    if (m_conflictFilterEnabled) {
-        AssessmentTimerTimer(NULL);
-    }
-}
-
-//---------------------------------------------------------------------------
-void __fastcall TForm1::ConflictFilterEnabledCheckBoxClick(TObject *Sender)
-{
-    m_conflictFilterEnabled = ConflictFilterEnabledCheckBox->Checked;
-    
-    // 필터 UI 컨트롤들 활성화/비활성화
-    TCPAMinTrackBar->Enabled = m_conflictFilterEnabled;
-    TCPAMaxTrackBar->Enabled = m_conflictFilterEnabled;
-    HorizontalMaxTrackBar->Enabled = m_conflictFilterEnabled;
-    VerticalMaxTrackBar->Enabled = m_conflictFilterEnabled;
-    ResetConflictFilterButton->Enabled = m_conflictFilterEnabled;
-    
-    // 필터 설정 변경 시 즉시 새로운 충돌 평가 시작
     AssessmentTimerTimer(NULL);
 }
 
 //---------------------------------------------------------------------------
-void __fastcall TForm1::ResetConflictFilterButtonClick(TObject *Sender)
+void __fastcall TForm1::ShowConflictAircraftAlwaysCheckBoxClick(TObject *Sender)
 {
-    // 필터 값들을 기본값으로 리셋
-    m_tcpaMinThreshold = 10.0;       // 10초로 변경
-    m_tcpaMaxThreshold = 900.0;      // 15분
-    m_horizontalMinDistance = 0.0;
-    m_horizontalMaxDistance = 1.0;   // 1 NM로 변경
-    m_verticalMinDistance = 0.0;
-    m_verticalMaxDistance = 1000.0;  // 1000 feet로 변경
+    m_showConflictAircraftAlways = ShowConflictAircraftAlwaysCheckBox->Checked;
     
-    // TrackBar 위치 업데이트
-    TCPAMinTrackBar->Position = 10;   // 10초로 변경
-    TCPAMaxTrackBar->Position = 900;  // 900초
-    HorizontalMaxTrackBar->Position = 10;   // 1.0 NM = 10 * 0.1
-    VerticalMaxTrackBar->Position = 1000;   // 1000 feet로 변경
-    
-    // 라벨 업데이트
-    UpdateConflictFilterLabels();
-    
-    // 리셋 후 즉시 새로운 충돌 평가 시작
-    if (m_conflictFilterEnabled) {
-        AssessmentTimerTimer(NULL);
+    // "충돌감지된 항공기만 표시"와 배타적 관계
+    if (m_showConflictAircraftAlways && m_showOnlyConflictAircraft) {
+        m_showOnlyConflictAircraft = false;
+        ShowOnlyConflictAircraftCheckBox->Checked = false;
     }
+    
+    // 화면 새로고침
+    ObjectDisplay->Repaint();
+}
+
+//---------------------------------------------------------------------------
+void __fastcall TForm1::ShowOnlyConflictAircraftCheckBoxClick(TObject *Sender)
+{
+    m_showOnlyConflictAircraft = ShowOnlyConflictAircraftCheckBox->Checked;
+    
+    // "충돌감지된 항공기는 필터 관계없이 항상 표시"와 배타적 관계
+    if (m_showOnlyConflictAircraft && m_showConflictAircraftAlways) {
+        m_showConflictAircraftAlways = false;
+        ShowConflictAircraftAlwaysCheckBox->Checked = false;
+    }
+    
+    // 화면 새로고침
+    ObjectDisplay->Repaint();
 }
 
 //---------------------------------------------------------------------------

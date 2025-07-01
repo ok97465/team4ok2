@@ -205,8 +205,8 @@ __published:	// IDE-managed Components
     TTrackBar *TCPAMaxTrackBar;
     TTrackBar *HorizontalMaxTrackBar;
     TTrackBar *VerticalMaxTrackBar;
-    TCheckBox *ConflictFilterEnabledCheckBox;
-    TButton *ResetConflictFilterButton;
+    TCheckBox *ShowConflictAircraftAlwaysCheckBox;
+    TCheckBox *ShowOnlyConflictAircraftCheckBox;
     // --- 항공기 카테고리 필터 UI ---
     TPanel *AircraftCategoryPanel;
     TLabel *AircraftCategoryLabel;
@@ -225,8 +225,8 @@ __published:	// IDE-managed Components
     void __fastcall TCPAFilterTrackBarChange(TObject *Sender);
     void __fastcall HorizontalDistanceFilterTrackBarChange(TObject *Sender);
     void __fastcall VerticalDistanceFilterTrackBarChange(TObject *Sender);
-    void __fastcall ConflictFilterEnabledCheckBoxClick(TObject *Sender);
-    void __fastcall ResetConflictFilterButtonClick(TObject *Sender);
+    void __fastcall ShowConflictAircraftAlwaysCheckBoxClick(TObject *Sender);
+    void __fastcall ShowOnlyConflictAircraftCheckBoxClick(TObject *Sender);
 	void __fastcall ApiCallTimerTimer(TObject *Sender);
 	void __fastcall ObjectDisplayInit(TObject *Sender);
 	void __fastcall ObjectDisplayResize(TObject *Sender);
@@ -410,7 +410,6 @@ public:		// User declarations
         std::vector<std::vector<std::pair<double,double>>> m_selectedRoutePaths;
 
         // --- 충돌 필터 관련 멤버 변수 ---
-        bool m_conflictFilterEnabled;
         double m_tcpaMinThreshold;  // 초
         double m_tcpaMaxThreshold;  // 초
         double m_horizontalMinDistance;  // NM
@@ -423,6 +422,10 @@ public:		// User declarations
         bool m_criticalBlinkState;
         bool m_hasCriticalConflicts;
         bool m_hasHighConflicts;
+        
+        // --- 충돌 항공기 표시 옵션 ---
+        bool m_showConflictAircraftAlways;  // 충돌감지된 항공기는 필터 관계없이 항상 표시
+        bool m_showOnlyConflictAircraft;    // 충돌감지된 항공기만 표시
 };
 
 

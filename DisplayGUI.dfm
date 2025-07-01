@@ -1305,7 +1305,7 @@ object Form1: TForm1
           Left = 5
           Top = 270
           Width = 234
-          Height = 280
+          Height = 290
           BevelInner = bvLowered
           BevelKind = bkFlat
           TabOrder = 10
@@ -1444,31 +1444,36 @@ object Form1: TForm1
             TabOrder = 3
             OnChange = VerticalDistanceFilterTrackBarChange
           end
-          object ConflictFilterEnabledCheckBox: TCheckBox
+
+          object ShowConflictAircraftAlwaysCheckBox: TCheckBox
             Left = 5
             Top = 220
-            Width = 150
+            Width = 220
             Height = 17
-            Caption = 'Enable Conflict Filtering'
-            Checked = True
+            Caption = 'Show conflict aircraft always'
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
             Font.Name = 'Tahoma'
             Font.Style = [fsBold]
             ParentFont = False
-            State = cbChecked
             TabOrder = 4
-            OnClick = ConflictFilterEnabledCheckBoxClick
+            OnClick = ShowConflictAircraftAlwaysCheckBoxClick
           end
-          object ResetConflictFilterButton: TButton
-            Left = 80
-            Top = 245
-            Width = 75
-            Height = 20
-            Caption = 'Reset Filter'
+          object ShowOnlyConflictAircraftCheckBox: TCheckBox
+            Left = 5
+            Top = 240
+            Width = 220
+            Height = 17
+            Caption = 'Show only conflict aircraft'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
             TabOrder = 5
-            OnClick = ResetConflictFilterButtonClick
+            OnClick = ShowOnlyConflictAircraftCheckBoxClick
           end
         end
       end
