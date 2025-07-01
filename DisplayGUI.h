@@ -184,6 +184,8 @@ __published:	// IDE-managed Components
 	TLabel *Label28;
 	TTimer *AssessmentTimer;
 	TListView *ConflictListView;
+	TListView *DeviationListView; // 빅쿼리 이탈감지 항공기 정보 표시
+	TLabel *DeviationLabel; // 이탈감지 항공기 정보 레이블
 	TCheckBox *FilterPolygonOnlyCheckBox; // 정의된 경유지 내 비행기만 표시하는 체크박스
 	// --- 속도/고도 필터 UI ---
     TTrackBar *SpeedMinTrackBar;
@@ -291,6 +293,7 @@ private:	// User declarations
 	std::pair<unsigned int, unsigned int> FSelectedConflictPair;
 	bool filterPolygonOnly; // 다각형 내 비행기만 표시하는 필터
 	bool filterWaypointsOnly; // 정의된 경유지 내 비행기만 표시하는 필터
+	std::vector<AnsiString> FDeviationAircraftList; // 이탈감지된 항공기 정보 목록
 	
 	TTimer *ApiCallTimer;
 
@@ -340,6 +343,7 @@ private:	// User declarations
                                                        TCustomDrawState State, bool &DefaultDraw);
         void __fastcall ConflictListViewCustomDrawSubItem(TCustomListView *Sender, TListItem *Item,
                                                           int SubItem, TCustomDrawState State, bool &DefaultDraw);
+        void __fastcall DeviationListViewSelectItem(TObject *Sender, TListItem *Item, bool Selected);
 
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
@@ -364,6 +368,7 @@ public:		// User declarations
                             bool originFilter,
                             bool destFilter) const;
 	void InitRouteAirportMaps(); 
+	void __fastcall UpdateDeviationList(); // 이탈감지 항공기 목록 업데이트 
 
 
 	int                        MouseDownX,MouseDownY;

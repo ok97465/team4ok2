@@ -1541,6 +1541,41 @@ object Form1: TForm1
       TabOrder = 0
       ViewStyle = vsReport
     end
+    object DeviationLabel: TLabel
+      Left = 8
+      Top = 128
+      Width = 120
+      Height = 13
+      Caption = 'Route Deviation Alerts:'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clRed
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object DeviationListView: TListView
+      Left = 0
+      Top = 148
+      Width = 362
+      Height = 80
+      Columns = <
+        item
+          Caption = 'ICAO'
+          Width = 60
+        end
+        item
+          Caption = 'Flight'
+          Width = 80
+        end
+        item
+          Caption = 'Deviation Info'
+          Width = 200
+        end>
+      GridLines = True
+      TabOrder = 1
+      ViewStyle = vsReport
+    end
   end
   object MainMenu1: TMainMenu
     Left = 24
