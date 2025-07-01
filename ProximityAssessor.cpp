@@ -8,8 +8,8 @@
 #include "LogHandler.h"
 
 // TAssessmentThread 생성자 (변경 없음)
-__fastcall TAssessmentThread::TAssessmentThread(const std::vector<TADS_B_Aircraft*>& snapshot, double hThresh, double vThresh, int timeSec)
-    : TThread(false), FAircraftSnapshot(snapshot), FHorizontalThreshold(hThresh), FVerticalThreshold(vThresh), FTimeSec(timeSec)
+__fastcall TAssessmentThread::TAssessmentThread(const std::vector<TADS_B_Aircraft*>& snapshot, double hThresh, double vThresh, int timeSec, double minTimeSec)
+    : TThread(false), FAircraftSnapshot(snapshot), FHorizontalThreshold(hThresh), FVerticalThreshold(vThresh), FTimeSec(timeSec), FMinTimeSec(minTimeSec)
 {
     FreeOnTerminate = true;
 }
@@ -47,10 +47,10 @@ void __fastcall TAssessmentThread::Execute()
                            tcpa, cpa_distance_nm, vertical_cpa))
             {
                 // [수정] 새로운 충돌 조건 확인
-                // 1. 미래에 최단 근접 지점이 있고 (tcpa > 0)
-                // 2. 그 시간이 너무 멀지 않으며 (예: 15분 = 900초)
+                // 1. 미래에 최단 근접 지점이 있고 (tcpa > minTCPA)
+                // 2. 그 시간이 너무 멀지 않으며 (maxTCPA)
                 // 3. 최단 근접 거리가 임계값보다 작은 경우
-                if (tcpa > 0.5 && tcpa < FTimeSec && cpa_distance_nm < FHorizontalThreshold) {
+                if (tcpa > FMinTimeSec && tcpa < FTimeSec && cpa_distance_nm < FHorizontalThreshold) {
                     localConflictList.push_back({aircraft1->ICAO, aircraft2->ICAO, cpa_distance_nm, tcpa, vertical_cpa});
                 }
             }
@@ -63,17 +63,20 @@ void __fastcall TAssessmentThread::Execute()
     const double H_DIST_THRESHOLD = FHorizontalThreshold;
     const double V_DIST_THRESHOLD = FVerticalThreshold;
     const double TIME_THRESHOLD = static_cast<double>(FTimeSec);
+    const double MIN_TIME_THRESHOLD = FMinTimeSec;
     const double w_time = 3.0, w_vert = 2.0, w_horiz = 1.0;
     const double MAX_POSSIBLE_SCORE = w_time + w_vert + w_horiz;
 
     // 정규화 기반 위험 점수 계산 람다 함수
     auto calculateThreatScore = [&](double tcpa, double h_dist, double v_dist) {
-        tcpa = std::max(0.0, std::min(tcpa, TIME_THRESHOLD));
+        tcpa = std::max(MIN_TIME_THRESHOLD, std::min(tcpa, TIME_THRESHOLD));
         h_dist = std::max(0.0, std::min(h_dist, H_DIST_THRESHOLD));
         v_dist = std::max(0.0, std::min(v_dist, V_DIST_THRESHOLD));
 
         // 1. "위험 근접도" 계산 (0.0 ~ 1.0)
-        double time_proximity = 1.0 - (tcpa / TIME_THRESHOLD);
+        // TCPA 근접도는 Min~Max 범위 내에서 계산
+        double time_range = TIME_THRESHOLD - MIN_TIME_THRESHOLD;
+        double time_proximity = 1.0 - ((tcpa - MIN_TIME_THRESHOLD) / time_range);
         double horiz_proximity = 1.0 - (h_dist / H_DIST_THRESHOLD);
         double vert_proximity = 1.0 - (v_dist / V_DIST_THRESHOLD);
 
@@ -117,10 +120,10 @@ void __fastcall TAssessmentThread::Execute()
 ProximityAssessor::ProximityAssessor() : TObject(), FWorkerThread(NULL), FOnComplete(NULL) {}
 ProximityAssessor::~ProximityAssessor() { if (FWorkerThread) FWorkerThread->Terminate(); }
 
-void ProximityAssessor::startAssessment(const std::vector<TADS_B_Aircraft*>& aircraftSnapshot, double hThresh, double vThresh, int timeSec)
+void ProximityAssessor::startAssessment(const std::vector<TADS_B_Aircraft*>& aircraftSnapshot, double hThresh, double vThresh, int timeSec, double minTimeSec)
 {
     if (FWorkerThread) return;
-    FWorkerThread = new TAssessmentThread(aircraftSnapshot, hThresh, vThresh, timeSec);
+    FWorkerThread = new TAssessmentThread(aircraftSnapshot, hThresh, vThresh, timeSec, minTimeSec);
     FWorkerThread->OnTerminate = ThreadTerminated;
 }
 

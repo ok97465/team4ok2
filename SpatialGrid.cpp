@@ -10,8 +10,9 @@ void SpatialGrid::clear() {
     }
 }
 void SpatialGrid::getGridIndices(const TADS_B_Aircraft* aircraft, int& x, int& y) {
-    x = static_cast<int>(aircraft->Longitude + 180.0);
-    y = static_cast<int>(aircraft->Latitude + 90.0);
+    // 5도 해상도로 설정 (성능과 정확도의 균형)
+    x = static_cast<int>((aircraft->Longitude + 180.0) / 5.0);
+    y = static_cast<int>((aircraft->Latitude + 90.0) / 5.0);
     if (x < 0) x = 0; if (x >= GRID_WIDTH) x = GRID_WIDTH - 1;
     if (y < 0) y = 0; if (y >= GRID_HEIGHT) y = GRID_HEIGHT - 1;
 }

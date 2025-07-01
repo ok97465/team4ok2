@@ -28,10 +28,11 @@ private:
     double FHorizontalThreshold;
     double FVerticalThreshold;
     int FTimeSec;
+    double FMinTimeSec;  // TCPA Min 값 추가
 protected:
     void __fastcall Execute() override;
 public:
-    __fastcall TAssessmentThread(const std::vector<TADS_B_Aircraft*>& snapshot, double hThresh, double vThresh, int timeSec);
+    __fastcall TAssessmentThread(const std::vector<TADS_B_Aircraft*>& snapshot, double hThresh, double vThresh, int timeSec, double minTimeSec);
     //__fastcall TAssessmentThread();
     std::vector<ConflictPair> SortedConflictList;
     std::map<unsigned int, std::vector<RelatedConflictInfo>> ConflictMap;
@@ -47,7 +48,7 @@ private:
 public:
     ProximityAssessor(); // 생성자 수정
     ~ProximityAssessor();
-    void startAssessment(const std::vector<TADS_B_Aircraft*>& aircraftSnapshot, double hThresh, double vThresh, int timeSec);
+    void startAssessment(const std::vector<TADS_B_Aircraft*>& aircraftSnapshot, double hThresh, double vThresh, int timeSec, double minTimeSec);
     __property TNotifyEvent OnComplete = {read=FOnComplete, write=FOnComplete};
     std::vector<ConflictPair> SortedListResults;
     std::map<unsigned int, std::vector<RelatedConflictInfo>> MapResults;

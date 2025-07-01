@@ -6,8 +6,8 @@
 
 class SpatialGrid {
 private:
-    static const int GRID_WIDTH = 360;
-    static const int GRID_HEIGHT = 180;
+    static const int GRID_WIDTH = 72;   // 5도 해상도 (360/5)
+    static const int GRID_HEIGHT = 36;  // 5도 해상도 (180/5)
     std::vector<TADS_B_Aircraft*> FGrid[GRID_WIDTH][GRID_HEIGHT];
     void getGridIndices(const TADS_B_Aircraft* aircraft, int& x, int& y);
 public:

@@ -38,7 +38,6 @@
 #include "AircraftInfo.h"
 #include "ButtonScroller.h"
 #include "ProximityAssessor.h"
-#include "AircraftDB.h" // for AircraftCategory
 typedef float T_GL_Color[4];
 
 
@@ -120,15 +119,15 @@ __published:	// IDE-managed Components
 	TLabel *Label7;
 	TLabel *Label6;
 	TLabel *Label18;
-		TLabel *FlightNumLabel;
-		TLabel *ICAOLabel;
-		TLabel *AirlineNameLabel;
-		TLabel *AirlineCountryLabel;
+        TLabel *FlightNumLabel;
+        TLabel *ICAOLabel;
+        TLabel *AirlineNameLabel;
+        TLabel *AirlineCountryLabel;
 		TLabel *LabelModel;
-		TLabel *AircraftModelLabel;
-		TLabel *LabelAirlineName;
-		TLabel *LabelAirlineCountry;
-		TLabel *Label5;
+        TLabel *AircraftModelLabel;
+        TLabel *LabelAirlineName;
+        TLabel *LabelAirlineCountry;
+        TLabel *Label5;
 	TLabel *Label4;
 	TPanel *Panel5;
 	TLabel *Lon;
@@ -187,26 +186,47 @@ __published:	// IDE-managed Components
 	TListView *ConflictListView;
 	TCheckBox *FilterPolygonOnlyCheckBox; // 정의된 경유지 내 비행기만 표시하는 체크박스
 	// --- 속도/고도 필터 UI ---
-	TTrackBar *SpeedMinTrackBar;
-	TTrackBar *SpeedMaxTrackBar;
-	TTrackBar *AltitudeMinTrackBar;
-	TTrackBar *AltitudeMaxTrackBar;
-	TLabel *SpeedFilterLabel;
-	TLabel *AltitudeFilterLabel;
-	// --- 항공기 카테고리 필터 UI ---
-	TPanel *AircraftCategoryPanel;
-	TLabel *AircraftCategoryLabel;
-	TCheckBox *CommercialCheckBox;
-	TCheckBox *CargoCheckBox;
-	TCheckBox *HelicopterCheckBox;
-	TCheckBox *MilitaryCheckBox;
-	TCheckBox *GeneralAviationCheckBox;
-	TCheckBox *BusinessJetCheckBox;
-	TCheckBox *GliderCheckBox;
-	TCheckBox *UltralightCheckBox;
-	void __fastcall AircraftCategoryFilterChange(TObject *Sender);
-	void __fastcall SpeedFilterTrackBarChange(TObject *Sender);
-	void __fastcall AltitudeFilterTrackBarChange(TObject *Sender);
+    TTrackBar *SpeedMinTrackBar;
+    TTrackBar *SpeedMaxTrackBar;
+    TTrackBar *AltitudeMinTrackBar;
+    TTrackBar *AltitudeMaxTrackBar;
+    TLabel *SpeedFilterLabel;
+    TLabel *AltitudeFilterLabel;
+    // --- 충돌 필터 UI ---
+    TPanel *Panel7;
+    TLabel *Label29;
+    TLabel *Label30;
+    TLabel *Label31;
+    TLabel *Label32;
+    TLabel *TCPAThresholdLabel;
+    TLabel *HorizontalDistanceLabel;
+    TLabel *VerticalDistanceLabel;
+    TTrackBar *TCPAMinTrackBar;
+    TTrackBar *TCPAMaxTrackBar;
+    TTrackBar *HorizontalMaxTrackBar;
+    TTrackBar *VerticalMaxTrackBar;
+    TCheckBox *ConflictFilterEnabledCheckBox;
+    TButton *ResetConflictFilterButton;
+    // --- 항공기 카테고리 필터 UI ---
+    TPanel *AircraftCategoryPanel;
+    TLabel *AircraftCategoryLabel;
+    TCheckBox *CommercialCheckBox;
+    TCheckBox *CargoCheckBox;
+    TCheckBox *HelicopterCheckBox;
+    TCheckBox *MilitaryCheckBox;
+    TCheckBox *GeneralAviationCheckBox;
+    TCheckBox *BusinessJetCheckBox;
+    TCheckBox *GliderCheckBox;
+    TCheckBox *UltralightCheckBox;
+    void __fastcall AircraftCategoryFilterChange(TObject *Sender);
+    void __fastcall SpeedFilterTrackBarChange(TObject *Sender);
+    void __fastcall AltitudeFilterTrackBarChange(TObject *Sender);
+    // --- 충돌 필터 이벤트 핸들러 ---
+    void __fastcall TCPAFilterTrackBarChange(TObject *Sender);
+    void __fastcall HorizontalDistanceFilterTrackBarChange(TObject *Sender);
+    void __fastcall VerticalDistanceFilterTrackBarChange(TObject *Sender);
+    void __fastcall ConflictFilterEnabledCheckBoxClick(TObject *Sender);
+    void __fastcall ResetConflictFilterButtonClick(TObject *Sender);
 	void __fastcall ApiCallTimerTimer(TObject *Sender);
 	void __fastcall ObjectDisplayInit(TObject *Sender);
 	void __fastcall ObjectDisplayResize(TObject *Sender);
@@ -219,7 +239,7 @@ __published:	// IDE-managed Components
 		  int X, int Y);
 	void __fastcall AddPoint(int X, int Y);	  
 	void __fastcall ObjectDisplayMouseUp(TObject *Sender, TMouseButton Button,
-		  TShiftState Shift, int X, int Y);
+          TShiftState Shift, int X, int Y);
 	void __fastcall ObjectDisplayDblClick(TObject *Sender);
 	void __fastcall Exit1Click(TObject *Sender);
 	void __fastcall ZoomInClick(TObject *Sender);
@@ -230,12 +250,12 @@ __published:	// IDE-managed Components
 	void __fastcall CancelClick(TObject *Sender);
 	void __fastcall CompleteClick(TObject *Sender);
 	void __fastcall AreaListViewSelectItem(TObject *Sender, TListItem *Item,
-		  bool Selected);
+          bool Selected);
 	void __fastcall DeleteClick(TObject *Sender);
 	void __fastcall AreaListViewCustomDrawItem(TCustomListView *Sender,
-		  TListItem *Item, TCustomDrawState State, bool &DefaultDraw);
+          TListItem *Item, TCustomDrawState State, bool &DefaultDraw);
 	void __fastcall FormMouseWheel(TObject *Sender, TShiftState Shift,
-		  int WheelDelta, TPoint &MousePos, bool &Handled);
+          int WheelDelta, TPoint &MousePos, bool &Handled);
 	void __fastcall RawConnectButtonClick(TObject *Sender);
 	void __fastcall RawRecordButtonClick(TObject *Sender);
 	void __fastcall RawPlaybackButtonClick(TObject *Sender);
@@ -258,13 +278,13 @@ __published:	// IDE-managed Components
 
 private:	// User declarations
 	TCPDataHandler *FRawDataHandler;
-	TCPDataHandler *FSBSDataHandler;
+    TCPDataHandler *FSBSDataHandler;
 	AircraftDataModel *FAircraftModel;
 	TButtonScroller *FRawButtonScroller;
-	TButtonScroller *FSBSButtonScroller;
+    TButtonScroller *FSBSButtonScroller;
 	AnsiString filterAirline;
-	AnsiString filterOrigin;
-	AnsiString filterDestination;
+    AnsiString filterOrigin;
+    AnsiString filterDestination;
 	ProximityAssessor* FProximityAssessor;
 	std::map<unsigned int, std::vector<RelatedConflictInfo>> FConflictMap;
 	std::vector<ConflictPair> FSortedConflictList;
@@ -274,20 +294,20 @@ private:	// User declarations
 	
 	TTimer *ApiCallTimer;
 
-	// 콜백에 의해 호출될 함수들
-	void __fastcall HandleRawData(const AnsiString& data);
-	void __fastcall HandleRawConnected();
-	void __fastcall HandleRawDisconnected(const String& reason);
+    // 콜백에 의해 호출될 함수들
+    void __fastcall HandleRawData(const AnsiString& data);
+    void __fastcall HandleRawConnected();
+    void __fastcall HandleRawDisconnected(const String& reason);
 	void __fastcall HandleRawReconnecting();
 
-	void __fastcall HandleSBSData(const AnsiString& data);
-	void __fastcall HandleSBSConnected();
-	void __fastcall HandleSBSDisconnected(const String& reason);
+    void __fastcall HandleSBSData(const AnsiString& data);
+    void __fastcall HandleSBSConnected();
+    void __fastcall HandleSBSDisconnected(const String& reason);
 	void __fastcall HandleSBSReconnecting();
 
 	void __fastcall UpdateConflictList();
-	void __fastcall ConflictListViewSelectItem(TObject *Sender, TListItem *Item, bool Selected);
-		void __fastcall CenterMapOnPair(unsigned int icao1, unsigned int icao2);
+    void __fastcall ConflictListViewSelectItem(TObject *Sender, TListItem *Item, bool Selected);
+        void __fastcall CenterMapOnPair(unsigned int icao1, unsigned int icao2);
 
 		// Rendering helper functions
 		void SetupRenderingState();
@@ -315,11 +335,11 @@ public:		// User declarations
 	void __fastcall Purge(void);
 	void __fastcall SendCotMessage(AnsiString IP_address, unsigned short Port,char *Buffer,DWORD Length);
 	void __fastcall RegisterWithCoTRouter(void);
-	void __fastcall SetMapCenter(double &x, double &y);
-	void __fastcall LoadMap(int Type);
-	void __fastcall CreateBigQueryCSV(void);
-	void __fastcall CloseBigQueryCSV(void);
-	bool __fastcall LoadARTCCBoundaries(AnsiString FileName);
+    void __fastcall SetMapCenter(double &x, double &y);
+    void __fastcall LoadMap(int Type);
+    void __fastcall CreateBigQueryCSV(void);
+    void __fastcall CloseBigQueryCSV(void);
+    bool __fastcall LoadARTCCBoundaries(AnsiString FileName);
 	void UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route);
 	void OnAircraftSelected(uint32_t icao);
         bool IsRouteMatched(const RouteInfo* route,
@@ -351,31 +371,44 @@ public:		// User declarations
 	ght_hash_table_t          *HashTable;
 	TStreamWriter              *RecordRawStream;
 	TStreamReader              *PlayBackRawStream;
-	TStreamWriter              *RecordSBSStream;
+    TStreamWriter              *RecordSBSStream;
 	TStreamReader              *PlayBackSBSStream;
 	TStreamWriter              *BigQueryCSV;
-	AnsiString                 BigQueryCSVFileName;
+    AnsiString                 BigQueryCSVFileName;
 	unsigned int               BigQueryRowCount;
 	unsigned int               BigQueryFileCount;
-	AnsiString                 BigQueryPythonScript;
+    AnsiString                 BigQueryPythonScript;
 	AnsiString                 BigQueryPath;
-	AnsiString                 BigQueryLogFileName;
+    AnsiString                 BigQueryLogFileName;
 	int                        NumSpriteImages;
 	int                        CurrentSpriteImage;
-	AnsiString                 AircraftDBPathFileName;
+    AnsiString                 AircraftDBPathFileName;
 	AnsiString                 ARTCCBoundaryDataPathFileName;
 
-		std::vector<AirplaneInstance> m_planeBatch;
-		std::vector<AirplaneLineInstance> m_lineBatch;
-		std::vector<HexCharInstance> m_textBatch;
+        std::vector<AirplaneInstance> m_planeBatch;
+        std::vector<AirplaneLineInstance> m_lineBatch;
+        std::vector<HexCharInstance> m_textBatch;
 
-		// 선택된 항공기의 경로(대권) 좌표 목록
-		std::vector<std::vector<std::pair<double,double>>> m_selectedRoutePaths;
+        // 선택된 항공기의 경로(대권) 좌표 목록
+        std::vector<std::vector<std::pair<double,double>>> m_selectedRoutePaths;
 
-		// --- Playback Speed UI 함수 선언 추가 ---
-	void SetupPlaybackSpeedUI();
-	void __fastcall PlaybackSpeedTrackBarChange(TObject *Sender);
-	void __fastcall PlaybackSpeedComboBoxChange(TObject *Sender);
+        // --- 충돌 필터 관련 멤버 변수 ---
+        bool m_conflictFilterEnabled;
+        double m_tcpaMinThreshold;  // 초
+        double m_tcpaMaxThreshold;  // 초
+        double m_horizontalMinDistance;  // NM
+        double m_horizontalMaxDistance;  // NM
+        double m_verticalMinDistance;    // feet
+        double m_verticalMaxDistance;    // feet
+
+        // --- Playback Speed UI 함수 선언 추가 ---
+    void SetupPlaybackSpeedUI();
+    void __fastcall PlaybackSpeedTrackBarChange(TObject *Sender);
+    void __fastcall PlaybackSpeedComboBoxChange(TObject *Sender);
+    
+    // --- 충돌 필터 관련 함수들 ---
+    void UpdateConflictFilterLabels();
+    bool IsConflictFiltered(double tcpa, double horizontalDist, double verticalDist);
 };
 
 
