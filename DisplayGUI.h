@@ -120,6 +120,7 @@ public:
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
 {
+    friend class TAircraftRenderThread;
 __published:	// IDE-managed Components
 	TMainMenu *MainMenu1;
 	TPanel *RightPanel;

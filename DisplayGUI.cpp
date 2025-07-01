@@ -1105,8 +1105,8 @@ void __fastcall TAircraftRenderThread::Execute()
       const RouteInfo* route = nullptr;
       if (params.airlineFilter || params.originFilter || params.destFilter)
       {
-        auto it = FOwner->callSignToRoute.find(AnsiString(Data->FlightNum).c_str());
-        route = (it != FOwner->callSignToRoute.end()) ? it->second : nullptr;
+        auto it = callSignToRoute.find(AnsiString(Data->FlightNum).c_str());
+        route = (it != callSignToRoute.end()) ? it->second : nullptr;
         if (!FOwner->IsRouteMatched(route, params.airlineFilter, params.originFilter, params.destFilter))
         {
           local[Data->ICAO] = info;
