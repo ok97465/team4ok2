@@ -12,23 +12,53 @@ from google.cloud import bigquery
 global_filepath = "./BigQuery/"
 output_filename = "update.csv"
 user_query = """
-UPDATE `scs-lg-arch-4.SBS_DATA_T4.SBS_DATA_TABLE_T4`
-SET
-  -- 23000.0	41.317291	-84.594543  
-  --89.836395	-178.313248
-  --269.436951	178.653488
-  --40000.0	-25.678028	-58.637608	E0B04E
-  --37000.0	269.452698	147.576599	4CA24C
-  --34000.0	263.118347	-3.107758	4D2303	2025-06-30 13:54:27 UTC	11.138962854612021
-  Altitude = 300000,
-  Latitude = -100,
-  Longitude = -100
-WHERE
-  -- 특정 HexIdent와 타임스탬프를 조건으로 지정
-  HexIdent = '4D2303'
-  AND TIMESTAMP(DATETIME(Date_MSG_Generated, Time_MSG_Generated), 'UTC') = TIMESTAMP('2025-06-30 13:54:27 UTC')
-;
-
+MERGE INTO
+  `scs-lg-arch-4.SBS_DATA_T4.SBS_DATA_TABLE_T4` AS T  -- 업데이트할 대상 테이블
+USING
+  (
+    -- 이 부분은 사용자가 제공한 쿼리입니다.
+    -- 여기서 업데이트 대상이 되는 HexIdent와 timestamp_utc를 식별합니다.
+    WITH PredictionResults AS (
+      SELECT
+        DISTINCT pred.* EXCEPT(nearest_centroids_distance),
+        pred.nearest_centroids_distance[OFFSET(0)].DISTANCE AS distance_from_centroid
+      FROM
+        ML.PREDICT(
+          MODEL `scs-lg-arch-4.SBS_DATA_T4.altitude_kmeans_model`,
+          (
+            SELECT
+              SAFE_CAST(Altitude AS FLOAT64) AS Altitude,
+              SAFE_CAST(Latitude AS FLOAT64) AS Latitude,
+              SAFE_CAST(Longitude AS FLOAT64) AS Longitude,
+              HexIdent,
+              TIMESTAMP(DATETIME(Date_MSG_Generated, Time_MSG_Generated), 'UTC') AS timestamp_utc
+            FROM
+              `scs-lg-arch-4.SBS_DATA_T4.SBS_DATA_TABLE_T4`
+            WHERE
+              TIMESTAMP(DATETIME(Date_MSG_Generated, Time_MSG_Generated), 'UTC') >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR)
+              AND SAFE_CAST(Altitude AS FLOAT64) IS NOT NULL AND Altitude > 0
+          )
+        ) AS pred
+    )
+    SELECT
+      HexIdent,
+      timestamp_utc
+    FROM
+      PredictionResults
+--    WHERE
+--    distance_from_centroid >= 20
+    ORDER BY
+      distance_from_centroid DESC
+    LIMIT 10
+  ) AS S  -- 업데이트할 데이터 소스
+ON
+  T.HexIdent = S.HexIdent
+  AND TIMESTAMP(DATETIME(T.Date_MSG_Generated, T.Time_MSG_Generated), 'UTC') = S.timestamp_utc
+WHEN MATCHED THEN
+  UPDATE SET
+    Altitude = 50000,   -- <-- 이 부분을 원하는 값으로 변경하세요 (예: 0 또는 -9999).
+    Latitude = 5,   -- <-- 이 부분을 원하는 값으로 변경하세요.
+    Longitude = 5;   -- <-- 이 부분을 원하는 값으로 변경하세요.
 """
 # 인증 json 파일 경로 (업로드용과 동일 이름 가정)
 api_key = os.path.join(global_filepath, "YourJsonFile.json")
