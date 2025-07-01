@@ -419,7 +419,7 @@ public:		// User declarations
                             bool originFilter,
                             bool destFilter) const;
 	void InitRouteAirportMaps(); 
-	void __fastcall UpdateDeviationList(); // 이탈감지 항공기 목록 업데이트 
+	void __fastcall UpdateDeviationList(); // 이탈감지 항공기 목록 업데이트 (ICAO, Altitude, Latitude, Longitude) 
 
 
 	int                        MouseDownX,MouseDownY;

@@ -1560,20 +1560,24 @@ object Form1: TForm1
     object DeviationListView: TListView
       Left = 0
       Top = 148
-      Width = 362
+      Width = 380
       Height = 80
       Columns = <
         item
-          Caption = 'ICAO'
-          Width = 60
-        end
-        item
-          Caption = 'Flight'
+          Caption = 'Aircraft'
           Width = 80
         end
         item
-          Caption = 'Deviation Info'
-          Width = 200
+          Caption = 'Altitude'
+          Width = 80
+        end
+        item
+          Caption = 'Latitude'
+          Width = 100
+        end
+        item
+          Caption = 'Longitude'
+          Width = 100
         end>
       GridLines = True
       TabOrder = 1
