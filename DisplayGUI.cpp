@@ -3509,6 +3509,8 @@ void __fastcall TForm1::UpdateDeviationList()
         try {
             parts->CommaText = deviationInfo;
             
+            printf("CSV parts count: %d\n", parts->Count);
+            
             if (parts->Count >= 8) {
                 // HexIdent, Altitude, Latitude, Longitude 정보 표시
                 printf("Deviation Aircraft - ICAO: %s, Alt: %s, Lat: %s, Lon: %s\n",
