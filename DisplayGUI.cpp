@@ -3514,8 +3514,8 @@ void __fastcall TForm1::UpdateDeviationList()
             if (parts->Count >= 8) {
                 // HexIdent, Altitude, Latitude, Longitude 정보 표시
                 printf("Deviation Aircraft - ICAO: %s, Alt: %s, Lat: %s, Lon: %s\n",
--                       parts->Strings[5].c_str(), parts->Strings[2].c_str(),
--                       parts->Strings[3].c_str(), parts->Strings[4].c_str());
+                       AnsiString(parts->Strings[5]).c_str(), AnsiString(parts->Strings[2]).c_str(),
+                       AnsiString(parts->Strings[3]).c_str(), AnsiString(parts->Strings[4]).c_str());
                 TListItem* item = DeviationListView->Items->Add();
                 item->Caption = parts->Strings[5]; // HexIdent (인덱스 5)
                 item->SubItems->Add(parts->Strings[2]); // Altitude (인덱스 2)
