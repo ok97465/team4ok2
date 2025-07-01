@@ -971,17 +971,18 @@ void TForm1::BuildAircraftBatches(int &ViewableAircraft)
 
 void TForm1::RenderAircraftBatches()
 {
-  for (const auto& line : m_lineBatch)
-  {
-    TADS_B_Aircraft* aircraft = FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
-    if (aircraft && aircraft_is_military(aircraft->ICAO, NULL))
-      DrawLeaderThick(line.x1, line.y1, line.x2, line.y2, 4.0f);
-    else if (aircraft && aircraft_is_helicopter(aircraft->ICAO, NULL))
-      DrawLeaderDashed(line.x1, line.y1, line.x2, line.y2);
-    else
-      DrawLeaderArrow(line.x1, line.y1, line.x2, line.y2, 8.0f);
-  }
+  // for (const auto& line : m_lineBatch)
+  // {
+  //   TADS_B_Aircraft* aircraft = FAircraftModel->FindAircraftByICAO(TrackHook.ICAO_CC);
+  //   if (aircraft && aircraft_is_military(aircraft->ICAO, NULL))
+  //     DrawLeaderThick(line.x1, line.y1, line.x2, line.y2, 4.0f);
+  //   else if (aircraft && aircraft_is_helicopter(aircraft->ICAO, NULL))
+  //     DrawLeaderDashed(line.x1, line.y1, line.x2, line.y2);
+  //   else
+  //     DrawLeaderArrow(line.x1, line.y1, line.x2, line.y2, 8.0f);
+  // }
 
+  DrawAirplaneLinesInstanced(m_lineBatch);
   DrawAirplaneImagesInstanced(m_planeBatch);
   DrawHexTextInstanced(m_textBatch);
 }
