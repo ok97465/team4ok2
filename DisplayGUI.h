@@ -309,18 +309,20 @@ private:	// User declarations
     void __fastcall ConflictListViewSelectItem(TObject *Sender, TListItem *Item, bool Selected);
         void __fastcall CenterMapOnPair(unsigned int icao1, unsigned int icao2);
 
-        // Rendering helper functions
-        void SetupRenderingState();
-        void DrawMapCenterCross();
-        void DrawTemporaryArea();
-        void DrawDefinedAreas();
-        bool ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route);
-        void BuildAircraftBatches(int &ViewableAircraft);
-        void RenderAircraftBatches();
-        void UpdateTrackHookDisplay();
-        void DrawCPAVisualization();
-        void DrawSelectedRoutes();
-        void DrawSelectedConflictPair();
+		// Rendering helper functions
+		void SetupRenderingState();
+		void DrawMapCenterCross();
+		void DrawTemporaryArea();
+		void DrawDefinedAreas();
+                bool ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route, AircraftCategory category,
+                                            int minSpeed, int maxSpeed, int minAlt, int maxAlt,
+                                            bool airlineFilter, bool originFilter, bool destFilter);
+                void BuildAircraftBatches(int &ViewableAircraft);
+                void RenderAircraftBatches();
+                void UpdateTrackHookDisplay();
+		void DrawCPAVisualization();
+		void DrawSelectedRoutes();
+		void DrawSelectedConflictPair();
 
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
@@ -339,8 +341,11 @@ public:		// User declarations
     void __fastcall CloseBigQueryCSV(void);
     bool __fastcall LoadARTCCBoundaries(AnsiString FileName);
 	void UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route);
-    void OnAircraftSelected(uint32_t icao);
-	bool IsRouteMatched(const RouteInfo* route) const;
+	void OnAircraftSelected(uint32_t icao);
+        bool IsRouteMatched(const RouteInfo* route,
+                            bool airlineFilter,
+                            bool originFilter,
+                            bool destFilter) const;
 	void InitRouteAirportMaps(); 
 
 

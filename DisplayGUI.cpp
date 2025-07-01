@@ -179,7 +179,8 @@ static void LoadAirlineInfo(const AnsiString& fileName)
             std::getline(ss, country, ',') &&
             std::getline(ss, name))
         {
-            code = trim(code);
+            auto up = [](std::string s){ std::transform(s.begin(), s.end(), s.begin(), ::toupper); return trim(s); };
+            code = up(code);
             country = trim(country);
             name = trim(name);
             if (!code.empty())
@@ -700,35 +701,29 @@ void TForm1::DrawDefinedAreas()
   }
 }
 
-bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route)
+bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route, AircraftCategory category,
+                                   int minSpeed, int maxSpeed, int minAlt, int maxAlt,
+                                   bool airlineFilter, bool originFilter, bool destFilter)
 {
-  if ((!filterAirline.IsEmpty() || !filterOrigin.IsEmpty() || !filterDestination.IsEmpty()) && route == nullptr)
-    return false;
-
-  if (!filterAirline.IsEmpty() && route)
+  if (airlineFilter && route)
   {
-    AnsiString code = AnsiString(route->airlineCode.c_str()).UpperCase();
-    AnsiString filter = filterAirline.UpperCase();
-    if (code.SubString(1, filter.Length()) != filter)
+    AnsiString code = route->airlineCode.c_str();
+    if (code.SubString(1, filterAirline.Length()) != filterAirline)
       return false;
   }
 
-  if (!filterOrigin.IsEmpty() && route && !route->airportCodes.empty())
+  if (originFilter && route && !route->airportCodes.empty())
   {
-    if (AnsiString(route->airportCodes.front().c_str()).UpperCase() != filterOrigin.UpperCase())
+    if (AnsiString(route->airportCodes.front().c_str()) != filterOrigin)
       return false;
   }
 
-  if (!filterDestination.IsEmpty() && route && !route->airportCodes.empty())
+  if (destFilter && route && !route->airportCodes.empty())
   {
-    if (AnsiString(route->airportCodes.back().c_str()).UpperCase() != filterDestination.UpperCase())
+    if (AnsiString(route->airportCodes.back().c_str()) != filterDestination)
       return false;
   }
 
-  int minSpeed = SpeedMinTrackBar->Position;
-  int maxSpeed = SpeedMaxTrackBar->Position;
-  int minAlt = AltitudeMinTrackBar->Position;
-  int maxAlt = AltitudeMaxTrackBar->Position;
 
   if (Data->HaveSpeedAndHeading)
     if (Data->Speed < minSpeed || Data->Speed > maxSpeed)
@@ -863,7 +858,6 @@ bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route
       return false;
   }
 
-  AircraftCategory category = aircraft_get_category(Data->ICAO);
   bool showAircraft = false;
   switch(category)
   {
@@ -890,6 +884,16 @@ void TForm1::BuildAircraftBatches(int &ViewableAircraft)
   ght_iterator_t iterator;
   TADS_B_Aircraft* Data;
 
+  int minSpeed = SpeedMinTrackBar->Position;
+  int maxSpeed = SpeedMaxTrackBar->Position;
+  int minAlt   = AltitudeMinTrackBar->Position;
+  int maxAlt   = AltitudeMaxTrackBar->Position;
+
+  bool airlineFilter   = !filterAirline.IsEmpty();
+  bool originFilter    = !filterOrigin.IsEmpty();
+  bool destFilter      = !filterDestination.IsEmpty();
+  bool anyRouteFilter  = airlineFilter || originFilter || destFilter;
+
   m_planeBatch.clear();
   m_lineBatch.clear();
   m_textBatch.clear();
@@ -899,23 +903,28 @@ void TForm1::BuildAircraftBatches(int &ViewableAircraft)
   {
     if (!Data->HaveLatLon) continue;
 
+    double ScrX, ScrY;
+    LatLon2XY(Data->Latitude, Data->Longitude, ScrX, ScrY);
+    if (ScrX < Map_v[0].x || ScrX > Map_v[1].x ||
+        ScrY < Map_v[0].y || ScrY > Map_v[3].y)
+      continue;
+
     const RouteInfo* route = nullptr;
-    if (!filterAirline.IsEmpty() || !filterOrigin.IsEmpty() || !filterDestination.IsEmpty())
+    if (anyRouteFilter)
     {
       auto it = callSignToRoute.find(AnsiString(Data->FlightNum).c_str());
       route = (it != callSignToRoute.end()) ? it->second : nullptr;
-      if (!IsRouteMatched(route))
+      if (!IsRouteMatched(route, airlineFilter, originFilter, destFilter))
         continue;
     }
 
-    if (!ShouldDisplayAircraft(Data, route))
+    AircraftCategory category = aircraft_get_category(Data->ICAO);
+    if (!ShouldDisplayAircraft(Data, route, category))
       continue;
 
     ViewableAircraft++;
 
-    double ScrX, ScrY, ScrX2, ScrY2;
-    LatLon2XY(Data->Latitude, Data->Longitude, ScrX, ScrY);
-    ScrX2 = ScrX; ScrY2 = ScrY;
+    double ScrX2 = ScrX, ScrY2 = ScrY;
 
     float color[4] = {1.0f,1.0f,1.0f,1.0f};
     bool isPartOfSelectedPair = (Data->ICAO == FSelectedConflictPair.first || Data->ICAO == FSelectedConflictPair.second);
@@ -1011,7 +1020,7 @@ void TForm1::UpdateTrackHookDisplay()
       ICAOLabel->Caption=Data->HexAddr;
       if (Data->HaveFlightNum) FlightNumLabel->Caption=Data->FlightNum; else FlightNumLabel->Caption="N/A";
       std::string airline, country;
-      if (LookupAirline(AnsiString(Data->FlightNum).Trim().UpperCase().c_str(), airline, country))
+      if (LookupAirline(AnsiString(Data->FlightNum).Trim().c_str(), airline, country))
       {
         AirlineNameLabel->Caption = airline.c_str();
         AirlineCountryLabel->Caption = country.c_str();
@@ -1217,15 +1226,18 @@ void __fastcall TForm1::DrawObjects(void)
   DrawSelectedRoutes();
   DrawSelectedConflictPair();
 }
-bool TForm1::IsRouteMatched(const RouteInfo* route) const {
+bool TForm1::IsRouteMatched(const RouteInfo* route,
+                            bool airlineFilter,
+                            bool originFilter,
+                            bool destFilter) const {
     if (!route) return false;
-    if (!filterAirline.IsEmpty() && AnsiString(route->airlineCode.c_str()).UpperCase() != filterAirline.UpperCase())
+    if (airlineFilter && AnsiString(route->airlineCode.c_str()) != filterAirline)
         return false;
-    if (!filterOrigin.IsEmpty() && route->airportCodes.size() &&
-        AnsiString(route->airportCodes.front().c_str()).UpperCase() != filterOrigin.UpperCase())
+    if (originFilter && route->airportCodes.size() &&
+        AnsiString(route->airportCodes.front().c_str()) != filterOrigin)
         return false;
-    if (!filterDestination.IsEmpty() && route->airportCodes.size() &&
-        AnsiString(route->airportCodes.back().c_str()).UpperCase() != filterDestination.UpperCase())
+    if (destFilter && route->airportCodes.size() &&
+        AnsiString(route->airportCodes.back().c_str()) != filterDestination)
         return false;
     return true;
 }
@@ -2392,7 +2404,7 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
     AircraftModelLabel->Caption = GetAircraftModel(ac->ICAO);
     {
         std::string airline, country;
-        if (LookupAirline(AnsiString(ac->FlightNum).Trim().UpperCase().c_str(), airline, country))
+        if (LookupAirline(AnsiString(ac->FlightNum).Trim().c_str(), airline, country))
         {
             AirlineNameLabel->Caption = airline.c_str();
             AirlineCountryLabel->Caption = country.c_str();
@@ -2476,7 +2488,7 @@ void __fastcall TForm1::OnAircraftSelected(uint32_t icao)
 
 	if (ac){
         // **배열을 AnsiString으로 변환한 뒤 처리!**
-        AnsiString flightNum = AnsiString(ac->FlightNum).Trim().UpperCase();
+        AnsiString flightNum = AnsiString(ac->FlightNum).Trim();
         auto it = callSignToRoute.find(flightNum.c_str());
         route = (it != callSignToRoute.end()) ? it->second : nullptr;
 
@@ -2503,18 +2515,18 @@ void __fastcall TForm1::OnAircraftSelected(uint32_t icao)
 
 void __fastcall TForm1::FilterAirlineEditChange(TObject *Sender)
 {
-    filterAirline = FilterAirlineEdit->Text.Trim();
+    filterAirline = FilterAirlineEdit->Text.Trim().UpperCase();
     ObjectDisplay->Repaint();
 }
 void __fastcall TForm1::FilterOriginEditChange(TObject *Sender)
 {
-    filterOrigin = FilterOriginEdit->Text.Trim();
+    filterOrigin = FilterOriginEdit->Text.Trim().UpperCase();
     LOG_DEBUG_F(LogHandler::CAT_GENERAL, "Filter origin changed: %s", filterOrigin.c_str());
     ObjectDisplay->Repaint();
 }
 void __fastcall TForm1::FilterDestinationEditChange(TObject *Sender)
 {
-    filterDestination = FilterDestinationEdit->Text.Trim();
+    filterDestination = FilterDestinationEdit->Text.Trim().UpperCase();
     ObjectDisplay->Repaint();
 }
 

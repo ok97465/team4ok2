@@ -5,6 +5,8 @@
 
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
+#include "AircraftDB.h"
+
 typedef struct
 {
  uint32_t            ICAO;
@@ -30,6 +32,7 @@ typedef struct
  double              Speed;
  double              VerticalRate;
  int                 SpriteImage;
+ AircraftCategory    Category;
 } TADS_B_Aircraft;
 
 //---------------------------------------------------------------------------
