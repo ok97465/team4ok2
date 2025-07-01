@@ -38,6 +38,7 @@
 #include "AircraftInfo.h"
 #include "ButtonScroller.h"
 #include "ProximityAssessor.h"
+#include "AircraftDB.h" // for AircraftCategory
 typedef float T_GL_Color[4];
 
 

@@ -969,7 +969,7 @@ void TForm1::BuildAircraftBatches(int &ViewableAircraft)
       else if (Data->Altitude < 10000) inst.scale = 2.0f;
     }
     inst.heading = Data->Heading;
-    inst.imageNum = SelectAircraftIcon(Data);
+    inst.imageNum = static_cast<int>(category); // category enum값을 imageNum에 직접 할당
     inst.color[0] = color[0]; inst.color[1] = color[1]; inst.color[2] = color[2]; inst.color[3] = color[3];
     m_planeBatch.push_back(inst);
 
