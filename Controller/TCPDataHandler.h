@@ -9,6 +9,7 @@
 #include <functional>
 
 enum class TDataSourceType { Network, File };
+enum class TConnectionType { Raw, SBS };
 
 class TCPDataHandler : public TObject
 {
@@ -40,6 +41,7 @@ private:
     int FPort;
     String FPlaybackFileName;
     TDataSourceType FDataSourceType;
+    TConnectionType FConnectionType;
     bool FIsActive;
 
     // --- Playback speed multiplier ---
@@ -69,7 +71,7 @@ public:
     TDisconnectedCallback OnDisconnected;
     TReconnectingCallback OnReconnecting;
 
-    void Connect(const String& host, int port);
+    void Connect(const String& host, int port, TConnectionType connectionType = TConnectionType::Raw);
     void StartPlayback(const String& fileName);
     void Disconnect();
     void StartRecording(const String& fileName);

@@ -600,6 +600,103 @@ object Form1: TForm1
             '2x'
             '3x')
         end
+        object Panel2: TPanel
+          Left = 3
+          Top = 490
+          Width = 234
+          Height = 147
+          BevelInner = bvLowered
+          BevelKind = bkFlat
+          TabOrder = 4
+          object Label12: TLabel
+            Left = 8
+            Top = 8
+            Width = 55
+            Height = 12
+            Caption = 'CPA TIME:'
+          end
+          object Label19: TLabel
+            Left = 8
+            Top = 26
+            Width = 82
+            Height = 12
+            Caption = 'CPA DISTANCE:'
+          end
+          object CpaTimeValue: TLabel
+            Left = 69
+            Top = 8
+            Width = 28
+            Height = 12
+            Caption = 'NONE'
+          end
+          object CpaDistanceValue: TLabel
+            Left = 96
+            Top = 26
+            Width = 25
+            Height = 12
+            Caption = 'None'
+          end
+          object ZoomIn: TButton
+            Left = 5
+            Top = 110
+            Width = 65
+            Height = 18
+            Caption = 'Zoom In'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+            TabOrder = 0
+            OnClick = ZoomInClick
+          end
+          object ZoomOut: TButton
+            Left = 160
+            Top = 110
+            Width = 65
+            Height = 18
+            Caption = 'Zoom Out'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+            TabOrder = 1
+            OnClick = ZoomOutClick
+          end
+          object TimeToGoTrackBar: TTrackBar
+            Left = 5
+            Top = 71
+            Width = 228
+            Height = 33
+            Max = 1800
+            Min = 1
+            Frequency = 100
+            Position = 1
+            TabOrder = 2
+            OnChange = TimeToGoTrackBarChange
+          end
+          object TimeToGoCheckBox: TCheckBox
+            Left = 8
+            Top = 38
+            Width = 105
+            Height = 27
+            Caption = 'Time-To-Go'
+            Checked = True
+            State = cbChecked
+            TabOrder = 3
+          end
+          object TimeToGoText: TStaticText
+            Left = 119
+            Top = 43
+            Width = 76
+            Height = 16
+            Caption = '00:00:00:000'
+            TabOrder = 4
+          end
+        end
       end
       object ControlsFiltersTab: TTabSheet
         Caption = 'Filter'
@@ -1204,102 +1301,6 @@ object Form1: TForm1
             'IFS High'
             'OpenStreetMap')
         end
-      end
-    end
-    object Panel1: TPanel
-      Left = 1
-      Top = 893
-      Width = 248
-      Height = 147
-      Align = alBottom
-      TabOrder = 1
-      object Label12: TLabel
-        Left = 8
-        Top = 8
-        Width = 55
-        Height = 12
-        Caption = 'CPA TIME:'
-      end
-      object Label19: TLabel
-        Left = 8
-        Top = 26
-        Width = 82
-        Height = 12
-        Caption = 'CPA DISTANCE:'
-      end
-      object CpaTimeValue: TLabel
-        Left = 69
-        Top = 8
-        Width = 28
-        Height = 12
-        Caption = 'NONE'
-      end
-      object CpaDistanceValue: TLabel
-        Left = 96
-        Top = 26
-        Width = 25
-        Height = 12
-        Caption = 'None'
-      end
-      object ZoomIn: TButton
-        Left = 5
-        Top = 110
-        Width = 65
-        Height = 18
-        Caption = 'Zoom In'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -11
-        Font.Name = 'Tahoma'
-        Font.Style = [fsBold]
-        ParentFont = False
-        TabOrder = 0
-        OnClick = ZoomInClick
-      end
-      object ZoomOut: TButton
-        Left = 160
-        Top = 110
-        Width = 65
-        Height = 18
-        Caption = 'Zoom Out'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -11
-        Font.Name = 'Tahoma'
-        Font.Style = [fsBold]
-        ParentFont = False
-        TabOrder = 1
-        OnClick = ZoomOutClick
-      end
-      object TimeToGoTrackBar: TTrackBar
-        Left = 5
-        Top = 71
-        Width = 228
-        Height = 33
-        Max = 1800
-        Min = 1
-        Frequency = 100
-        Position = 1
-        TabOrder = 2
-        OnChange = TimeToGoTrackBarChange
-      end
-      object TimeToGoCheckBox: TCheckBox
-        Left = 8
-        Top = 38
-        Width = 105
-        Height = 27
-        Caption = 'Time-To-Go'
-        Checked = True
-        State = cbChecked
-        TabOrder = 3
-      end
-      object TimeToGoText: TStaticText
-        Left = 119
-        Top = 43
-        Width = 76
-        Height = 16
-        Caption = '00:00:00:000'
-        TabOrder = 4
       end
     end
   end
