@@ -1301,6 +1301,176 @@ object Form1: TForm1
             'IFS High'
             'OpenStreetMap')
         end
+        object Panel7: TPanel
+          Left = 5
+          Top = 270
+          Width = 234
+          Height = 280
+          BevelInner = bvLowered
+          BevelKind = bkFlat
+          TabOrder = 10
+          object Label29: TLabel
+            Left = 75
+            Top = 8
+            Width = 84
+            Height = 16
+            Caption = 'Conflict Filter'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -13
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold, fsUnderline]
+            ParentFont = False
+          end
+          object Label30: TLabel
+            Left = 5
+            Top = 35
+            Width = 85
+            Height = 13
+            Caption = 'TCPA Threshold:'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+          end
+          object Label31: TLabel
+            Left = 5
+            Top = 95
+            Width = 116
+            Height = 13
+            Caption = 'Horizontal Distance:'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+          end
+          object Label32: TLabel
+            Left = 5
+            Top = 155
+            Width = 100
+            Height = 13
+            Caption = 'Vertical Distance:'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+          end
+          object TCPAThresholdLabel: TLabel
+            Left = 5
+            Top = 75
+            Width = 115
+            Height = 13
+            Caption = 'TCPA: 0 ~ 300 sec'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+          end
+          object HorizontalDistanceLabel: TLabel
+            Left = 5
+            Top = 135
+            Width = 100
+            Height = 13
+            Caption = 'H Dist: 0 ~ 10 NM'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+          end
+          object VerticalDistanceLabel: TLabel
+            Left = 5
+            Top = 195
+            Width = 110
+            Height = 13
+            Caption = 'V Dist: 0 ~ 5000 ft'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+          end
+          object TCPAMinTrackBar: TTrackBar
+            Left = 5
+            Top = 50
+            Width = 110
+            Height = 20
+            Max = 900
+            Frequency = 90
+            Position = 10
+            TabOrder = 0
+            OnChange = TCPAFilterTrackBarChange
+          end
+          object TCPAMaxTrackBar: TTrackBar
+            Left = 125
+            Top = 50
+            Width = 110
+            Height = 20
+            Max = 900
+            Frequency = 90
+            Position = 900
+            TabOrder = 1
+            OnChange = TCPAFilterTrackBarChange
+          end
+          object HorizontalMaxTrackBar: TTrackBar
+            Left = 5
+            Top = 110
+            Width = 225
+            Height = 20
+            Max = 50
+            Frequency = 5
+            Position = 10
+            TabOrder = 2
+            OnChange = HorizontalDistanceFilterTrackBarChange
+          end
+          object VerticalMaxTrackBar: TTrackBar
+            Left = 5
+            Top = 170
+            Width = 225
+            Height = 20
+            Max = 3000
+            Frequency = 300
+            Position = 1000
+            TabOrder = 3
+            OnChange = VerticalDistanceFilterTrackBarChange
+          end
+          object ConflictFilterEnabledCheckBox: TCheckBox
+            Left = 5
+            Top = 220
+            Width = 150
+            Height = 17
+            Caption = 'Enable Conflict Filtering'
+            Checked = True
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
+            State = cbChecked
+            TabOrder = 4
+            OnClick = ConflictFilterEnabledCheckBoxClick
+          end
+          object ResetConflictFilterButton: TButton
+            Left = 80
+            Top = 245
+            Width = 75
+            Height = 20
+            Caption = 'Reset Filter'
+            TabOrder = 5
+            OnClick = ResetConflictFilterButtonClick
+          end
+        end
       end
     end
   end
@@ -1334,33 +1504,33 @@ object Form1: TForm1
     ExplicitLeft = -1
     object ConflictListView: TListView
       Left = 0
-      Top = 940
-      Width = 423
-      Height = 100
+      Top = 0
+      Width = 362
+      Height = 120
       Columns = <
         item
           Caption = 'Aircraft 1'
-          Width = 70
+          Width = 65
         end
         item
           Caption = 'Aircraft 2'
-          Width = 70
+          Width = 65
         end
         item
           Caption = 'TCPA'
-          Width = 60
+          Width = 50
         end
         item
-          Caption = 'H Dist(NM)'
-          Width = 60
+          Caption = 'H Dist'
+          Width = 50
         end
         item
-          Caption = 'V Dist(Feet)'
-          Width = 60
+          Caption = 'V Dist'
+          Width = 50
         end
         item
-          Caption = 'Threat Level'
-          Width = 80
+          Caption = 'Risk'
+          Width = 60
         end>
       GridLines = True
       TabOrder = 0
