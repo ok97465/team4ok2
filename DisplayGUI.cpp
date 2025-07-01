@@ -2167,23 +2167,20 @@ void __fastcall TForm1::HandleSBSData(const AnsiString& data)
                         // 첫 번째 라인(헤더)은 건너뛰기
                         if (isFirstLine) {
                             isFirstLine = false;
-                            // 헤더 라인인지 확인 (ICAO, Altitude 등의 컬럼명이 포함되어 있으면)
-                            if (line.Pos("ICAO") > 0 || line.Pos("Altitude") > 0 || 
-                                line.Pos("Latitude") > 0 || line.Pos("Longitude") > 0) {
+                            // 헤더 라인인지 확인 (Row, CENTROID_ID 등의 컬럼명이 포함되어 있으면)
+                            if (line.Pos("Row") > 0 || line.Pos("CENTROID_ID") > 0 || 
+                                line.Pos("HexIdent") > 0 || line.Pos("distance_from_centroid") > 0) {
                                 continue; // 헤더 라인이므로 건너뛰기
                             }
                         }
                         
-                        printf("%s\n", line.c_str());
                         if (!line.IsEmpty() && line.Trim().Length() > 0) {
-                            // CSV 형식 검증: 최소 4개의 컬럼(ICAO,Altitude,Latitude,Longitude)이 있는지 확인
+                            // CSV 형식 검증: 8개의 컬럼(Row, CENTROID_ID, Altitude, Latitude, Longitude, HexIdent, timestamp_utc, distance_from_centroid)이 있는지 확인
                             int commaCount = 0;
                             for (int i = 1; i <= line.Length(); i++) {
                                 if (line[i] == ',') commaCount++;
                             }
-                            if (commaCount >= 3) { // 최소 3개의 쉼표 (4개 컬럼)
-                                FDeviationAircraftList.push_back(line);
-                            }
+                            FDeviationAircraftList.push_back(line);
                         }
                     }
                     // UI 업데이트
@@ -2192,7 +2189,6 @@ void __fastcall TForm1::HandleSBSData(const AnsiString& data)
                     delete reader;
                 }
             } else {
-                printf("no result.csv\n");
                 FDeviationAircraftList.clear();
                 UpdateDeviationList();
             }			
@@ -3533,23 +3529,19 @@ void __fastcall TForm1::UpdateDeviationList()
     DeviationListView->Items->Clear();
     
     for (const AnsiString& deviationInfo : FDeviationAircraftList) {
-        // CSV 형태의 데이터를 파싱 - result.csv 형식: ICAO,Altitude,Latitude,Longitude
+        // CSV 형태의 데이터를 파싱 - result.csv 형식: Row, CENTROID_ID, Altitude, Latitude, Longitude, HexIdent, timestamp_utc, distance_from_centroid
         TStringList* parts = new TStringList();
         try {
             parts->CommaText = deviationInfo;
             
-            if (parts->Count >= 4) {
-                // ICAO, Altitude, Latitude, Longitude 정보 표시
+            if (parts->Count >= 8) {
+                // HexIdent, Altitude, Latitude, Longitude 정보 표시
                 TListItem* item = DeviationListView->Items->Add();
-                item->Caption = parts->Strings[0]; // ICAO (HexIdent)
-                item->SubItems->Add(parts->Strings[1]); // Altitude
-                item->SubItems->Add(parts->Strings[2]); // Latitude
-                item->SubItems->Add(parts->Strings[3]); // Longitude
-                
-                // 디버그 출력
-                printf("Deviation Aircraft - ICAO: %s, Alt: %s, Lat: %s, Lon: %s\n", 
-                       parts->Strings[0].c_str(), parts->Strings[1].c_str(), 
-                       parts->Strings[2].c_str(), parts->Strings[3].c_str());
+                item->Caption = parts->Strings[5]; // HexIdent (인덱스 5)
+                item->SubItems->Add(parts->Strings[2]); // Altitude (인덱스 2)
+                item->SubItems->Add(parts->Strings[3]); // Latitude (인덱스 3)
+                item->SubItems->Add(parts->Strings[4]); // Longitude (인덱스 4)
+                item->SubItems->Add(parts->Strings[7]); // distance_from_centroid (인덱스 7)
                 
                 // 이탈감지된 항목은 빨간색으로 표시
                 item->ImageIndex = -1;
@@ -3557,6 +3549,7 @@ void __fastcall TForm1::UpdateDeviationList()
                 // 단순 텍스트 형태의 경우 (fallback)
                 TListItem* item = DeviationListView->Items->Add();
                 item->Caption = "N/A";
+                item->SubItems->Add("N/A");
                 item->SubItems->Add("N/A");
                 item->SubItems->Add("N/A");
                 item->SubItems->Add(deviationInfo);
