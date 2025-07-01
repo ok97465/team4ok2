@@ -286,7 +286,20 @@ private:	// User declarations
 
 	void __fastcall UpdateConflictList();
     void __fastcall ConflictListViewSelectItem(TObject *Sender, TListItem *Item, bool Selected);
-	void __fastcall CenterMapOnPair(unsigned int icao1, unsigned int icao2);
+        void __fastcall CenterMapOnPair(unsigned int icao1, unsigned int icao2);
+
+        // Rendering helper functions
+        void SetupRenderingState();
+        void DrawMapCenterCross();
+        void DrawTemporaryArea();
+        void DrawDefinedAreas();
+        bool ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route);
+        void BuildAircraftBatches(int &ViewableAircraft);
+        void RenderAircraftBatches();
+        void UpdateTrackHookDisplay();
+        void DrawCPAVisualization();
+        void DrawSelectedRoutes();
+        void DrawSelectedConflictPair();
 
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
