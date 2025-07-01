@@ -49,16 +49,16 @@ USING
 --    distance_from_centroid >= 20
     ORDER BY
       distance_from_centroid DESC
-    LIMIT 10
+    LIMIT 6
   ) AS S  -- 업데이트할 데이터 소스
 ON
   T.HexIdent = S.HexIdent
   AND TIMESTAMP(DATETIME(T.Date_MSG_Generated, T.Time_MSG_Generated), 'UTC') = S.timestamp_utc
 WHEN MATCHED THEN
   UPDATE SET
-    Altitude = 50000,   -- <-- 이 부분을 원하는 값으로 변경하세요 (예: 0 또는 -9999).
-    Latitude = 5,   -- <-- 이 부분을 원하는 값으로 변경하세요.
-    Longitude = 5;   -- <-- 이 부분을 원하는 값으로 변경하세요.
+    Altitude = 10000,   -- <-- 이 부분을 원하는 값으로 변경하세요 (예: 0 또는 -9999).
+    Latitude = 11,   -- <-- 이 부분을 원하는 값으로 변경하세요.
+    Longitude = 11;   -- <-- 이 부분을 원하는 값으로 변경하세요.
 """
 # 인증 json 파일 경로 (업로드용과 동일 이름 가정)
 api_key = os.path.join(global_filepath, "YourJsonFile.json")
