@@ -2690,6 +2690,31 @@ std::string ICAO_to_string(uint32_t icao) {
 // 2. 메인 패널 갱신 함수
 // ========================
 
+static const char* GetAircraftType(enum AircraftCategory cate) {
+    
+        switch (cate) {
+            case CATEGORY_COMMERCIAL:
+                return "COMMERCIAL";
+            case CATEGORY_CARGO:
+                return "CARGO";
+            case CATEGORY_HELICOPTER:
+                return "HELICOPTER";
+            case CATEGORY_MILITARY:
+                return "MILITARY";
+            case CATEGORY_BUSINESS_JET:
+                return "BUSINESS_JET";
+            case CATEGORY_GENERAL_AVIATION:
+                return "GENERAL_AVIATION";
+            case CATEGORY_GLIDER:
+                return "GLIDER";
+            case CATEGORY_ULTRALIGHT:
+                return "ULTRALIGHT";
+            case CATEGORY_UNKNOWN:
+            default:
+                return "UNKNOWN";
+        }
+}
+
 void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route)
 {
     // -------- 기존 항공기 정보 갱신 --------
@@ -2715,7 +2740,7 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
 
     ICAOLabel->Caption      = ac->HexAddr;         // ICAO(16진)
     FlightNumLabel->Caption = ac->FlightNum;       // Callsign
-    AircraftModelLabel->Caption = GetAircraftModel(ac->ICAO);
+    AircraftModelLabel->Caption = GetAircraftType(ac->Category);
     {
         std::string airline, country;
         if (LookupAirline(AnsiString(ac->FlightNum).Trim().c_str(), airline, country))
