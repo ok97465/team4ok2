@@ -48,8 +48,10 @@ object Form1: TForm1
     Width = 250
     Height = 1041
     Align = alRight
-    Color = clWindow
+    Color = clWhite
     Constraints.MaxWidth = 250
+    ParentBackground = False
+    DoubleBuffered = True
     TabOrder = 0
     object RightPanelTabControl: TPageControl
       Left = 1
@@ -607,6 +609,7 @@ object Form1: TForm1
           Height = 147
           BevelInner = bvLowered
           BevelKind = bkFlat
+          Color = clWhite
           TabOrder = 4
           object Label12: TLabel
             Left = 8
