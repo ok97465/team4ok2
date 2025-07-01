@@ -28,6 +28,10 @@
 #include <IdTCPConnection.hpp>
 #include "cspin.h"
 #include <vector>
+#include <unordered_map>
+#include <thread>
+#include <mutex>
+#include <atomic>
 #include <utility>
 #include "ntds2d.h"
 #include "TCPDataHandler.h"
@@ -68,6 +72,42 @@ typedef struct
  TTriangles *Triangles;
  bool        Selected;
 }TArea;
+
+struct FilterSettings {
+    AnsiString filterAirline;
+    AnsiString filterOrigin;
+    AnsiString filterDestination;
+    bool filterPolygonOnly;
+    bool filterWaypointsOnly;
+    int minSpeed;
+    int maxSpeed;
+    int minAlt;
+    int maxAlt;
+    bool checkCommercial;
+    bool checkCargo;
+    bool checkHelicopter;
+    bool checkMilitary;
+    bool checkBusinessJet;
+    bool checkGlider;
+    bool checkUltralight;
+    bool checkGeneralAviation;
+    bool timeToGoEnabled;
+    int timeToGoMinutes;
+};
+
+struct AircraftRenderInfo {
+    bool display;
+    float color[4];
+    double x;
+    double y;
+    double x2;
+    double y2;
+    float heading;
+    float scale;
+    int   imageNum;
+    HexCharInstance text[6];
+    int textCount;
+};
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
@@ -294,12 +334,16 @@ private:	// User declarations
         void DrawTemporaryArea();
         void DrawDefinedAreas();
         bool ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route);
+        bool ShouldDisplayAircraftThreaded(TADS_B_Aircraft* Data, const RouteInfo* route, const FilterSettings& settings);
         void BuildAircraftBatches(int &ViewableAircraft);
         void RenderAircraftBatches();
         void UpdateTrackHookDisplay();
         void DrawCPAVisualization();
         void DrawSelectedRoutes();
         void DrawSelectedConflictPair();
+        void StartRenderInfoThread();
+        void StopRenderInfoThread();
+        static void RenderInfoThreadProc(TForm1* self);
 
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
@@ -362,6 +406,11 @@ public:		// User declarations
         std::vector<AirplaneInstance> m_planeBatch;
         std::vector<AirplaneLineInstance> m_lineBatch;
         std::vector<HexCharInstance> m_textBatch;
+
+        std::unordered_map<uint32_t, AircraftRenderInfo> m_renderInfoMap;
+        std::mutex m_renderMutex;
+        std::thread m_renderThread;
+        std::atomic<bool> m_stopRenderThread;
 
         // 선택된 항공기의 경로(대권) 좌표 목록
         std::vector<std::vector<std::pair<double,double>>> m_selectedRoutePaths;
