@@ -2160,11 +2160,30 @@ void __fastcall TForm1::HandleSBSData(const AnsiString& data)
                 TStreamReader *reader = new TStreamReader(csvPath, false);
                 try {
                     FDeviationAircraftList.clear(); // 기존 목록 초기화
+                    bool isFirstLine = true;
                     while (!reader->EndOfStream) {
                         AnsiString line = reader->ReadLine();
+                        
+                        // 첫 번째 라인(헤더)은 건너뛰기
+                        if (isFirstLine) {
+                            isFirstLine = false;
+                            // 헤더 라인인지 확인 (ICAO, Altitude 등의 컬럼명이 포함되어 있으면)
+                            if (line.Pos("ICAO") > 0 || line.Pos("Altitude") > 0 || 
+                                line.Pos("Latitude") > 0 || line.Pos("Longitude") > 0) {
+                                continue; // 헤더 라인이므로 건너뛰기
+                            }
+                        }
+                        
                         printf("%s\n", line.c_str());
-                        if (!line.IsEmpty()) {
-                            FDeviationAircraftList.push_back(line);
+                        if (!line.IsEmpty() && line.Trim().Length() > 0) {
+                            // CSV 형식 검증: 최소 4개의 컬럼(ICAO,Altitude,Latitude,Longitude)이 있는지 확인
+                            int commaCount = 0;
+                            for (int i = 1; i <= line.Length(); i++) {
+                                if (line[i] == ',') commaCount++;
+                            }
+                            if (commaCount >= 3) { // 최소 3개의 쉼표 (4개 컬럼)
+                                FDeviationAircraftList.push_back(line);
+                            }
                         }
                     }
                     // UI 업데이트
@@ -3514,23 +3533,31 @@ void __fastcall TForm1::UpdateDeviationList()
     DeviationListView->Items->Clear();
     
     for (const AnsiString& deviationInfo : FDeviationAircraftList) {
-        // CSV 형태의 데이터를 파싱 (예: ICAO,FlightNumber,DeviationDetails)
+        // CSV 형태의 데이터를 파싱 - result.csv 형식: ICAO,Altitude,Latitude,Longitude
         TStringList* parts = new TStringList();
         try {
             parts->CommaText = deviationInfo;
             
-            if (parts->Count >= 3) {
+            if (parts->Count >= 4) {
+                // ICAO, Altitude, Latitude, Longitude 정보 표시
                 TListItem* item = DeviationListView->Items->Add();
-                item->Caption = parts->Strings[0]; // ICAO
-                item->SubItems->Add(parts->Strings[1]); // Flight Number
-                item->SubItems->Add(parts->Strings[2]); // Deviation Info
+                item->Caption = parts->Strings[0]; // ICAO (HexIdent)
+                item->SubItems->Add(parts->Strings[1]); // Altitude
+                item->SubItems->Add(parts->Strings[2]); // Latitude
+                item->SubItems->Add(parts->Strings[3]); // Longitude
+                
+                // 디버그 출력
+                printf("Deviation Aircraft - ICAO: %s, Alt: %s, Lat: %s, Lon: %s\n", 
+                       parts->Strings[0].c_str(), parts->Strings[1].c_str(), 
+                       parts->Strings[2].c_str(), parts->Strings[3].c_str());
                 
                 // 이탈감지된 항목은 빨간색으로 표시
-                item->SubItems->Add("DEVIATION");
-            } else if (parts->Count >= 1) {
-                // 단순 텍스트 형태의 경우
+                item->ImageIndex = -1;
+            } else if (parts->Count >= 1 && !deviationInfo.Trim().IsEmpty()) {
+                // 단순 텍스트 형태의 경우 (fallback)
                 TListItem* item = DeviationListView->Items->Add();
                 item->Caption = "N/A";
+                item->SubItems->Add("N/A");
                 item->SubItems->Add("N/A");
                 item->SubItems->Add(deviationInfo);
             }
