@@ -104,7 +104,9 @@ struct RenderThreadParams {
     AnsiString filterAirline;
     AnsiString filterOrigin;
     AnsiString filterDestination;
-}; 
+};
+
+class TForm1;
 
 class TAircraftRenderThread : public TThread {
 private:
