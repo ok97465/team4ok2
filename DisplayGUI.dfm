@@ -50,8 +50,9 @@ object Form1: TForm1
     Align = alRight
     Color = clWhite
     Constraints.MaxWidth = 250
-    ParentBackground = False
     DoubleBuffered = True
+    ParentBackground = False
+    ParentDoubleBuffered = False
     TabOrder = 0
     object RightPanelTabControl: TPageControl
       Left = 1
@@ -508,9 +509,9 @@ object Form1: TForm1
           object LabelModel: TLabel
             Left = 5
             Top = 235
-            Width = 37
+            Width = 49
             Height = 13
-            Caption = 'Model:'
+            Caption = 'AC Type:'
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
@@ -564,7 +565,6 @@ object Form1: TForm1
             Height = 69
             TabStop = False
             BorderStyle = bsNone
-            Color = clWindow
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
@@ -1328,7 +1328,7 @@ object Form1: TForm1
           object Label30: TLabel
             Left = 5
             Top = 35
-            Width = 85
+            Width = 91
             Height = 13
             Caption = 'TCPA Threshold:'
             Font.Charset = DEFAULT_CHARSET
@@ -1341,7 +1341,7 @@ object Form1: TForm1
           object Label31: TLabel
             Left = 5
             Top = 95
-            Width = 116
+            Width = 113
             Height = 13
             Caption = 'Horizontal Distance:'
             Font.Charset = DEFAULT_CHARSET
@@ -1354,7 +1354,7 @@ object Form1: TForm1
           object Label32: TLabel
             Left = 5
             Top = 155
-            Width = 100
+            Width = 98
             Height = 13
             Caption = 'Vertical Distance:'
             Font.Charset = DEFAULT_CHARSET
@@ -1367,7 +1367,7 @@ object Form1: TForm1
           object TCPAThresholdLabel: TLabel
             Left = 5
             Top = 75
-            Width = 115
+            Width = 100
             Height = 13
             Caption = 'TCPA: 0 ~ 300 sec'
             Font.Charset = DEFAULT_CHARSET
@@ -1380,7 +1380,7 @@ object Form1: TForm1
           object HorizontalDistanceLabel: TLabel
             Left = 5
             Top = 135
-            Width = 100
+            Width = 95
             Height = 13
             Caption = 'H Dist: 0 ~ 10 NM'
             Font.Charset = DEFAULT_CHARSET
@@ -1393,7 +1393,7 @@ object Form1: TForm1
           object VerticalDistanceLabel: TLabel
             Left = 5
             Top = 195
-            Width = 110
+            Width = 100
             Height = 13
             Caption = 'V Dist: 0 ~ 5000 ft'
             Font.Charset = DEFAULT_CHARSET
@@ -1447,7 +1447,6 @@ object Form1: TForm1
             TabOrder = 3
             OnChange = VerticalDistanceFilterTrackBarChange
           end
-
           object ShowConflictAircraftAlwaysCheckBox: TCheckBox
             Left = 5
             Top = 220
@@ -1509,7 +1508,19 @@ object Form1: TForm1
     OnInit = ObjectDisplayInit
     OnResize = ObjectDisplayResize
     OnPaint = ObjectDisplayPaint
-    ExplicitLeft = -1
+    object DeviationLabel: TLabel
+      Left = 8
+      Top = 128
+      Width = 131
+      Height = 13
+      Caption = 'Route Deviation Alerts:'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clRed
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
     object ConflictListView: TListView
       Left = 0
       Top = 0
@@ -1526,15 +1537,12 @@ object Form1: TForm1
         end
         item
           Caption = 'TCPA'
-          Width = 50
         end
         item
           Caption = 'H Dist'
-          Width = 50
         end
         item
           Caption = 'V Dist'
-          Width = 50
         end
         item
           Caption = 'Risk'
@@ -1543,19 +1551,6 @@ object Form1: TForm1
       GridLines = True
       TabOrder = 0
       ViewStyle = vsReport
-    end
-    object DeviationLabel: TLabel
-      Left = 8
-      Top = 128
-      Width = 120
-      Height = 13
-      Caption = 'Route Deviation Alerts:'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clRed
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Style = [fsBold]
-      ParentFont = False
     end
     object DeviationListView: TListView
       Left = 0
