@@ -5,6 +5,7 @@
 #include "TimeFunctions.h"
 #include "RawDecoder.h"
 #include "SbsDecoder.h"
+#include "AircraftDB.h"
 #include <vector>
 
 #pragma link "HashTable\\Lib\\Win64\\Release\\HashTableLib.a"
@@ -197,6 +198,13 @@ void AircraftDataModel::ApplyUpdate(const ParsedAircraftData& parsedData, bool A
         aircraft->HaveFlightNum = true;
         strncpy(aircraft->FlightNum, parsedData.FlightNum, 9);
         aircraft->FlightNum[8] = '\0';
+        for(char* p = aircraft->FlightNum; *p; ++p) *p = toupper(*p);
+        // trim leading/trailing spaces
+        char* start = aircraft->FlightNum;
+        while(*start && isspace(*start)) ++start;
+        if(start != aircraft->FlightNum) memmove(aircraft->FlightNum, start, strlen(start)+1);
+        char* end = aircraft->FlightNum + strlen(aircraft->FlightNum) - 1;
+        while(end >= aircraft->FlightNum && isspace(*end)) { *end = '\0'; --end; }
     }
     if (parsedData.hasAltitude) {
         aircraft->HaveAltitude = true;
@@ -227,6 +235,7 @@ TADS_B_Aircraft* AircraftDataModel::FindOrCreateAircraft(unsigned int Addr, bool
         memset(aircraft, 0, sizeof(TADS_B_Aircraft)); // 모든 필드를 0으로 초기화
         aircraft->ICAO = Addr;
         snprintf(aircraft->HexAddr, sizeof(aircraft->HexAddr), "%06X", (int)Addr);
+        aircraft->Category = aircraft_get_category(Addr);
         
         // CycleImages가 체크되어 있을 때만 SpriteImage 할당
         if (ACycleImages) {
