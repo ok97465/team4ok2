@@ -1,12 +1,11 @@
 ﻿#pragma hdrstop
 
 #include "TCPDataHandler.h"
-#include "TimeFunctions.h" // <<< GetCurrentTimeInMsec 사용을 위해 추가
+#include "TimeFunctions.h"
 #include "LogHandler.h"
 
-const int MAX_RETRY_ATTEMPTS = 10;
-const int INITIAL_RETRY_INTERVAL_MS = 2000;  // 2초
-const int MAX_RETRY_INTERVAL_MS = 30000;     // 30초
+const int MAX_RETRY_ATTEMPTS = 60;
+const int RETRY_INTERVAL_MS = 1000;  // 1초
 
 //---------------------------------------------------------------------------
 __fastcall TCPDataHandler::TWorkerThread::TWorkerThread(TCPDataHandler* AHandler)
@@ -21,7 +20,6 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
     if (FHandler->FDataSourceType == TDataSourceType::Network)
 	{
 		int retryCount = 0;
-		int retryInterval = INITIAL_RETRY_INTERVAL_MS;
 		bool connectionWasSuccessful = false;
 
 		while (!Terminated) // 사용자가 Disconnect()를 호출하여 Terminated가 true가 될 때까지 반복
@@ -29,33 +27,31 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
             if (retryCount >= MAX_RETRY_ATTEMPTS)
 			{
 				// Synchronize를 사용하여 메인 스레드에서 ShowMessage를 안전하게 호출합니다.
+				String connectionTypeStr = (FHandler->FConnectionType == TConnectionType::Raw) ? "Raw" : "SBS";
 				Synchronize([&](){
-					ShowMessage("Failed to connect after " + String(MAX_RETRY_ATTEMPTS) + " attempts. Please check the server and your network connection.");
+					ShowMessage(connectionTypeStr + " connection failed. Please check the server and your network connection.");
 				});
 				break;
 			}
 			try
 			{
-				// 재연결 시도인 경우 (첫 시도가 아님)
-				if (retryCount > 0)
+				// Raw 연결에서만 재연결 시도 시 대기
+				if (FHandler->FConnectionType == TConnectionType::Raw && retryCount > 0)
 				{
 					// UI에 "재연결 중" 상태 전송
 					Synchronize([this](){ FHandler->SyncNotifyReconnecting(); });
 
-					// Exponential Backoff 딜레이
-					TThread::Sleep(retryInterval);
-					retryInterval *= 2;
-					if (retryInterval > MAX_RETRY_INTERVAL_MS) {
-						retryInterval = MAX_RETRY_INTERVAL_MS;
-					}
+					// 1초 대기
+					TThread::Sleep(RETRY_INTERVAL_MS);
 				}
 
 				// 연결 시도
 				FHandler->FClient->Host = FHandler->FHost;
 				FHandler->FClient->Port = FHandler->FPort;
-                FHandler->FClient->ConnectTimeout = 5000; // 5초 타임아웃 설정
+				FHandler->FClient->ConnectTimeout = 3000; // 3초 타임아웃 설정
 				FHandler->FClient->Connect(); // 여기서 실패하면 catch 블록으로 이동
-				FHandler->FClient->Socket->Binding->SetKeepAliveValues(true, 60000, 15000);
+				
+				FHandler->FClient->Socket->Binding->SetKeepAliveValues(true, 3000, 1000);
 
 				connectionWasSuccessful = true;
                 Synchronize([this](){ FHandler->SyncNotifyConnected(); });				
@@ -63,13 +59,32 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
 				// 데이터 수신 루프
 				while (!Terminated && FHandler->FClient->Connected())
 				{
-					String data = FHandler->FClient->IOHandler->ReadLn();
-					if (!Terminated) {
-						TThread::Queue(nullptr, [this, data](){ FHandler->SyncNotifyData(data); });
+					try {
+						String data = FHandler->FClient->IOHandler->ReadLn();
+						if (!Terminated) {
+							TThread::Queue(nullptr, [this, data](){ FHandler->SyncNotifyData(data); });
+						}
+					}
+					catch (const Exception& readException) {
+						// 연결 상태 재확인
+						if (!FHandler->FClient->Connected()) {
+							// 연결이 끊어진 경우 즉시 루프 종료하여 재연결 시도
+							break;
+						}
+						
+						// Raw 연결에서는 연결이 살아있을 때만 ReadLn 재시도
+						if (FHandler->FConnectionType == TConnectionType::Raw) {
+							// 짧은 대기 후 계속 시도
+							TThread::Sleep(100);
+							continue;
+						}
+						// SBS 연결에서는 ReadLn 예외 시 즉시 종료
+						else {
+							throw; // 예외를 다시 던져서 외부 catch에서 처리
+						}
 					}
 				}
 				retryCount = 0;
-				retryInterval = INITIAL_RETRY_INTERVAL_MS;
 			}
 			catch (const Exception& e)
 			{
@@ -77,18 +92,38 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
 				if (Terminated) {
 					break; // 사용자가 취소한 것이므로 즉시 루프 종료
 				}
+				
+				// 연결이 성공했다가 끊긴 경우에도 Raw는 재시도, SBS는 즉시 종료
 				if (connectionWasSuccessful) {
-					ShowMessage("Connection lost: " + e.Message);
-                    break;
-                }
-				// 그 외 네트워크 오류의 경우, 재시도 횟수를 증가시키고 루프를 계속합니다.
-				retryCount++;
-                LOG_WARNING_F(LogHandler::CAT_NETWORK, "Connection attempt failed (Retry #%d): %s", 
-                             retryCount, e.Message.c_str());
-                if (FHandler->FClient->Connected()) {
-					FHandler->FClient->Disconnect();
+					connectionWasSuccessful = false; // 재시도를 위해 플래그 리셋
+					if (FHandler->FConnectionType == TConnectionType::SBS) {
+						// SBS는 재시도하지 않으므로 즉시 에러 메시지 표시
+						Synchronize([&](){
+							ShowMessage("SBS connection lost: " + e.Message);
+						});
+						break; // SBS는 즉시 루프 종료
+					}
+					// Raw의 경우 재시도 로직으로 계속 진행
 				}
-				continue;
+				// Raw 연결에서만 재시도 횟수를 증가시키고 루프를 계속
+				if (FHandler->FConnectionType == TConnectionType::Raw) {
+					retryCount++;
+					if (FHandler->FClient->Connected()) {
+						FHandler->FClient->Disconnect();
+					}
+					continue; // Raw는 재시도를 위해 루프 계속
+				}
+				// SBS 연결의 경우 즉시 종료 (재시도 없음)
+				else {
+					if (FHandler->FClient->Connected()) {
+						FHandler->FClient->Disconnect();
+					}
+					// SBS는 재시도하지 않으므로 즉시 에러 메시지 표시
+					Synchronize([&](){
+						ShowMessage("SBS connection failed: " + e.Message);
+					});
+					break; // SBS는 즉시 루프 종료
+				}
 			}
 		}
 	}
@@ -157,9 +192,15 @@ void __fastcall TCPDataHandler::TWorkerThread::Execute()
 //---------------------------------------------------------------------------
 __fastcall TCPDataHandler::TCPDataHandler(TComponent* AOwner)
     : TObject(), FOwner(AOwner), FClient(NULL), FWorkerThread(NULL),
-      FPlaybackStream(NULL), FRecordStream(NULL), FIsActive(false)
+      FPlaybackStream(NULL), FRecordStream(NULL), FIsActive(false),
+      FConnectionType(TConnectionType::Raw)
 {
     FClient = new TIdTCPClient(nullptr);
+    
+    // LogHandler 초기화 및 NETWORK 카테고리 활성화
+    LogHandler::Initialize();
+    LogHandler::EnableCategory(LogHandler::CAT_NETWORK);
+    LogHandler::SetConsoleOutput(true);  // 콘솔 출력 활성화
 }
 //---------------------------------------------------------------------------
 __fastcall TCPDataHandler::~TCPDataHandler()
@@ -171,11 +212,12 @@ __fastcall TCPDataHandler::~TCPDataHandler()
 	StopRecording();
 }
 //---------------------------------------------------------------------------
-void TCPDataHandler::Connect(const String& host, int port)
+void TCPDataHandler::Connect(const String& host, int port, TConnectionType connectionType)
 {
     if (FIsActive) return;
     FHost = host;
     FPort = port;
+    FConnectionType = connectionType;
     FDataSourceType = TDataSourceType::Network;
     FIsActive = true;
 

@@ -1750,7 +1750,7 @@ void __fastcall TForm1::RawConnectButtonClick(TObject *Sender)
 	if (!FRawDataHandler->IsActive())
     {
 		FRawButtonScroller->UpdateCaption("Connecting... (Cancel)");
-        FRawDataHandler->Connect(RawIpAddress->Text, 30002);
+        FRawDataHandler->Connect(RawIpAddress->Text, 30002, TConnectionType::Raw);
     }
     else
     {
@@ -1803,7 +1803,7 @@ void __fastcall TForm1::SBSConnectButtonClick(TObject *Sender)
 {
 	if (!FSBSDataHandler->IsActive())
     {
-        FSBSDataHandler->Connect(SBSIpAddress->Text, 5002);
+        FSBSDataHandler->Connect(SBSIpAddress->Text, 5002, TConnectionType::SBS);
     }
     else
     {
