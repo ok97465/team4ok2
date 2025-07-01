@@ -3536,16 +3536,16 @@ void __fastcall TForm1::UpdateDeviationList()
             
             printf("CSV parts count: %d\n", parts->Count);
             
-            if (parts->Count >= 8) {
+            if (parts->Count >= 7) {
                 // HexIdent, Altitude, Latitude, Longitude 정보 표시
                 printf("Deviation Aircraft - ICAO: %s, Alt: %s, Lat: %s, Lon: %s\n",
-                       AnsiString(parts->Strings[5]).c_str(), AnsiString(parts->Strings[2]).c_str(),
-                       AnsiString(parts->Strings[3]).c_str(), AnsiString(parts->Strings[4]).c_str());
+                       AnsiString(parts->Strings[4]).c_str(), AnsiString(parts->Strings[1]).c_str(),
+                       AnsiString(parts->Strings[2]).c_str(), AnsiString(parts->Strings[3]).c_str());
                 TListItem* item = DeviationListView->Items->Add();
-                item->Caption = parts->Strings[5]; // HexIdent (인덱스 5)
-                item->SubItems->Add(parts->Strings[2]); // Altitude (인덱스 2)
-                item->SubItems->Add(parts->Strings[3]); // Latitude (인덱스 3)
-                item->SubItems->Add(parts->Strings[4]); // Longitude (인덱스 4)
+                item->Caption = parts->Strings[4]; // HexIdent (인덱스 5)
+                item->SubItems->Add(parts->Strings[1]); // Altitude (인덱스 2)
+                item->SubItems->Add(parts->Strings[2]); // Latitude (인덱스 3)
+                item->SubItems->Add(parts->Strings[3]); // Longitude (인덱스 4)
                 
                 // 이탈감지된 항목은 빨간색으로 표시
                 item->ImageIndex = -1;
