@@ -10,126 +10,96 @@ TCoordConvStatus VInverse(double Latitude1, double Longitude1,
 						  double *Distance,   double *Azimuth12,
 						  double *Azimuth21)
 {
+	// Check for antipodal points
+	if (IsAntipodal(Latitude1, Latitude2, Longitude1, Longitude2)) return(ANTIPODAL);
 
-  int  icount,MAXCT=100;   //max loops
-  double lat1, long1, lat2, long2, A, a0, B, b0, flat, C, r, s, u2, x,
-		 sinu1, sinu2, cosu1, cosu2, tanu1, tanu2, sigma ,lambda,
-		 testlambda, L, s2s, ss,c2sm, cs, sinalpha, cosalpha, dsigma, 
-		 alpha12, alpha21;
-
-  lat1 = DEGTORAD(Latitude1);
-  lat2 = DEGTORAD(Latitude2);
-  long1 = DEGTORAD(Longitude1);
-  long2 = DEGTORAD(Longitude2);
-  icount = 0;
-
-  //check for antipodal points
-  if (IsAntipodal(Latitude1, Latitude2,
-				 Longitude1,Longitude2))  return(ANTIPODAL);
-
-  //same point detection
-	if ((fabs(Latitude1 - Latitude2) < 0.000001) &&
-		(fabs(Longitude1 - Longitude2) < 0.000001))
-	  {
+	// Check for same point
+	if ((fabs(Latitude1 - Latitude2) < 1e-6) && (fabs(Longitude1 - Longitude2) < 1e-6))
+	{
 		*Azimuth12 = 0.0;
 		*Azimuth21 = 0.0;
 		*Distance = 0.0;
 		return(SAMEPT);
-	 }
+	}
 
-	a0 = EllipseMajor;
-	b0 = EllipseMinor;
-	flat = (a0 - b0) / a0;
-	r = 1.0 - flat;
+	const double a0 = EllipseMajor;
+	const double b0 = EllipseMinor;
+	const double flat = (a0 - b0) / a0;
+	const double r = 1.0 - flat;
 
-	tanu1 = r * tan(lat1);
-	tanu2 = r * tan(lat2);
+	const double lat1 = DEGTORAD(Latitude1);
+	const double lat2 = DEGTORAD(Latitude2);
+	const double long1 = DEGTORAD(Longitude1);
+	const double long2 = DEGTORAD(Longitude2);
 
-	x = atan(tanu1);
-	cosu1 = cos(x);
-	sinu1 = sin(x);
+	const double tanu1 = r * tan(lat1);
+	const double cosu1 = 1.0 / sqrt(1.0 + tanu1 * tanu1);
+	const double sinu1 = tanu1 * cosu1;
 
-	x = atan(tanu2);
-	cosu2 = cos(x);
-	sinu2 = sin(x);
+	const double tanu2 = r * tan(lat2);
+	const double cosu2 = 1.0 / sqrt(1.0 + tanu2 * tanu2);
+	const double sinu2 = tanu2 * cosu2;
 
-	L = long2 - long1;
-	lambda = L;
+	const double L = long2 - long1;
+	double lambda = L;
+	double testlambda;
 
-   do
-	 {
-	  icount++;
-	  testlambda = lambda;
+	double sigma, ss, cs, sinalpha, cosalpha_sqr, c2sm, C;
 
-	  //equation 14
-	  s2s = sqr(cosu2 * sin(lambda)) +
-			  sqr(cosu1 * sinu2 - sinu1 * cosu2 * cos(lambda));
-	  ss = fabs(sqrt(s2s));  //sin(sigma)
-	  //equation 15
-	  cs = sinu1 * sinu2 + cosu1 * cosu2 * cos(lambda);  //cos(sigma)
+	int icount = 0;
+	const int MAXCT = 100;
 
-	  sigma = atan2(ss,cs);    //ArcCos(cs);
-	  //no need for equation 16
-	  //equation 17
-	  sinalpha = cosu1 * cosu2 * sin(lambda) / ss;
-	  x = asin(sinalpha);
-	  cosalpha = cos(x);
-	  //equation 18
-	  c2sm = cs - (2.0 * sinu1 * sinu2 / sqr(cosalpha));
-	  //equation 10
-	  C = flat / 16.0 *
-		   sqr(cosalpha) *
-		   (4.0 + flat *
-		   (4.0 - 3.0 * sqr(cosalpha)));
+	do
+	{
+		icount++;
+		testlambda = lambda;
 
-	  //equation 11
-	  lambda = L +
-				(1.0 - C) *
-				flat * sinalpha *
-				(sigma + C * ss *
-				(c2sm + C *
-				cs * (-1.0 + 2.0 * sqr(c2sm))));
+		const double sin_lambda = sin(lambda);
+		const double cos_lambda = cos(lambda);
+
+		// Equation 14
+		const double s2s_sq = pow(cosu2 * sin_lambda, 2.0) + pow(cosu1 * sinu2 - sinu1 * cosu2 * cos_lambda, 2.0);
+		ss = sqrt(s2s_sq);
+		// Equation 15
+		cs = sinu1 * sinu2 + cosu1 * cosu2 * cos_lambda;
+
+		sigma = atan2(ss, cs);
+		// Equation 17
+		sinalpha = cosu1 * cosu2 * sin_lambda / ss;
+		cosalpha_sqr = 1.0 - sinalpha * sinalpha;
+		// Equation 18
+		c2sm = cs - (2.0 * sinu1 * sinu2 / cosalpha_sqr);
+		// Equation 10
+		C = flat / 16.0 * cosalpha_sqr * (4.0 + flat * (4.0 - 3.0 * cosalpha_sqr));
+
+		// Equation 11
+		lambda = L + (1.0 - C) * flat * sinalpha * (sigma + C * ss * (c2sm + C * cs * (-1.0 + 2.0 * c2sm * c2sm)));
 	}
 	while ((fabs(testlambda - lambda) > EPS) && (icount <= MAXCT));
 
-	//test failure to converge
 	if (icount > MAXCT) return(NOCONVERGE);
 
-	u2 = sqr(cosalpha) *
-		  (sqr(a0) - sqr(b0)) / sqr(b0);
+	const double u2 = cosalpha_sqr * (a0 * a0 - b0 * b0) / (b0 * b0);
 
-	A =  1.0 +
-		  (u2 / 16384.0) *
-		  (4096.0 + u2 *
-		  (-768.0 + u2 *
-		  (320.0 - 175.0 * u2)));
+	const double A = 1.0 + (u2 / 16384.0) * (4096.0 + u2 * (-768.0 + u2 * (320.0 - 175.0 * u2)));
+	const double B = (u2 / 1024.0) * (256.0 + u2 * (-128.0 + u2 * (74.0 - 47.0 * u2)));
 
-	B = (u2 / 1024.0) *
-		 (256.0 + u2 *
-		 (-128.0 + u2 *
-		 (74.0 - 47.0 * u2)));
+	const double dsigma = B * ss * (c2sm + (B / 4.0) * (cs * (-1.0 + 2.0 * c2sm * c2sm) -
+		(B / 6.0) * c2sm * (-3.0 + 4.0 * ss * ss) * (-3.0 + 4.0 * c2sm * c2sm)));
 
-	dsigma = B * ss *
-			  (c2sm + (B / 4.0) *
-			  (cs * (-1.0 + 2.0 * sqr(c2sm)) -
-			  (B / 6.0) * c2sm *
-			  (-3.0 + 4.0 * sqr(ss)) *
-			  (-3.0 + 4.0 * sqr(c2sm))));
+	const double s = b0 * A * (sigma - dsigma);
 
-	s = b0 * A * (sigma - dsigma);
+	const double sin_lambda_final = sin(lambda);
+	const double cos_lambda_final = cos(lambda);
 
-	alpha12 = atan2(cosu2 * sin(lambda),
-	  (cosu1 * sinu2 - sinu1 * cosu2 * cos(lambda)));
+	double alpha12 = atan2(cosu2 * sin_lambda_final, (cosu1 * sinu2 - sinu1 * cosu2 * cos_lambda_final));
+	double alpha21 = atan2(cosu1 * sin_lambda_final, (-sinu1 * cosu2 + cosu1 * sinu2 * cos_lambda_final));
 
-	alpha21 = atan2(cosu1 * sin(lambda),
-		(-sinu1 * cosu2 + cosu1 * sinu2 * cos(lambda))) - M_PI;
+	*Azimuth12 = RADTODEG(ModAzimuth(alpha12));
+	*Azimuth21 = RADTODEG(ModAzimuth(alpha21 - M_PI));
+	*Distance = s;
 
-	alpha12 = ModAzimuth(alpha12);      //constrain value
-	alpha21 = ModAzimuth(alpha21);      //ditto
-	*Azimuth12 = RADTODEG(alpha12);   //convert to decimal degrees
-	*Azimuth21 = RADTODEG(alpha21);   //ditto
-	*Distance = s;                    //distance in meters
-	 return OKNOERROR;
+	return OKNOERROR;
 }
 //---------------------------------------------------------------------------
 TCoordConvStatus VDirect(double Latitude1,  double Longitude1,
@@ -137,107 +107,97 @@ TCoordConvStatus VDirect(double Latitude1,  double Longitude1,
 						  double *Latitude2, double *Longitude2,
 						  double *Azimuth21)
 {
-   double lat1, lat2, long1, long2, az12, az21, s, a0, b0, flat, r, u1,
-		  tanu1, sinu1, cosu1, tansigma1, sinalpha, cosalpha, a, b, c, usqr,
-		  sigma, sigma1, deltasigma, twosigmam, lastsigma, term1,
-		  term2, term3, lambda, omega, ss, cs, c2sm;
-
-	lat1 = DEGTORAD(Latitude1);
-	long1 = DEGTORAD(Longitude1);
-	az12 = DEGTORAD(Azimuth12);
-	s = Distance;
-
-	//handle zero distance
-	if (s==0.0)
-	  {
+	// Handle zero distance case first
+	if (Distance == 0.0)
+	{
 		*Latitude2 = Latitude1;
 		*Longitude2 = Longitude1;
 		*Azimuth21 = 0.0;
 		return(ZERODIST);
-	  }
+	}
 
-	a0 = EllipseMajor;
-	b0 = EllipseMinor;
-	flat = (a0 - b0) / a0;
-	r = 1.0 - flat;
-	tanu1 = r * tan(lat1);
+	const double s = Distance;
+	const double lat1 = DEGTORAD(Latitude1);
+	const double long1 = DEGTORAD(Longitude1);
+	const double az12 = DEGTORAD(Azimuth12);
 
-	tansigma1 = tanu1 / cos(az12);          //eq 1
+	const double a0 = EllipseMajor;
+	const double b0 = EllipseMinor;
+	const double flat = (a0 - b0) / a0;
+	const double r = 1.0 - flat;
 
-	u1 = atan(tanu1);
-	sinu1 = sin(u1);
-	cosu1 = cos(u1);
+	const double tanu1 = r * tan(lat1);
+	const double u1 = atan(tanu1);
+	const double sinu1 = sin(u1);
+	const double cosu1 = cos(u1);
 
-	sinalpha = cosu1 * sin(az12);           //eq 2
-	cosalpha = sqrt(1.0 - sqr(sinalpha));
+	const double sin_az12 = sin(az12);
+	const double cos_az12 = cos(az12);
 
-	usqr = sqr(cosalpha) * (sqr(a0) - sqr(b0)) / sqr(b0);
+	const double sinalpha = cosu1 * sin_az12;
+	const double cosalpha_sqr = 1.0 - sinalpha * sinalpha;
+	const double cosalpha = sqrt(cosalpha_sqr);
 
-	term1 = usqr / 16384.0;
-	term2 = 4096.0 + usqr * (-768.0 + usqr * (320.0 - 175.0 * usqr));
-	a = 1.0 + term1 * term2;
-	b = usqr / 1024.0 * (256.0 + usqr * (-128.0 + usqr *
-		  (74.0 - 47.0 * usqr)));            //eq 4
+	const double usqr = cosalpha_sqr * (a0 * a0 - b0 * b0) / (b0 * b0);
 
-	sigma = s / (b0 * a);
-	sigma1 =atan(tansigma1);
+	const double A = 1.0 + usqr / 16384.0 * (4096.0 + usqr * (-768.0 + usqr * (320.0 - 175.0 * usqr)));
+	const double B = usqr / 1024.0 * (256.0 + usqr * (-128.0 + usqr * (74.0 - 47.0 * usqr)));
+
+	const double sigma1 = atan2(tanu1, cos_az12);
+	double sigma = s / (b0 * A);
+	double lastsigma;
+	double sin_sigma, cos_sigma, cos2sigmam;
 
 	do
-	 {
-	  lastsigma = sigma;
-	  twosigmam = 2.0 * sigma1 + sigma;     //eq 5
-	  ss = sin(sigma);                      //sin(sigma)
-	  cs = cos(sigma);                      //cos(sigma)
-	  c2sm = cos(twosigmam);                //cos(twosigmam)
+	{
+		lastsigma = sigma;
+		const double twosigmam = 2.0 * sigma1 + sigma;
+		sin_sigma = sin(sigma);
+		cos_sigma = cos(sigma);
+		cos2sigmam = cos(twosigmam);
 
-	  deltasigma = b * ss * (c2sm + b / 4.0 * (cs * (-1.0 + 2.0 * sqr(c2sm)) -
-		  b / 6.0 * c2sm * (-3.0 + 4.0 * sqr(ss)) *
-		  (-3.0 + 4.0 * sqr(c2sm))));        //eq 6
+		const double deltasigma = B * sin_sigma * (cos2sigmam + B / 4.0 * (cos_sigma * (-1.0 + 2.0 * cos2sigmam * cos2sigmam) -
+			B / 6.0 * cos2sigmam * (-3.0 + 4.0 * sin_sigma * sin_sigma) * (-3.0 + 4.0 * cos2sigmam * cos2sigmam)));
 
-	  sigma = s / (b0 * a) + deltasigma;    //eq 7
-	 }
+		sigma = s / (b0 * A) + deltasigma;
+	}
 	while (fabs(sigma - lastsigma) > EPS);
 
-	twosigmam = 2.0 * sigma1 + sigma;       //eq 5
-	ss = sin(sigma);                        //sin(sigma)
-	cs = cos(sigma);                        //cos(sigma)
-	c2sm = cos(twosigmam);                  //cos(twosigmam)
-	term1 = sinu1 * cs + cosu1 * ss * cos(az12);
-	term2 = sqr(sinalpha) + sqr(sinu1 * ss - cosu1 * cs * cos(az12));
-	term3 = r * sqrt(term2);
-	lat2 = atan2(term1, term3);
+	// Recalculate final values with converged sigma
+	const double twosigmam = 2.0 * sigma1 + sigma;
+	sin_sigma = sin(sigma);
+	cos_sigma = cos(sigma);
+	cos2sigmam = cos(twosigmam);
 
-	term1 = ss * sin(az12);
-	term2 = cosu1 * cs - sinu1 * ss * cos(az12);
-	lambda = atan2(term1, term2);
+	// Final Latitude
+	const double lat2_num = sinu1 * cos_sigma + cosu1 * sin_sigma * cos_az12;
+	const double lat2_den = r * sqrt(sinalpha * sinalpha + pow(sinu1 * sin_sigma - cosu1 * cos_sigma * cos_az12, 2.0));
+	double lat2 = atan2(lat2_num, lat2_den);
 
-	c = flat / 16.0 * sqr(cosalpha) * (4.0 + flat *
-		  (4.0 - 3.0 * sqr(cosalpha)));
+	// Final Longitude
+	const double lambda_num = sin_sigma * sin_az12;
+	const double lambda_den = cosu1 * cos_sigma - sinu1 * sin_sigma * cos_az12;
+	const double lambda = atan2(lambda_num, lambda_den);
 
-	omega = lambda - (1.0 - c) * flat * sinalpha *
-		  (sigma + c * ss * (c2sm + c * cs * (-1.0 + 2.0 * sqr(c2sm))));
+	const double C = flat / 16.0 * cosalpha_sqr * (4.0 + flat * (4.0 - 3.0 * cosalpha_sqr));
+	const double omega = lambda - (1.0 - C) * flat * sinalpha *
+		(sigma + C * sin_sigma * (cos2sigmam + C * cos_sigma * (-1.0 + 2.0 * cos2sigmam * cos2sigmam)));
+	double long2 = long1 + omega;
 
-	long2 = long1 + omega;
+	// Final Azimuth
+	const double az21_den = -sinu1 * sin_sigma + cosu1 * cos_sigma * cos_az12;
+	double az21 = atan2(sinalpha, az21_den);
 
-	term1 = -sinu1 * ss + cosu1 * cs * cos(az12);
-	az21 = atan2(sinalpha, term1);
-	az21 = ModAzimuth(az21) - M_PI;
-
-
+	// Normalize and convert to degrees
 	lat2 = ModLatitude(lat2);
 	long2 = ModLongitude(long2);
-
+	az21 = ModAzimuth(az21);
 
 	*Latitude2 = RADTODEG(lat2);
 	*Longitude2 = RADTODEG(long2);
 	*Azimuth21 = RADTODEG(az21);
-	if (*Azimuth21 > 360.0)
-	  *Azimuth21 = *Azimuth21 - 360.0;
-	if (*Azimuth21 < 0.0)
-	  *Azimuth21 = *Azimuth21 + 360.0;
 
-
-  return(OKNOERROR);
+	return(OKNOERROR);
 }
 //---------------------------------------------------------------------------
  static bool IsAntipodal(double Latitude1, double Latitude2,
