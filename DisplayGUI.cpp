@@ -447,6 +447,9 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   AssessmentTimer->Enabled = true;
 
   ConflictListView->OnSelectItem = ConflictListViewSelectItem;
+  ConflictListView->OnCustomDrawItem = ConflictListViewCustomDrawItem;
+  ConflictListView->OnCustomDrawSubItem = ConflictListViewCustomDrawSubItem;
+  ConflictListView->HideSelection = false; // 포커스가 없어도 선택 상태 유지
   FSelectedConflictPair = {0, 0};
 
   // 충돌 필터 초기값 설정
@@ -457,6 +460,15 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   m_horizontalMaxDistance = 1.0;  // 1 NM로 변경
   m_verticalMinDistance = 0.0;    // 0 feet
   m_verticalMaxDistance = 1000.0; // 1000 feet로 변경
+  
+  // 충돌 상태 표시 초기화
+  m_criticalBlinkTimer = new TTimer(this);
+  m_criticalBlinkTimer->Interval = 500; // 0.5초마다 깜빡임
+  m_criticalBlinkTimer->OnTimer = CriticalBlinkTimerTimer;
+  m_criticalBlinkTimer->Enabled = false;
+  m_criticalBlinkState = false;
+  m_hasCriticalConflicts = false;
+  m_hasHighConflicts = false;
   
   // 충돌 필터 UI 초기화
   UpdateConflictFilterLabels();
@@ -705,6 +717,13 @@ bool TForm1::ShouldDisplayAircraft(TADS_B_Aircraft* Data, const RouteInfo* route
                                    int minSpeed, int maxSpeed, int minAlt, int maxAlt,
                                    bool airlineFilter, bool originFilter, bool destFilter)
 {
+  // 선택된 충돌 페어에 해당하는 항공기는 무조건 표시
+  if (FSelectedConflictPair.first != 0 && FSelectedConflictPair.second != 0) {
+    if (Data->ICAO == FSelectedConflictPair.first || Data->ICAO == FSelectedConflictPair.second) {
+      return true; // 다른 필터 무시하고 무조건 표시
+    }
+  }
+  
   if (airlineFilter && route)
   {
     AnsiString code = route->airlineCode.c_str();
@@ -2634,6 +2653,18 @@ void __fastcall TForm1::OnAssessmentComplete(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::UpdateConflictList()
 {
+    // 충돌 상태 초기화
+    m_hasCriticalConflicts = false;
+    m_hasHighConflicts = false;
+    
+    // 현재 선택된 항목의 ICAO 쌍을 기억
+    std::pair<unsigned int, unsigned int> selectedPair = {0, 0};
+    if (ConflictListView->Selected && ConflictListView->Selected->Data) {
+        __int64 packedICAOs = (__int64)ConflictListView->Selected->Data;
+        selectedPair.first = (unsigned int)(packedICAOs >> 32);
+        selectedPair.second = (unsigned int)(packedICAOs & 0xFFFFFFFF);
+    }
+    
     // FSortedConflictList는 이미 백그라운드 스레드에서 위험도 순으로 완벽하게 정렬되어 있습니다.
     ConflictListView->Items->BeginUpdate();
     ConflictListView->Items->Clear();
@@ -2670,18 +2701,53 @@ void __fastcall TForm1::UpdateConflictList()
 
             double score = conflict.threatScore;
             AnsiString levelStr;
-            if (score > 7.8) levelStr = "Critical";
-            else if (score > 6.5) levelStr = "High";
-            else if (score > 4.0) levelStr = "Medium";
-            else levelStr = "Low";
+            
+            if (score > 8.3) {
+                levelStr = "Critical";
+                m_hasCriticalConflicts = true;
+            }
+            else if (score > 6.5) {
+                levelStr = "High";
+                m_hasHighConflicts = true;
+            }
+            else if (score > 4.0) {
+                levelStr = "Medium";
+            }
+            else {
+                levelStr = "Low";
+            }
 
             // 위험도 레벨만 표시 (점수 제거)
             item->SubItems->Add(levelStr);
-
+            
+            // 위험도 레벨을 Data에 저장 (나중에 색상 적용을 위해)
             item->Data = (void*)((__int64)conflict.ICAO1 << 32 | conflict.ICAO2);
         }
     }
     ConflictListView->Items->EndUpdate();
+    
+    // 이전에 선택되었던 항목을 다시 선택
+    if (selectedPair.first != 0 && selectedPair.second != 0) {
+        for (int i = 0; i < ConflictListView->Items->Count; i++) {
+            TListItem* item = ConflictListView->Items->Item[i];
+            if (item->Data) {
+                __int64 packedICAOs = (__int64)item->Data;
+                unsigned int icao1 = (unsigned int)(packedICAOs >> 32);
+                unsigned int icao2 = (unsigned int)(packedICAOs & 0xFFFFFFFF);
+                
+                if ((icao1 == selectedPair.first && icao2 == selectedPair.second) ||
+                    (icao1 == selectedPair.second && icao2 == selectedPair.first)) {
+                    item->Selected = true;
+                    item->Focused = true;
+                    ConflictListView->Selected = item;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // 깜빡임 상태 업데이트
+    UpdateConflictStatusColors();
 }
 
 // ConflictListViewSelectItem 함수 (변경 없음, 이전과 동일)
@@ -2704,12 +2770,18 @@ void __fastcall TForm1::ConflictListViewSelectItem(TObject *Sender, TListItem *I
         TrackHook.Valid_CC = false;
 
         ObjectDisplay->Repaint();
+        
+        // 선택 상태 색상 업데이트
+        ConflictListView->Invalidate();
     }
     else
     {
         // 선택이 해제되면, 쌍 선택도 해제
         FSelectedConflictPair = {0, 0};
         ObjectDisplay->Repaint();
+        
+        // 선택 해제 상태 색상 업데이트
+        ConflictListView->Invalidate();
     }
 }
 //---------------------------------------------------------------------------
@@ -2826,12 +2898,12 @@ void __fastcall TForm1::TCPAFilterTrackBarChange(TObject *Sender)
     
     // 시간 표시 형식 개선 (분:초 형식)
     AnsiString minStr, maxStr;
-    if (minTCPA < 60) {
-        minStr = IntToStr(minTCPA) + "s";
+    if (minTCPA < 60.0) {
+        minStr.sprintf("%.1f s", minTCPA);
     } else {
-        int minutes = minTCPA / 60;
-        int seconds = minTCPA % 60;
-        minStr.sprintf("%d:%02d", minutes, seconds);
+        int minutes = (int)minTCPA / 60;
+        int seconds = (int)minTCPA % 60;
+        minStr.sprintf("%02d:%02d", minutes, seconds);
     }
     
     if (maxTCPA < 60) {
@@ -2985,4 +3057,165 @@ bool TForm1::IsConflictFiltered(double tcpa, double horizontalDist, double verti
     return false;  // 필터를 통과함
 }
 */
+
+//---------------------------------------------------------------------------
+// Critical 상태 깜빡임 타이머 이벤트
+void __fastcall TForm1::CriticalBlinkTimerTimer(TObject *Sender)
+{
+    m_criticalBlinkState = !m_criticalBlinkState;
+    
+    // ListView를 다시 그리도록 강제 업데이트
+    ConflictListView->Invalidate();
+}
+
+//---------------------------------------------------------------------------
+// ListView 서브 항목의 커스텀 색상 그리기
+void __fastcall TForm1::ConflictListViewCustomDrawSubItem(TCustomListView *Sender, TListItem *Item,
+                                                          int SubItem, TCustomDrawState State, bool &DefaultDraw)
+{
+    if (!Item) {
+        DefaultDraw = true;
+        return;
+    }
+    
+    // 선택된 항목인지 확인 (포커스 여부와 관계없이)
+    bool isItemSelected = false;
+    
+    // 더 확실한 선택 상태 확인 방법
+    if (ConflictListView->Selected && ConflictListView->Selected == Item) {
+        isItemSelected = true;
+    }
+    
+    // 선택된 항목의 모든 서브 아이템은 청록색으로 설정
+    if (isItemSelected) {
+        Sender->Canvas->Brush->Color = TColor(RGB(0, 255, 255)); // 청록색 (Cyan)
+        Sender->Canvas->Font->Color = clBlack; // 청록 배경에는 검은색 텍스트
+        DefaultDraw = true;
+        return; // 선택된 항목은 다른 색상 로직을 건너뛰기
+    }
+    
+    // 선택되지 않은 항목만 위험도에 따른 색상 적용
+    if (Item->SubItems->Count > 4) {
+        AnsiString levelStr = Item->SubItems->Strings[4]; // 위험도 레벨
+        
+        if (levelStr == "Critical") {
+            if (m_criticalBlinkTimer->Enabled && m_criticalBlinkState) {
+                Sender->Canvas->Brush->Color = clRed;
+                Sender->Canvas->Font->Color = clWhite;
+            } else {
+                Sender->Canvas->Brush->Color = TColor(RGB(255, 220, 220)); // 연한 빨간색
+                Sender->Canvas->Font->Color = clBlack;
+            }
+        }
+        else if (levelStr == "High") {
+            Sender->Canvas->Brush->Color = TColor(RGB(255, 165, 0)); // 주황색
+            Sender->Canvas->Font->Color = clBlack;
+        }
+        else if (levelStr == "Medium") {
+            Sender->Canvas->Brush->Color = TColor(RGB(255, 255, 0)); // 노란색
+            Sender->Canvas->Font->Color = clBlack;
+        }
+        else if (levelStr == "Low") {
+            Sender->Canvas->Brush->Color = TColor(RGB(144, 238, 144)); // 연한 초록색
+            Sender->Canvas->Font->Color = clBlack;
+        }
+        else {
+            Sender->Canvas->Brush->Color = clWindow;
+            Sender->Canvas->Font->Color = clWindowText;
+        }
+    } else {
+        Sender->Canvas->Brush->Color = clWindow;
+        Sender->Canvas->Font->Color = clWindowText;
+    }
+    
+    DefaultDraw = true; // 기본 그리기 허용
+}
+
+//---------------------------------------------------------------------------
+// ListView 항목의 커스텀 색상 그리기
+void __fastcall TForm1::ConflictListViewCustomDrawItem(TCustomListView *Sender, TListItem *Item, 
+                                                       TCustomDrawState State, bool &DefaultDraw)
+{
+    if (!Item || Item->SubItems->Count < 5) {
+        DefaultDraw = true;
+        return;
+    }
+    
+    // 위험도 레벨 가져오기 (마지막 컬럼)
+    AnsiString levelStr = Item->SubItems->Strings[4];
+    TColor backgroundColor = clWindow; // 기본 색상
+    TColor textColor = clWindowText; // 기본 텍스트 색상
+    
+    // 위험도에 따른 색상 설정
+    if (levelStr == "Critical") {
+        // Critical인 경우 항상 깜빡임 적용
+        if (m_criticalBlinkTimer->Enabled && m_criticalBlinkState) {
+            backgroundColor = clRed;
+            textColor = clWhite; // 빨간 배경에는 흰색 텍스트
+        } else {
+            backgroundColor = TColor(RGB(255, 220, 220)); // 연한 빨간색
+            textColor = clBlack;
+        }
+    }
+    else if (levelStr == "High") {
+        // High인 경우 주황색
+        backgroundColor = TColor(RGB(255, 165, 0)); // 주황색
+        textColor = clBlack; // 주황 배경에는 검은색 텍스트
+    }
+    else if (levelStr == "Medium") {
+        // Medium인 경우 노란색
+        backgroundColor = TColor(RGB(255, 255, 0)); // 노란색
+        textColor = clBlack; // 노란 배경에는 검은색 텍스트
+    }
+    else if (levelStr == "Low") {
+        // Low인 경우 연한 초록색
+        backgroundColor = TColor(RGB(144, 238, 144)); // 연한 초록색 (Light Green)
+        textColor = clBlack; // 초록 배경에는 검은색 텍스트
+    }
+    else {
+        // 기타의 경우 기본 색상
+        backgroundColor = clWindow;
+        textColor = clWindowText;
+    }
+    
+    // 선택된 항목인지 확인 (포커스 여부와 관계없이)
+    bool isItemSelected = false;
+    
+    // 더 확실한 선택 상태 확인 방법
+    if (ConflictListView->Selected && ConflictListView->Selected == Item) {
+        isItemSelected = true;
+    }
+    
+    // 선택된 항목인 경우 청록색으로 덮어쓰기 (선택된 비행기 색과 동일)
+    if (isItemSelected) {
+        backgroundColor = TColor(RGB(0, 255, 255)); // 청록색 (Cyan)
+        textColor = clBlack; // 청록 배경에는 검은색 텍스트
+    }
+    
+    // 배경색 설정
+    Sender->Canvas->Brush->Color = backgroundColor;
+    Sender->Canvas->Font->Color = textColor;
+    
+    DefaultDraw = true; // 기본 그리기 허용
+}
+//---------------------------------------------------------------------------
+// 충돌 상태에 따른 색상 및 깜빡임 업데이트
+void TForm1::UpdateConflictStatusColors()
+{
+    // Critical 충돌이 있으면 깜빡임 타이머 활성화
+    if (m_hasCriticalConflicts) {
+        if (!m_criticalBlinkTimer->Enabled) {
+            m_criticalBlinkTimer->Enabled = true;
+        }
+    } else {
+        // Critical 충돌이 없으면 깜빡임 타이머 비활성화
+        if (m_criticalBlinkTimer->Enabled) {
+            m_criticalBlinkTimer->Enabled = false;
+            m_criticalBlinkState = false;
+        }
+    }
+    
+    // ListView를 다시 그리도록 강제 업데이트
+    ConflictListView->Invalidate();
+}
 

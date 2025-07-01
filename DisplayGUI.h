@@ -324,6 +324,23 @@ private:	// User declarations
 		void DrawSelectedRoutes();
 		void DrawSelectedConflictPair();
 
+        // --- Playback Speed UI 함수 선언 추가 ---
+        void SetupPlaybackSpeedUI();
+        void __fastcall PlaybackSpeedTrackBarChange(TObject *Sender);
+        void __fastcall PlaybackSpeedComboBoxChange(TObject *Sender);
+        
+        // --- 충돌 필터 관련 함수들 ---
+        void UpdateConflictFilterLabels();
+        bool IsConflictFiltered(double tcpa, double horizontalDist, double verticalDist);
+        
+        // --- 충돌 상태 표시 관련 함수들 ---
+        void __fastcall CriticalBlinkTimerTimer(TObject *Sender);
+        void UpdateConflictStatusColors();
+        void __fastcall ConflictListViewCustomDrawItem(TCustomListView *Sender, TListItem *Item, 
+                                                       TCustomDrawState State, bool &DefaultDraw);
+        void __fastcall ConflictListViewCustomDrawSubItem(TCustomListView *Sender, TListItem *Item,
+                                                          int SubItem, TCustomDrawState State, bool &DefaultDraw);
+
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
 	__fastcall ~TForm1();
@@ -401,14 +418,11 @@ public:		// User declarations
         double m_verticalMinDistance;    // feet
         double m_verticalMaxDistance;    // feet
 
-        // --- Playback Speed UI 함수 선언 추가 ---
-    void SetupPlaybackSpeedUI();
-    void __fastcall PlaybackSpeedTrackBarChange(TObject *Sender);
-    void __fastcall PlaybackSpeedComboBoxChange(TObject *Sender);
-    
-    // --- 충돌 필터 관련 함수들 ---
-    void UpdateConflictFilterLabels();
-    bool IsConflictFiltered(double tcpa, double horizontalDist, double verticalDist);
+        // --- 충돌 상태 표시 관련 ---
+        TTimer* m_criticalBlinkTimer;
+        bool m_criticalBlinkState;
+        bool m_hasCriticalConflicts;
+        bool m_hasHighConflicts;
 };
 
 

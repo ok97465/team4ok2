@@ -47,10 +47,13 @@ void __fastcall TAssessmentThread::Execute()
                            tcpa, cpa_distance_nm, vertical_cpa))
             {
                 // [수정] 새로운 충돌 조건 확인
+                // TCPA MIN 값이 0인 경우 내부적으로 0.5로 계산
+                double effectiveMinTime = (FMinTimeSec == 0.0) ? 0.5 : FMinTimeSec;
+                
                 // 1. 미래에 최단 근접 지점이 있고 (tcpa > minTCPA)
                 // 2. 그 시간이 너무 멀지 않으며 (maxTCPA)
                 // 3. 최단 근접 거리가 임계값보다 작은 경우
-                if (tcpa > FMinTimeSec && tcpa < FTimeSec && cpa_distance_nm < FHorizontalThreshold) {
+                if (tcpa > effectiveMinTime && tcpa < FTimeSec && cpa_distance_nm < FHorizontalThreshold) {
                     localConflictList.push_back({aircraft1->ICAO, aircraft2->ICAO, cpa_distance_nm, tcpa, vertical_cpa});
                 }
             }
@@ -63,7 +66,8 @@ void __fastcall TAssessmentThread::Execute()
     const double H_DIST_THRESHOLD = FHorizontalThreshold;
     const double V_DIST_THRESHOLD = FVerticalThreshold;
     const double TIME_THRESHOLD = static_cast<double>(FTimeSec);
-    const double MIN_TIME_THRESHOLD = FMinTimeSec;
+    // TCPA MIN 값이 0인 경우 내부적으로 0.5로 계산
+    const double MIN_TIME_THRESHOLD = (FMinTimeSec == 0.0) ? 0.5 : FMinTimeSec;
     const double w_time = 3.0, w_vert = 2.0, w_horiz = 1.0;
     const double MAX_POSSIBLE_SCORE = w_time + w_vert + w_horiz;
 
