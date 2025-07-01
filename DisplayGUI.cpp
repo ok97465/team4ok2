@@ -455,6 +455,9 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   ConflictListView->OnCustomDrawSubItem = ConflictListViewCustomDrawSubItem;
   ConflictListView->HideSelection = false; // 포커스가 없어도 선택 상태 유지
   FSelectedConflictPair = {0, 0};
+  
+  // 이탈감지 리스트 이벤트 핸들러 연결
+  DeviationListView->OnSelectItem = DeviationListViewSelectItem;
 
   // 충돌 필터 초기값 설정
   m_tcpaMinThreshold = 10.0;     // 10초로 변경
@@ -506,6 +509,9 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   m_renderParams.filterWaypointsOnly = filterWaypointsOnly;
 
   FRenderThread = new TAircraftRenderThread(this);
+    
+  // 이탈감지 리스트 초기화
+  UpdateDeviationList();
 
   LOG_INFO(LogHandler::CAT_GENERAL, "Initialization complete");
 }
@@ -2153,15 +2159,23 @@ void __fastcall TForm1::HandleSBSData(const AnsiString& data)
             if (FileExists(csvPath)) {
                 TStreamReader *reader = new TStreamReader(csvPath, false);
                 try {
+                    FDeviationAircraftList.clear(); // 기존 목록 초기화
                     while (!reader->EndOfStream) {
                         AnsiString line = reader->ReadLine();
                         printf("%s\n", line.c_str());
+                        if (!line.IsEmpty()) {
+                            FDeviationAircraftList.push_back(line);
+                        }
                     }
+                    // UI 업데이트
+                    UpdateDeviationList();
                 } __finally {
                     delete reader;
                 }
             } else {
                 printf("no result.csv\n");
+                FDeviationAircraftList.clear();
+                UpdateDeviationList();
             }			
         }
     }
@@ -3350,7 +3364,7 @@ void __fastcall TForm1::ConflictListViewCustomDrawSubItem(TCustomListView *Sende
         if (levelStr == "Critical") {
             if (m_criticalBlinkTimer->Enabled && m_criticalBlinkState) {
                 Sender->Canvas->Brush->Color = clRed;
-                Sender->Canvas->Font->Color = clWhite;
+                Sender->Canvas->Font->Color = clWhite; // 빨간 배경에는 흰색 텍스트
             } else {
                 Sender->Canvas->Brush->Color = TColor(RGB(255, 220, 220)); // 연한 빨간색
                 Sender->Canvas->Font->Color = clBlack;
@@ -3467,4 +3481,87 @@ void TForm1::UpdateConflictStatusColors()
     // ListView를 다시 그리도록 강제 업데이트
     ConflictListView->Invalidate();
 }
+
+//---------------------------------------------------------------------------
+// 이탈감지 항공기 목록 업데이트
+void __fastcall TForm1::UpdateDeviationList()
+{
+    DeviationListView->Items->Clear();
+    
+    for (const AnsiString& deviationInfo : FDeviationAircraftList) {
+        // CSV 형태의 데이터를 파싱 (예: ICAO,FlightNumber,DeviationDetails)
+        TStringList* parts = new TStringList();
+        try {
+            parts->CommaText = deviationInfo;
+            
+            if (parts->Count >= 3) {
+                TListItem* item = DeviationListView->Items->Add();
+                item->Caption = parts->Strings[0]; // ICAO
+                item->SubItems->Add(parts->Strings[1]); // Flight Number
+                item->SubItems->Add(parts->Strings[2]); // Deviation Info
+                
+                // 이탈감지된 항목은 빨간색으로 표시
+                item->SubItems->Add("DEVIATION");
+            } else if (parts->Count >= 1) {
+                // 단순 텍스트 형태의 경우
+                TListItem* item = DeviationListView->Items->Add();
+                item->Caption = "N/A";
+                item->SubItems->Add("N/A");
+                item->SubItems->Add(deviationInfo);
+            }
+        } __finally {
+            delete parts;
+        }
+    }
+    
+    // 이탈감지 항목이 있으면 레이블 색상 변경
+    if (FDeviationAircraftList.size() > 0) {
+        DeviationLabel->Font->Color = clRed;
+        AnsiString countStr = AnsiString(static_cast<int>(FDeviationAircraftList.size()));
+        DeviationLabel->Caption = "Route Deviation Alerts (" + countStr + ")";
+    } else {
+        DeviationLabel->Font->Color = clGreen;
+        DeviationLabel->Caption = "Route Deviation Alerts (0)";
+    }
+}
+
+// 이탈감지 항공기 선택 이벤트 핸들러
+void __fastcall TForm1::DeviationListViewSelectItem(TObject *Sender, TListItem *Item, bool Selected)
+{
+    if (Selected && Item) {
+        AnsiString icaoStr = Item->Caption;
+        if (icaoStr != "N/A") {
+            try {
+                // ICAO를 16진수로 변환
+                unsigned int icao = 0;
+                if (icaoStr.Length() == 6) {
+                    icao = StrToInt("0x" + icaoStr);
+                } else {
+                    icao = StrToInt(icaoStr);
+                }
+                
+                // 해당 항공기로 포커스 이동
+                OnAircraftSelected(icao);
+                
+                // 해당 항공기 정보를 UI에 표시
+                TADS_B_Aircraft* ac = FAircraftModel->FindAircraftByICAO(icao);
+                if (ac) {
+                    // 해당 항공기 중심으로 맵 이동
+                    double aircraftLat = ac->Latitude;
+                    double aircraftLon = ac->Longitude;
+                    
+                    MapCenterLat = aircraftLat;
+                    MapCenterLon = aircraftLon;
+                    SetMapCenter(g_EarthView->m_Eye.x, g_EarthView->m_Eye.y);
+                    
+                    // 항공기 정보 패널 업데이트
+                    UpdateCloseControlPanel(ac, nullptr);
+                }
+            } catch (...) {
+                // ICAO 변환 실패 시 무시
+            }
+        }
+    }
+}
+//---------------------------------------------------------------------------
 
