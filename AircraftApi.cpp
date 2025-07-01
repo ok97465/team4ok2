@@ -5,6 +5,8 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
+#include <cctype>
 #include "AircraftApi.h"
 
 //#define DEBUG_KANG
@@ -73,12 +75,13 @@ std::vector<AirportInfo> FetchAirportList() {
 
             try {
                 AirportInfo info;
-                info.code        = cells[0];
+                auto up = [](std::string s){ std::transform(s.begin(), s.end(), s.begin(), ::toupper); return s; };
+                info.code        = up(cells[0]);
                 info.name        = cells[1];
-                info.icao        = cells[2];
-                info.iata        = cells[3];
+                info.icao        = up(cells[2]);
+                info.iata        = up(cells[3]);
                 info.location    = cells[4];
-                info.countryIso2 = cells[5];
+                info.countryIso2 = up(cells[5]);
                 info.latitude    = cells[6].empty() ? 0.0 : std::stod(cells[6]);
                 info.longitude   = cells[7].empty() ? 0.0 : std::stod(cells[7]);
                 info.altitudeFeet= cells[8].empty() ? 0   : std::stoi(cells[8]);
@@ -126,11 +129,14 @@ std::vector<RouteInfo> FetchRouteList() {
 
             try {
                 RouteInfo info;
-                info.callSign     = cells[0];
-                info.code         = cells[1];
-                info.number       = cells[2];
-                info.airlineCode  = cells[3];
-                info.airportCodes = split_airport_codes(cells[4]);
+                auto up = [](std::string s){ std::transform(s.begin(), s.end(), s.begin(), ::toupper); return s; };
+                info.callSign     = up(cells[0]);
+                info.code         = up(cells[1]);
+                info.number       = up(cells[2]);
+                info.airlineCode  = up(cells[3]);
+                auto airports = split_airport_codes(cells[4]);
+                for(auto& a : airports) a = up(a);
+                info.airportCodes = airports;
                 result.push_back(info);
             } catch (const std::exception& e) {
                 std::cerr << "[Route CSV] 변환 오류: 라인 " << line_no << " [" << line << "] - " << e.what() << "\n";
