@@ -388,6 +388,11 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   TrackHook.Valid_CC=false;
   TrackHook.Valid_CPA=false;
 
+  MapCacheTexture = 0;
+  MapCacheValid = false;
+  CachedEyeX = CachedEyeY = CachedEyeH = 0.0;
+  CachedDrawMap = false;
+
   AreaTemp=NULL;
   Areas= new TList;
 
@@ -490,6 +495,11 @@ __fastcall TForm1::~TForm1()
   delete FSBSButtonScroller;
   delete FAircraftModel;
   delete FProximityAssessor;
+
+  if (MapCacheTexture) {
+    glDeleteTextures(1, &MapCacheTexture);
+    MapCacheTexture = 0;
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SetMapCenter(double &x, double &y)
@@ -521,6 +531,14 @@ void __fastcall TForm1::ObjectDisplayInit(TObject *Sender)
   InitHexTextInstancing();
   if(g_EarthView)
     g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+  if (MapCacheTexture == 0)
+    glGenTextures(1, &MapCacheTexture);
+  glBindTexture(GL_TEXTURE_2D, MapCacheTexture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ObjectDisplay->Width,
+               ObjectDisplay->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  MapCacheValid = false;
   glPushAttrib (GL_LINE_BIT);
   glPopAttrib ();
     LOG_INFO_F(LogHandler::CAT_GENERAL, "OpenGL Version: %s", glGetString(GL_VERSION));
@@ -549,20 +567,55 @@ void __fastcall TForm1::ObjectDisplayResize(TObject *Sender)
   glBlendFunc(GL_SRC_ALPHA, GL_ONE);
   if(g_EarthView)
     g_EarthView->Resize(ObjectDisplay->Width,ObjectDisplay->Height);
+  if (MapCacheTexture) {
+    glBindTexture(GL_TEXTURE_2D, MapCacheTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ObjectDisplay->Width,
+                 ObjectDisplay->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    MapCacheValid = false;
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ObjectDisplayPaint(TObject *Sender)
 {
 
- if (DrawMap->Checked)glClearColor(0.0,0.0,0.0,0.0);
- else	glClearColor(BG_INTENSITY,BG_INTENSITY,BG_INTENSITY,0.0);
+ if (DrawMap->Checked) glClearColor(0.0,0.0,0.0,0.0);
+ else glClearColor(BG_INTENSITY,BG_INTENSITY,BG_INTENSITY,0.0);
 
  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
- if (g_EarthView)
- {
-  g_EarthView->Animate();
-  g_EarthView->Render(DrawMap->Checked);
+ bool viewChanged = true;
+ if (g_EarthView) {
+   viewChanged = !MapCacheValid ||
+                 CachedDrawMap != DrawMap->Checked ||
+                 fabs(CachedEyeX - g_EarthView->m_Eye.x) > 1e-6 ||
+                 fabs(CachedEyeY - g_EarthView->m_Eye.y) > 1e-6 ||
+                 fabs(CachedEyeH - g_EarthView->m_Eye.h) > 1e-6;
+ }
+
+ if (g_EarthView) {
+   g_EarthView->Animate();
+   if (viewChanged) {
+     g_EarthView->Render(DrawMap->Checked);
+     CachedEyeX = g_EarthView->m_Eye.x;
+     CachedEyeY = g_EarthView->m_Eye.y;
+     CachedEyeH = g_EarthView->m_Eye.h;
+     CachedDrawMap = DrawMap->Checked;
+     glBindTexture(GL_TEXTURE_2D, MapCacheTexture);
+     glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0,
+                      ObjectDisplay->Width, ObjectDisplay->Height, 0);
+     MapCacheValid = true;
+   } else {
+     glBindTexture(GL_TEXTURE_2D, MapCacheTexture);
+     glEnable(GL_TEXTURE_2D);
+     glBegin(GL_QUADS);
+     glTexCoord2f(0.0f, 0.0f); glVertex2f(0.0f, 0.0f);
+     glTexCoord2f(1.0f, 0.0f); glVertex2f((float)ObjectDisplay->Width, 0.0f);
+     glTexCoord2f(1.0f, 1.0f); glVertex2f((float)ObjectDisplay->Width, (float)ObjectDisplay->Height);
+     glTexCoord2f(0.0f, 1.0f); glVertex2f(0.0f, (float)ObjectDisplay->Height);
+     glEnd();
+     glDisable(GL_TEXTURE_2D);
+   }
+ }
  }
  if( g_GETileManager)
   g_GETileManager->Cleanup();

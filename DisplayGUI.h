@@ -363,11 +363,19 @@ public:		// User declarations
 	int                        NumSpriteImages;
 	int                        CurrentSpriteImage;
 	AnsiString                 AircraftDBPathFileName;
-	AnsiString                 ARTCCBoundaryDataPathFileName;
+        AnsiString                 ARTCCBoundaryDataPathFileName;
 
-		std::vector<AirplaneInstance> m_planeBatch;
-		std::vector<AirplaneLineInstance> m_lineBatch;
-		std::vector<HexCharInstance> m_textBatch;
+        // Map rendering cache
+        GLuint                    MapCacheTexture;
+        bool                      MapCacheValid;
+        double                    CachedEyeX;
+        double                    CachedEyeY;
+        double                    CachedEyeH;
+        bool                      CachedDrawMap;
+
+                std::vector<AirplaneInstance> m_planeBatch;
+                std::vector<AirplaneLineInstance> m_lineBatch;
+                std::vector<HexCharInstance> m_textBatch;
 
 		// 선택된 항공기의 경로(대권) 좌표 목록
 		std::vector<std::vector<std::pair<double,double>>> m_selectedRoutePaths;
