@@ -725,7 +725,7 @@ void DrawAirplaneLinesInstanced(const std::vector<AirplaneLineInstance>& instanc
     GLint vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);
     pglUniform2f(pglGetUniformLocation(gLineInstancing.program, "Viewport"), (float)vp[2], (float)vp[3]);
-    glLineWidth(3.0f);
+    glLineWidth(7.0f);
     pglDrawArraysInstanced(GL_LINES, 0, 2, instances.size());
 
     pglBindVertexArray(0);

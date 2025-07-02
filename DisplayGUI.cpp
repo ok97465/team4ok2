@@ -1130,9 +1130,11 @@ void __fastcall TAircraftRenderThread::Execute()
   while(!Terminated)
   {
     RenderThreadParams params;
+    bool check_dead_reckoning = false;
     {
       std::lock_guard<std::mutex> lock(FOwner->m_renderInfoMutex);
       params = FOwner->m_renderParams;
+      check_dead_reckoning = FOwner->DeadReckoningCheckBox->Checked;
     }
 
     std::unordered_map<unsigned int, AircraftRenderInfo> local;
@@ -1208,6 +1210,27 @@ void __fastcall TAircraftRenderThread::Execute()
     {
       std::lock_guard<std::mutex> lock(FOwner->m_renderInfoMutex);
       FOwner->m_renderInfoTable.swap(local);
+    }
+
+     if (check_dead_reckoning)
+    {
+      double futureLat, futureLon, junk;
+      double diff_time;
+      __int64 cur_time = GetCurrentTimeInMsec();
+
+      for(Data = FOwner->FAircraftModel->GetFirstAircraft(&iterator, &Key);
+          Data; Data = FOwner->FAircraftModel->GetNextAircraft(&iterator, &Key))
+      {
+        diff_time = (cur_time - Data->LastSeen) / 1000.0 / 3600;
+        if (VDirect(Data->Latitude, Data->Longitude,
+                   Data->Heading, Data->Speed * diff_time,
+                   &futureLat, &futureLon, &junk) == OKNOERROR)
+        {
+          Data->LastSeen = cur_time;
+          Data->Latitude = futureLat;
+          Data->Longitude = futureLon;  
+        }
+      }
     }
 
     TThread::Sleep(5);
@@ -1806,6 +1829,7 @@ void __fastcall TForm1::ZoomOutClick(TObject *Sender)
 void __fastcall TForm1::Timer2Timer(TObject *Sender)
 {
     if (PurgeStale->Checked == false) return;
+    if (DeadReckoningCheckBox->Checked) return;
 
     // Model에게 "오래된 항공기 삭제" 작업을 위임
     FAircraftModel->PurgeStaleAircraft(CSpinStaleTime->Value);
@@ -1814,6 +1838,7 @@ void __fastcall TForm1::Timer2Timer(TObject *Sender)
 void __fastcall TForm1::PurgeButtonClick(TObject *Sender)
 {
     // 1. Model에게 "모든 항공기 삭제" 작업을 위임
+    if (DeadReckoningCheckBox->Checked) return;
     m_selectedRoutePaths.clear();
     FAircraftModel->PurgeAllAircraft();
     
@@ -2705,6 +2730,31 @@ std::string ICAO_to_string(uint32_t icao) {
 // 2. 메인 패널 갱신 함수
 // ========================
 
+static const char* GetAircraftType(enum AircraftCategory cate) {
+    
+        switch (cate) {
+            case CATEGORY_COMMERCIAL:
+                return "COMMERCIAL";
+            case CATEGORY_CARGO:
+                return "CARGO";
+            case CATEGORY_HELICOPTER:
+                return "HELICOPTER";
+            case CATEGORY_MILITARY:
+                return "MILITARY";
+            case CATEGORY_BUSINESS_JET:
+                return "BUSINESS_JET";
+            case CATEGORY_GENERAL_AVIATION:
+                return "GENERAL_AVIATION";
+            case CATEGORY_GLIDER:
+                return "GLIDER";
+            case CATEGORY_ULTRALIGHT:
+                return "ULTRALIGHT";
+            case CATEGORY_UNKNOWN:
+            default:
+                return "UNKNOWN";
+        }
+}
+
 void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const RouteInfo* route)
 {
     // -------- 기존 항공기 정보 갱신 --------
@@ -2730,7 +2780,7 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
 
     ICAOLabel->Caption      = ac->HexAddr;         // ICAO(16진)
     FlightNumLabel->Caption = ac->FlightNum;       // Callsign
-    AircraftModelLabel->Caption = GetAircraftModel(ac->ICAO);
+    AircraftModelLabel->Caption = GetAircraftType(ac->Category);
     {
         std::string airline, country;
         if (LookupAirline(AnsiString(ac->FlightNum).Trim().c_str(), airline, country))
@@ -3511,16 +3561,16 @@ void __fastcall TForm1::UpdateDeviationList()
             
             printf("CSV parts count: %d\n", parts->Count);
             
-            if (parts->Count >= 8) {
+            if (parts->Count >= 7) {
                 // HexIdent, Altitude, Latitude, Longitude 정보 표시
                 printf("Deviation Aircraft - ICAO: %s, Alt: %s, Lat: %s, Lon: %s\n",
-                       AnsiString(parts->Strings[5]).c_str(), AnsiString(parts->Strings[2]).c_str(),
-                       AnsiString(parts->Strings[3]).c_str(), AnsiString(parts->Strings[4]).c_str());
+                       AnsiString(parts->Strings[4]).c_str(), AnsiString(parts->Strings[1]).c_str(),
+                       AnsiString(parts->Strings[2]).c_str(), AnsiString(parts->Strings[3]).c_str());
                 TListItem* item = DeviationListView->Items->Add();
-                item->Caption = parts->Strings[5]; // HexIdent (인덱스 5)
-                item->SubItems->Add(parts->Strings[2]); // Altitude (인덱스 2)
-                item->SubItems->Add(parts->Strings[3]); // Latitude (인덱스 3)
-                item->SubItems->Add(parts->Strings[4]); // Longitude (인덱스 4)
+                item->Caption = parts->Strings[4]; // HexIdent (인덱스 5)
+                item->SubItems->Add(parts->Strings[1]); // Altitude (인덱스 2)
+                item->SubItems->Add(parts->Strings[2]); // Latitude (인덱스 3)
+                item->SubItems->Add(parts->Strings[3]); // Longitude (인덱스 4)
                 
                 // 이탈감지된 항목은 빨간색으로 표시
                 item->ImageIndex = -1;

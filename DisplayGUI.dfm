@@ -496,9 +496,9 @@ object Form1: TForm1
           object LabelModel: TLabel
             Left = 5
             Top = 235
-            Width = 37
+            Width = 49
             Height = 13
-            Caption = 'Model:'
+            Caption = 'AC Type:'
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
