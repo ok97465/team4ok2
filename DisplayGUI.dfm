@@ -812,7 +812,7 @@ object Form1: TForm1
             Top = 59
             Width = 125
             Height = 13
-            Caption = 'API Last Update Time:'
+            Caption = 'ROUTE Last Update Time:'
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
