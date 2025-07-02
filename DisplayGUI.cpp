@@ -1527,10 +1527,24 @@ void TForm1::DrawSelectedConflictPair()
     }
     if (found)
     {
+      // 실제 CPA 계산을 통해 수직 거리도 구하기
+      double tcpa_calc, cpa_distance_calc, vertical_cpa;
+      bool cpaCalculated = computeCPA(ac1->Latitude, ac1->Longitude, ac1->Altitude,
+                                      ac1->Speed, ac1->Heading,
+                                      ac2->Latitude, ac2->Longitude, ac2->Altitude,
+                                      ac2->Speed, ac2->Heading,
+                                      tcpa_calc, cpa_distance_calc, vertical_cpa);
+      
       // TrackHook CPA가 비활성화된 경우에만 CPA 정보를 UI에 업데이트
       if (!TrackHook.Valid_CPA) {
         CpaTimeValue->Caption = TimeToChar(tcpa * 1000);
-        CpaDistanceValue->Caption = FloatToStrF(cpa_distance_nm, ffFixed, 10, 2) + " NM";
+        if (cpaCalculated) {
+          // 수평 거리와 수직 거리를 모두 표시
+          CpaDistanceValue->Caption = FloatToStrF(cpa_distance_nm, ffFixed, 10, 2) + " NM VDIST: " + IntToStr((int)vertical_cpa) + " FT";
+        } else {
+          // CPA 계산이 실패한 경우 기본 거리만 표시
+          CpaDistanceValue->Caption = FloatToStrF(cpa_distance_nm, ffFixed, 10, 2) + " NM";
+        }
       }
       
       // 그래픽 렌더링
