@@ -1022,6 +1022,7 @@ object Form1: TForm1
             Font.Style = [fsBold]
             ParentFont = False
             TabOrder = 5
+            OnClick = FilterPolygonOnlyCheckBoxClick
           end
         end
         object Panel10: TPanel
