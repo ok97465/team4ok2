@@ -258,8 +258,6 @@ __published:	// IDE-managed Components
     TTrackBar *VerticalMaxTrackBar;
     TCheckBox *ShowConflictAircraftAlwaysCheckBox;
     TCheckBox *ShowOnlyConflictAircraftCheckBox;
-    // --- 항공기 카테고리 필터 UI ---
-    TPanel *AircraftCategoryPanel;
     TLabel *AircraftCategoryLabel;
     TCheckBox *CommercialCheckBox;
     TCheckBox *CargoCheckBox;
@@ -419,7 +417,7 @@ public:		// User declarations
                             bool originFilter,
                             bool destFilter) const;
 	void InitRouteAirportMaps(); 
-	void __fastcall UpdateDeviationList(); // 이탈감지 항공기 목록 업데이트 (ICAO, Altitude, Latitude, Longitude) 
+	void __fastcall UpdateDeviationList(); // 이탈감지 항공기 목록 업데이트 (ICAO, Altitude, Latitude, Longitude)
 
 
 	int                        MouseDownX,MouseDownY;
