@@ -1,4 +1,4 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #ifndef DisplayGUIH
 #define DisplayGUIH
@@ -215,10 +215,8 @@ __published:	// IDE-managed Components
 	TPanel *Panel6;
 	TLabel *Label21;
 	TLabel *Label22;
-	TLabel *Label23;
 	TLabel *Label24;
 	TLabel *RawConnectStatus;
-	TLabel *SBSConnectStatus;
 	TLabel *APILastUpdateTime;
 	TMemo *RouteInfoMemo;
 	TTrackBar *PlaybackSpeedTrackBar; // UI for playback speed
@@ -232,7 +230,10 @@ __published:	// IDE-managed Components
 	TLabel *Label27;
 	TLabel *Label28;
 	TTimer *AssessmentTimer;
+	TPanel *ConflictPanel; // 충돌감지 UI를 감싸는 패널
 	TListView *ConflictListView;
+	TLabel *ConflictLabel; // 충돌감지 항공기 정보 레이블
+	TPanel *DeviationPanel; // 경로이탈 UI를 감싸는 패널
 	TListView *DeviationListView; // 빅쿼리 이탈감지 항공기 정보 표시
 	TLabel *DeviationLabel; // 이탈감지 항공기 정보 레이블
 	TCheckBox *FilterPolygonOnlyCheckBox; // 정의된 경유지 내 비행기만 표시하는 체크박스
@@ -268,7 +269,6 @@ __published:	// IDE-managed Components
     TCheckBox *GliderCheckBox;
     TCheckBox *UltralightCheckBox;
 	TCheckBox *DeadReckoningCheckBox;
-	// TCheckBox *DeadReckoningCheckBox;
     void __fastcall AircraftCategoryFilterChange(TObject *Sender);
     void __fastcall SpeedFilterTrackBarChange(TObject *Sender);
     void __fastcall AltitudeFilterTrackBarChange(TObject *Sender);

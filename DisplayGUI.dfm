@@ -1618,75 +1618,108 @@ object Form1: TForm1
     OnInit = ObjectDisplayInit
     OnResize = ObjectDisplayResize
     OnPaint = ObjectDisplayPaint
-    object DeviationLabel: TLabel
+    object ConflictPanel: TPanel
       Left = 8
-      Top = 128
-      Width = 131
-      Height = 13
-      Caption = 'Route Deviation Alerts:'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clRed
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Style = [fsBold]
-      ParentFont = False
-    end
-    object ConflictListView: TListView
-      Left = 0
-      Top = 0
-      Width = 362
-      Height = 120
-      Columns = <
-        item
-          Caption = 'Aircraft 1'
-          Width = 65
-        end
-        item
-          Caption = 'Aircraft 2'
-          Width = 65
-        end
-        item
-          Caption = 'TCPA'
-        end
-        item
-          Caption = 'H Dist'
-        end
-        item
-          Caption = 'V Dist'
-        end
-        item
-          Caption = 'Risk'
-          Width = 60
-        end>
-      GridLines = True
-      TabOrder = 0
-      ViewStyle = vsReport
-    end
-    object DeviationListView: TListView
-      Left = 0
-      Top = 148
+      Top = 8
       Width = 380
-      Height = 80
-      Columns = <
-        item
-          Caption = 'Aircraft'
-          Width = 80
-        end
-        item
-          Caption = 'Altitude'
-          Width = 80
-        end
-        item
-          Caption = 'Latitude'
-          Width = 100
-        end
-        item
-          Caption = 'Longitude'
-          Width = 100
-        end>
-      GridLines = True
+      Height = 150
+      BevelOuter = bvRaised
+      Color = clWhite
+      ParentBackground = False
+      TabOrder = 0
+      object ConflictLabel: TLabel
+        Left = 8
+        Top = 8
+        Width = 145
+        Height = 13
+        Caption = 'Collision Detection Alerts:'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clRed
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object ConflictListView: TListView
+        Left = 8
+        Top = 25
+        Width = 362
+        Height = 115
+        Columns = <
+          item
+            Caption = 'Aircraft 1'
+            Width = 65
+          end
+          item
+            Caption = 'Aircraft 2'
+            Width = 65
+          end
+          item
+            Caption = 'TCPA'
+          end
+          item
+            Caption = 'H Dist'
+          end
+          item
+            Caption = 'V Dist'
+          end
+          item
+            Caption = 'Risk'
+            Width = 60
+          end>
+        GridLines = True
+        TabOrder = 0
+        ViewStyle = vsReport
+      end
+    end
+    object DeviationPanel: TPanel
+      Left = 8
+      Top = 170
+      Width = 380
+      Height = 150
+      BevelOuter = bvRaised
+      Color = clWhite
+      ParentBackground = False
       TabOrder = 1
-      ViewStyle = vsReport
+      object DeviationLabel: TLabel
+        Left = 8
+        Top = 8
+        Width = 131
+        Height = 13
+        Caption = 'Route Deviation Alerts:'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clRed
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object DeviationListView: TListView
+        Left = 8
+        Top = 25
+        Width = 362
+        Height = 115
+        Columns = <
+          item
+            Caption = 'Aircraft'
+            Width = 80
+          end
+          item
+            Caption = 'Altitude'
+            Width = 80
+          end
+          item
+            Caption = 'Latitude'
+            Width = 89
+          end
+          item
+            Caption = 'Longitude'
+            Width = 89
+          end>
+        GridLines = True
+        TabOrder = 0
+        ViewStyle = vsReport
+      end
     end
   end
   object MainMenu1: TMainMenu
