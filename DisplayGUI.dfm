@@ -797,7 +797,7 @@ object Form1: TForm1
           object Label22: TLabel
             Left = 5
             Top = 40
-            Width = 76
+            Width = 100
             Height = 13
             Caption = 'Connection State:'
             Font.Charset = DEFAULT_CHARSET
@@ -810,9 +810,9 @@ object Form1: TForm1
           object Label24: TLabel
             Left = 5
             Top = 59
-            Width = 125
+            Width = 115
             Height = 13
-            Caption = 'ROUTE Last Update Time:'
+            Caption = 'ROUTE Update Time:'
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
@@ -834,7 +834,7 @@ object Form1: TForm1
             ParentFont = False
           end
           object APILastUpdateTime: TLabel
-            Left = 136
+            Left = 127
             Top = 59
             Width = 65
             Height = 13
@@ -1623,14 +1623,13 @@ object Form1: TForm1
       Top = 8
       Width = 380
       Height = 150
-      BevelOuter = bvRaised
       Color = clWhite
       ParentBackground = False
       TabOrder = 0
       object ConflictLabel: TLabel
         Left = 8
         Top = 8
-        Width = 145
+        Width = 144
         Height = 13
         Caption = 'Collision Detection Alerts:'
         Font.Charset = DEFAULT_CHARSET
@@ -1677,7 +1676,6 @@ object Form1: TForm1
       Top = 170
       Width = 380
       Height = 150
-      BevelOuter = bvRaised
       Color = clWhite
       ParentBackground = False
       TabOrder = 1
