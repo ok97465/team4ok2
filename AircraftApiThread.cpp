@@ -4,6 +4,7 @@
 #include "AircraftApiThread.h"
 #include "AircraftApi.h"
 #include "DisplayGUI.h"
+#include "TimeFunctions.h"
 
 __fastcall TLoadApiDataThread::TLoadApiDataThread()
     : TThread(false) // 생성 즉시 실행
@@ -12,6 +13,9 @@ __fastcall TLoadApiDataThread::TLoadApiDataThread()
 }
 
 void __fastcall TLoadApiDataThread::NotifyUI() {
+    __int64 CurrentTime;
+     CurrentTime=GetCurrentTimeInMsec();
+    Form1->APILastUpdateTime->Caption=TimeToChar(CurrentTime);
     Form1->ObjectDisplay->Repaint();
 }
 
