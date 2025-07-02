@@ -454,10 +454,12 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   ConflictListView->OnCustomDrawItem = ConflictListViewCustomDrawItem;
   ConflictListView->OnCustomDrawSubItem = ConflictListViewCustomDrawSubItem;
   ConflictListView->HideSelection = false; // 포커스가 없어도 선택 상태 유지
+  ConflictPanel->Visible = false; // 초기에는 숨김 (데이터가 있을 때만 표시)
   FSelectedConflictPair = {0, 0};
   
   // 이탈감지 리스트 이벤트 핸들러 연결
   DeviationListView->OnSelectItem = DeviationListViewSelectItem;
+  DeviationPanel->Visible = false; // 초기에는 숨김 (데이터가 있을 때만 표시)
 
   // 충돌 필터 초기값 설정
   m_tcpaMinThreshold = 10.0;     // 10초로 변경
@@ -3023,6 +3025,9 @@ void __fastcall TForm1::UpdateConflictList()
     // FSortedConflictList는 이미 백그라운드 스레드에서 위험도 순으로 완벽하게 정렬되어 있습니다.
     ConflictListView->Items->BeginUpdate();
     ConflictListView->Items->Clear();
+    
+    // 실제 충돌 데이터 개수 추적
+    int validConflictCount = 0;
 
     // 스레드가 정렬해준 순서 그대로 리스트뷰에 추가합니다.
     for (const auto& conflict : FSortedConflictList)
@@ -3033,6 +3038,8 @@ void __fastcall TForm1::UpdateConflictList()
 
         if (ac1 && ac2)
         {
+            validConflictCount++;  // 유효한 충돌 데이터 증가
+            
             TListItem* item = ConflictListView->Items->Add();
 
             item->Caption = ac1->HexAddr;
@@ -3080,6 +3087,15 @@ void __fastcall TForm1::UpdateConflictList()
         }
     }
     ConflictListView->Items->EndUpdate();
+    
+    // 충돌 감지 상태창 가시성 제어 - 실제 데이터가 있는 경우에만 표시
+    ConflictPanel->Visible = (validConflictCount > 0);
+    
+    // 충돌감지 항목이 있으면 레이블 내용 업데이트
+    if (validConflictCount > 0) {
+        AnsiString countStr = AnsiString(validConflictCount);
+        ConflictLabel->Caption = "Collision Detection Alerts (" + countStr + ")";
+    }
     
     // 이전에 선택되었던 항목을 다시 선택
     if (selectedPair.first != 0 && selectedPair.second != 0) {
@@ -3562,6 +3578,9 @@ void __fastcall TForm1::UpdateDeviationList()
 {
     DeviationListView->Items->Clear();
     
+    // 실제 이탈 데이터 개수 추적
+    int validDeviationCount = 0;
+    
     for (const AnsiString& deviationInfo : FDeviationAircraftList) {
         // CSV 형태의 데이터를 파싱 - result.csv 형식: Row, CENTROID_ID, Altitude, Latitude, Longitude, HexIdent, timestamp_utc, distance_from_centroid
         TStringList* parts = new TStringList();
@@ -3571,6 +3590,8 @@ void __fastcall TForm1::UpdateDeviationList()
             printf("CSV parts count: %d\n", parts->Count);
             
             if (parts->Count >= 7) {
+                validDeviationCount++;  // 유효한 이탈 데이터 증가
+                
                 // HexIdent, Altitude, Latitude, Longitude 정보 표시
                 printf("Deviation Aircraft - ICAO: %s, Alt: %s, Lat: %s, Lon: %s\n",
                        AnsiString(parts->Strings[4]).c_str(), AnsiString(parts->Strings[1]).c_str(),
@@ -3584,6 +3605,8 @@ void __fastcall TForm1::UpdateDeviationList()
                 // 이탈감지된 항목은 빨간색으로 표시
                 item->ImageIndex = -1;
             } else if (parts->Count >= 1 && !deviationInfo.Trim().IsEmpty()) {
+                validDeviationCount++;  // 단순 텍스트도 유효한 데이터로 카운트
+                
                 // 단순 텍스트 형태의 경우 (fallback)
                 TListItem* item = DeviationListView->Items->Add();
                 item->Caption = "N/A";
@@ -3596,14 +3619,13 @@ void __fastcall TForm1::UpdateDeviationList()
         }
     }
     
-    // 이탈감지 항목이 있으면 레이블 색상 변경
-    if (FDeviationAircraftList.size() > 0) {
-        DeviationLabel->Font->Color = clRed;
-        AnsiString countStr = AnsiString(static_cast<int>(FDeviationAircraftList.size()));
+    // 경로 이탈 상태창 가시성 제어 - 실제 데이터가 있는 경우에만 표시
+    DeviationPanel->Visible = (validDeviationCount > 0);
+    
+    // 이탈감지 항목이 있으면 레이블 내용 업데이트
+    if (validDeviationCount > 0) {
+        AnsiString countStr = AnsiString(validDeviationCount);
         DeviationLabel->Caption = "Route Deviation Alerts (" + countStr + ")";
-    } else {
-        DeviationLabel->Font->Color = clGreen;
-        DeviationLabel->Caption = "Route Deviation Alerts (0)";
     }
 }
 
