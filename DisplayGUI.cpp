@@ -1550,6 +1550,7 @@ void __fastcall TForm1::DrawObjects(void)
   BuildAircraftBatches(ViewableAircraft);
   RenderAircraftBatches();
   ViewableAircraftCountLabel->Caption = ViewableAircraft;
+  AircraftCountLabel->Caption = IntToStr(FAircraftModel->GetAircraftCount());
   UpdateTrackHookDisplay();
   DrawCPAVisualization();
   DrawSelectedRoutes();
