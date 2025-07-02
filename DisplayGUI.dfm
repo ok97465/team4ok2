@@ -799,20 +799,7 @@ object Form1: TForm1
             Top = 40
             Width = 76
             Height = 13
-            Caption = 'Raw Connect:'
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -11
-            Font.Name = 'Tahoma'
-            Font.Style = [fsBold]
-            ParentFont = False
-          end
-          object Label23: TLabel
-            Left = 5
-            Top = 59
-            Width = 64
-            Height = 13
-            Caption = 'SBS Status:'
+            Caption = 'Connection State:'
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
@@ -822,7 +809,7 @@ object Form1: TForm1
           end
           object Label24: TLabel
             Left = 5
-            Top = 78
+            Top = 59
             Width = 125
             Height = 13
             Caption = 'API Last Update Time:'
@@ -834,21 +821,8 @@ object Form1: TForm1
             ParentFont = False
           end
           object RawConnectStatus: TLabel
-            Left = 87
+            Left = 110
             Top = 40
-            Width = 82
-            Height = 13
-            Caption = 'Not Connected'
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -11
-            Font.Name = 'Tahoma'
-            Font.Style = [fsBold]
-            ParentFont = False
-          end
-          object SBSConnectStatus: TLabel
-            Left = 87
-            Top = 59
             Width = 82
             Height = 13
             Caption = 'Not Connected'
@@ -861,7 +835,7 @@ object Form1: TForm1
           end
           object APILastUpdateTime: TLabel
             Left = 136
-            Top = 78
+            Top = 59
             Width = 65
             Height = 13
             Caption = '00:00:00:00'
