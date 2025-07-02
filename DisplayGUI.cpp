@@ -447,7 +447,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   FProximityAssessor = new ProximityAssessor();
   FProximityAssessor->OnComplete = OnAssessmentComplete;
 
-  AssessmentTimer->Interval = 1000;
+  AssessmentTimer->Interval = 3000;
   AssessmentTimer->Enabled = true;
 
   ConflictListView->OnSelectItem = ConflictListViewSelectItem;
@@ -471,7 +471,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
   
   // 충돌 상태 표시 초기화
   m_criticalBlinkTimer = new TTimer(this);
-  m_criticalBlinkTimer->Interval = 500; // 0.5초마다 깜빡임
+  m_criticalBlinkTimer->Interval = 1000; // 1초마다 깜빡임
   m_criticalBlinkTimer->OnTimer = CriticalBlinkTimerTimer;
   m_criticalBlinkTimer->Enabled = false;
   m_criticalBlinkState = false;
