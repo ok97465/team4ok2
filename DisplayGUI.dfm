@@ -59,24 +59,11 @@ object Form1: TForm1
       Top = 1
       Width = 248
       Height = 1040
-      ActivePage = ControlsFiltersTab
+      ActivePage = DataSourcesTab
       Align = alTop
       TabOrder = 0
       object AircraftInfoTab: TTabSheet
         Caption = 'Info'
-        object PlaybackSpeedLabel: TLabel
-          Left = 8
-          Top = 464
-          Width = 92
-          Height = 13
-          Caption = 'Playback Speed:'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = [fsBold]
-          ParentFont = False
-        end
         object Panel5: TPanel
           Left = 3
           Top = 3
@@ -579,91 +566,140 @@ object Form1: TForm1
             TabOrder = 0
           end
         end
-        object PlaybackSpeedComboBox: TComboBox
-          Left = 100
-          Top = 461
-          Width = 60
-          Height = 20
-          Style = csDropDownList
-          ItemIndex = 0
-          TabOrder = 2
-          Text = '1x'
-          Items.Strings = (
-            '1x'
-            '2x'
-            '3x')
-        end
         object Panel2: TPanel
           Left = 3
-          Top = 490
+          Top = 631
           Width = 234
-          Height = 147
+          Height = 143
           BevelInner = bvLowered
           BevelKind = bkFlat
           Color = clWhite
-          TabOrder = 3
-          object Label12: TLabel
-            Left = 8
+          TabOrder = 2
+          object Label39: TLabel
+            Left = 72
             Top = 8
-            Width = 55
-            Height = 12
-            Caption = 'CPA TIME:'
+            Width = 92
+            Height = 16
+            Caption = 'Data Playback'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -13
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold, fsUnderline]
+            ParentFont = False
           end
-          object Label19: TLabel
+          object PlaybackSpeedLabel: TLabel
             Left = 8
-            Top = 26
-            Width = 82
-            Height = 12
-            Caption = 'CPA DISTANCE:'
+            Top = 30
+            Width = 92
+            Height = 13
+            Caption = 'Playback Speed:'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold]
+            ParentFont = False
           end
-          object CpaTimeValue: TLabel
-            Left = 69
-            Top = 8
-            Width = 28
-            Height = 12
-            Caption = 'NONE'
-          end
-          object CpaDistanceValue: TLabel
-            Left = 96
-            Top = 26
-            Width = 25
-            Height = 12
-            Caption = 'None'
+          object PlaybackSpeedComboBox: TComboBox
+            Left = 100
+            Top = 27
+            Width = 60
+            Height = 20
+            Style = csDropDownList
+            ItemIndex = 0
+            TabOrder = 0
+            Text = '1x'
+            Items.Strings = (
+              '1x'
+              '2x'
+              '3x')
           end
           object TimeToGoTrackBar: TTrackBar
-            Left = 5
-            Top = 71
+            Left = -4
+            Top = 91
             Width = 228
             Height = 33
             Max = 1800
             Min = 1
             Frequency = 100
             Position = 1
-            TabOrder = 0
+            TabOrder = 1
             OnChange = TimeToGoTrackBarChange
           end
           object TimeToGoCheckBox: TCheckBox
             Left = 8
-            Top = 38
+            Top = 58
             Width = 105
             Height = 27
             Caption = 'Time-To-Go'
             Checked = True
             State = cbChecked
-            TabOrder = 1
+            TabOrder = 2
           end
           object TimeToGoText: TStaticText
             Left = 119
-            Top = 43
+            Top = 58
             Width = 76
             Height = 16
             Caption = '00:00:00:000'
-            TabOrder = 2
+            TabOrder = 3
+          end
+        end
+        object Panel13: TPanel
+          Left = 3
+          Top = 780
+          Width = 234
+          Height = 70
+          BevelInner = bvLowered
+          BevelKind = bkFlat
+          Color = clWhite
+          TabOrder = 3
+          object Label38: TLabel
+            Left = 85
+            Top = 8
+            Width = 56
+            Height = 16
+            Caption = 'CPA Info'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -13
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold, fsUnderline]
+            ParentFont = False
+          end
+          object Label12: TLabel
+            Left = 8
+            Top = 30
+            Width = 55
+            Height = 12
+            Caption = 'CPA TIME:'
+          end
+          object Label19: TLabel
+            Left = 8
+            Top = 48
+            Width = 82
+            Height = 12
+            Caption = 'CPA DISTANCE:'
+          end
+          object CpaTimeValue: TLabel
+            Left = 69
+            Top = 30
+            Width = 28
+            Height = 12
+            Caption = 'NONE'
+          end
+          object CpaDistanceValue: TLabel
+            Left = 96
+            Top = 48
+            Width = 25
+            Height = 12
+            Caption = 'None'
           end
         end
         object Panel3: TPanel
           Left = 3
-          Top = 643
+          Top = 545
           Width = 234
           Height = 80
           BevelInner = bvLowered
@@ -728,8 +764,8 @@ object Form1: TForm1
             Value = 90
           end
           object PurgeButton: TButton
-            Left = 186
-            Top = 10
+            Left = 175
+            Top = 11
             Width = 51
             Height = 16
             Caption = 'Purge'
@@ -739,12 +775,12 @@ object Form1: TForm1
         end
         object Panel6: TPanel
           Left = 3
-          Top = 729
+          Top = 436
           Width = 234
           Height = 103
           BevelInner = bvLowered
           BevelKind = bkFlat
-          TabOrder = 5
+          TabOrder = 6
           object Label21: TLabel
             Left = 56
             Top = 8
@@ -839,12 +875,12 @@ object Form1: TForm1
         end
         object Panel9: TPanel
           Left = 3
-          Top = 838
+          Top = 856
           Width = 234
           Height = 100
           BevelInner = bvLowered
           BevelKind = bkFlat
-          TabOrder = 6
+          TabOrder = 5
           object Label34: TLabel
             Left = 80
             Top = 5
@@ -1018,7 +1054,7 @@ object Form1: TForm1
           Left = 3
           Top = 208
           Width = 234
-          Height = 350
+          Height = 313
           BevelInner = bvLowered
           BevelKind = bkFlat
           TabOrder = 1
@@ -1537,13 +1573,35 @@ object Form1: TForm1
             TabOrder = 5
             OnClick = ShowOnlyConflictAircraftCheckBoxClick
           end
+        end
+        object Panel12: TPanel
+          Left = 5
+          Top = 435
+          Width = 234
+          Height = 60
+          BevelInner = bvLowered
+          BevelKind = bkFlat
+          TabOrder = 2
+          object Label37: TLabel
+            Left = 85
+            Top = 8
+            Width = 58
+            Height = 16
+            Caption = 'BigQuery'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -13
+            Font.Name = 'Tahoma'
+            Font.Style = [fsBold, fsUnderline]
+            ParentFont = False
+          end
           object BigQueryCheckBox: TCheckBox
             Left = 5
-            Top = 265
+            Top = 30
             Width = 124
             Height = 17
             Caption = 'BigQuery Upload'
-            TabOrder = 6
+            TabOrder = 0
             OnClick = BigQueryCheckBoxClick
           end
         end
