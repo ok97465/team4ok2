@@ -761,7 +761,7 @@ object Form1: TForm1
             MaxValue = 1000
             MinValue = 5
             TabOrder = 3
-            Value = 90
+            Value = 30
           end
           object PurgeButton: TButton
             Left = 175
@@ -1312,7 +1312,7 @@ object Form1: TForm1
           Left = 5
           Top = 5
           Width = 234
-          Height = 124
+          Height = 147
           BevelInner = bvLowered
           BevelKind = bkFlat
           TabOrder = 0
@@ -1399,10 +1399,18 @@ object Form1: TForm1
             TabOrder = 2
             OnClick = SBSPlaybackButtonClick
           end
+          object DeadReckoningCheckBox: TCheckBox
+            Left = 7
+            Top = 120
+            Width = 202
+            Height = 17
+            Caption = 'Dead Reckoning'
+            TabOrder = 8
+          end
         end
         object Panel7: TPanel
           Left = 5
-          Top = 135
+          Top = 158
           Width = 234
           Height = 290
           BevelInner = bvLowered
@@ -1576,7 +1584,7 @@ object Form1: TForm1
         end
         object Panel12: TPanel
           Left = 5
-          Top = 435
+          Top = 451
           Width = 234
           Height = 60
           BevelInner = bvLowered
