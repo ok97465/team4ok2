@@ -2078,6 +2078,11 @@ void __fastcall TForm1::HandleRawConnected()
 	FRawButtonScroller->UpdateCaption("Raw Disconnect");
     RawConnectStatus->Caption = "Raw Connected";
     RawPlaybackButton->Enabled = false;
+    
+    // SBS 관련 버튼들 비활성화
+    SBSConnectButton->Enabled = false;
+    SBSRecordButton->Enabled = false;
+    SBSPlaybackButton->Enabled = false;
 }
 
 //---------------------------------------------------------------------------
@@ -2095,6 +2100,13 @@ void __fastcall TForm1::HandleRawDisconnected(const String& reason)
     }
     RawPlaybackButton->Caption = "Raw Playback";
     RawConnectButton->Enabled = true;
+    
+    // SBS 관련 버튼들 활성화 (SBS가 연결되어 있지 않은 경우에만)
+    if (!FSBSDataHandler->IsActive()) {
+        SBSConnectButton->Enabled = true;
+        SBSRecordButton->Enabled = true;
+        SBSPlaybackButton->Enabled = true;
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::HandleRawReconnecting()
@@ -2103,6 +2115,11 @@ void __fastcall TForm1::HandleRawReconnecting()
 	FRawButtonScroller->UpdateCaption("Reconnecting... (Cancel)");
     RawConnectStatus->Caption = "Reconnecting...";
     RawPlaybackButton->Enabled = false;
+    
+    // SBS 관련 버튼들 비활성화
+    SBSConnectButton->Enabled = false;
+    SBSRecordButton->Enabled = false;
+    SBSPlaybackButton->Enabled = false;
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::RawConnectButtonClick(TObject *Sender)
@@ -2236,6 +2253,11 @@ void __fastcall TForm1::HandleSBSConnected()
 	FSBSButtonScroller->UpdateCaption("SBS Disconnect");
     RawConnectStatus->Caption = "SBS Connected";
     SBSPlaybackButton->Enabled = false;
+    
+    // Raw 관련 버튼들 비활성화
+    RawConnectButton->Enabled = false;
+    RawRecordButton->Enabled = false;
+    RawPlaybackButton->Enabled = false;
 }
 
 void __fastcall TForm1::HandleSBSDisconnected(const String& reason)
@@ -2249,6 +2271,13 @@ void __fastcall TForm1::HandleSBSDisconnected(const String& reason)
                SBSPlaybackButton->Caption = "SBS Playback";
         SBSConnectButton->Enabled = true;
     }
+    
+    // Raw 관련 버튼들 활성화 (Raw가 연결되어 있지 않은 경우에만)
+    if (!FRawDataHandler->IsActive()) {
+        RawConnectButton->Enabled = true;
+        RawRecordButton->Enabled = true;
+        RawPlaybackButton->Enabled = true;
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::HandleSBSReconnecting()
@@ -2257,6 +2286,11 @@ void __fastcall TForm1::HandleSBSReconnecting()
 	FSBSButtonScroller->UpdateCaption("Reconnecting... (Cancel)");
     RawConnectStatus->Caption = "Reconnecting...";
 	SBSPlaybackButton->Enabled = false;
+    
+    // Raw 관련 버튼들 비활성화
+    RawConnectButton->Enabled = false;
+    RawRecordButton->Enabled = false;
+    RawPlaybackButton->Enabled = false;
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::SBSRecordButtonClick(TObject *Sender)
