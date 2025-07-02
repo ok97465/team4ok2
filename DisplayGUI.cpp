@@ -2074,6 +2074,7 @@ void __fastcall TForm1::HandleRawData(const AnsiString& data)
 void __fastcall TForm1::HandleRawConnected()
 {
 	FRawButtonScroller->UpdateCaption("Raw Disconnect");
+    RawConnectStatus->Caption = "Raw Connected";
     RawPlaybackButton->Enabled = false;
 }
 
@@ -2082,6 +2083,7 @@ void __fastcall TForm1::HandleRawConnected()
 void __fastcall TForm1::HandleRawDisconnected(const String& reason)
 {
 	FRawButtonScroller->UpdateCaption("Raw Connect");
+    RawConnectStatus->Caption = "Not Connected";
     RawPlaybackButton->Enabled = true;
 
     // 파일 재생 중이었다면 관련 상태도 초기화
@@ -2097,6 +2099,7 @@ void __fastcall TForm1::HandleRawReconnecting()
 {
     // UI를 "재연결 중" 상태로 업데이트
 	FRawButtonScroller->UpdateCaption("Reconnecting... (Cancel)");
+    RawConnectStatus->Caption = "Reconnecting...";
     RawPlaybackButton->Enabled = false;
 }
 //---------------------------------------------------------------------------
@@ -2105,6 +2108,7 @@ void __fastcall TForm1::RawConnectButtonClick(TObject *Sender)
 	if (!FRawDataHandler->IsActive())
     {
 		FRawButtonScroller->UpdateCaption("Connecting... (Cancel)");
+        RawConnectStatus->Caption = "Connecting...";
         FRawDataHandler->Connect(RawIpAddress->Text, 30002, TConnectionType::Raw);
     }
     else
@@ -2158,6 +2162,8 @@ void __fastcall TForm1::SBSConnectButtonClick(TObject *Sender)
 {
 	if (!FSBSDataHandler->IsActive())
     {
+        FSBSButtonScroller->UpdateCaption("Connecting... (Cancel)");
+        RawConnectStatus->Caption = "Connecting...";
         FSBSDataHandler->Connect(SBSIpAddress->Text, 5002, TConnectionType::SBS);
     }
     else
@@ -2226,12 +2232,14 @@ void __fastcall TForm1::HandleSBSData(const AnsiString& data)
 void __fastcall TForm1::HandleSBSConnected()
 {
 	FSBSButtonScroller->UpdateCaption("SBS Disconnect");
+    RawConnectStatus->Caption = "SBS Connected";
     SBSPlaybackButton->Enabled = false;
 }
 
 void __fastcall TForm1::HandleSBSDisconnected(const String& reason)
 {
 	FSBSButtonScroller->UpdateCaption("SBS Connect");
+    RawConnectStatus->Caption = "Not Connected";
     SBSPlaybackButton->Enabled = true;
      if (PlayBackSBSStream) {
         delete PlayBackSBSStream;
@@ -2245,6 +2253,7 @@ void __fastcall TForm1::HandleSBSReconnecting()
 {
 	// UI를 "재연결 중" 상태로 업데이트
 	FSBSButtonScroller->UpdateCaption("Reconnecting... (Cancel)");
+    RawConnectStatus->Caption = "Reconnecting...";
 	SBSPlaybackButton->Enabled = false;
 }
 //---------------------------------------------------------------------------
