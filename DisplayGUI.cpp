@@ -1493,7 +1493,18 @@ void TForm1::DrawSelectedRoutes()
 
 void TForm1::DrawSelectedConflictPair()
 {
-  if (FSelectedConflictPair.first == 0) return;
+  // 기존 TrackHook CPA 기능이 활성화되어 있으면 선택된 충돌 페어 정보는 표시하지 않음
+  if (TrackHook.Valid_CPA) return;
+  
+  if (FSelectedConflictPair.first == 0) {
+    // 선택된 충돌 페어가 없으면 CPA 정보를 "None"으로 설정 (TrackHook CPA가 비활성화된 경우에만)
+    if (!TrackHook.Valid_CPA) {
+      CpaTimeValue->Caption = "None";
+      CpaDistanceValue->Caption = "None";
+    }
+    return;
+  }
+  
   TADS_B_Aircraft* ac1 = FAircraftModel->FindAircraftByICAO(FSelectedConflictPair.first);
   TADS_B_Aircraft* ac2 = FAircraftModel->FindAircraftByICAO(FSelectedConflictPair.second);
   if (ac1 && ac2 && ac1->HaveLatLon && ac2->HaveLatLon)
@@ -1516,6 +1527,27 @@ void TForm1::DrawSelectedConflictPair()
     }
     if (found)
     {
+      // 실제 CPA 계산을 통해 수직 거리도 구하기
+      double tcpa_calc, cpa_distance_calc, vertical_cpa;
+      bool cpaCalculated = computeCPA(ac1->Latitude, ac1->Longitude, ac1->Altitude,
+                                      ac1->Speed, ac1->Heading,
+                                      ac2->Latitude, ac2->Longitude, ac2->Altitude,
+                                      ac2->Speed, ac2->Heading,
+                                      tcpa_calc, cpa_distance_calc, vertical_cpa);
+      
+      // TrackHook CPA가 비활성화된 경우에만 CPA 정보를 UI에 업데이트
+      if (!TrackHook.Valid_CPA) {
+        CpaTimeValue->Caption = TimeToChar(tcpa * 1000);
+        if (cpaCalculated) {
+          // 수평 거리와 수직 거리를 모두 표시
+          CpaDistanceValue->Caption = FloatToStrF(cpa_distance_nm, ffFixed, 10, 2) + " NM VDIST: " + IntToStr((int)vertical_cpa) + " FT";
+        } else {
+          // CPA 계산이 실패한 경우 기본 거리만 표시
+          CpaDistanceValue->Caption = FloatToStrF(cpa_distance_nm, ffFixed, 10, 2) + " NM";
+        }
+      }
+      
+      // 그래픽 렌더링
       double lat1, lon1, lat2, lon2, junk;
       VDirect(ac1->Latitude, ac1->Longitude, ac1->Heading, ac1->Speed / 3600.0 * tcpa, &lat1, &lon1, &junk);
       VDirect(ac2->Latitude, ac2->Longitude, ac2->Heading, ac2->Speed / 3600.0 * tcpa, &lat2, &lon2, &junk);
@@ -1537,6 +1569,20 @@ void TForm1::DrawSelectedConflictPair()
       glVertex2d(x1_fut, y1_fut);
       glVertex2d(x2_fut, y2_fut);
       glEnd();
+    }
+    else {
+      // CPA 정보를 찾지 못한 경우 (TrackHook CPA가 비활성화된 경우에만)
+      if (!TrackHook.Valid_CPA) {
+        CpaTimeValue->Caption = "None";
+        CpaDistanceValue->Caption = "None";
+      }
+    }
+  }
+  else {
+    // 항공기 데이터가 유효하지 않은 경우 (TrackHook CPA가 비활성화된 경우에만)
+    if (!TrackHook.Valid_CPA) {
+      CpaTimeValue->Caption = "None";
+      CpaDistanceValue->Caption = "None";
     }
   }
 }
@@ -1779,6 +1825,15 @@ void __fastcall TForm1::Exit1Click(TObject *Sender)
 		   TrackHook.Valid_CC=false;
            m_selectedRoutePaths.clear();
            UpdateCloseControlPanel(nullptr, nullptr);
+           // 빈 공간을 우클릭했을 때 충돌감지 상태창의 선택 정보도 초기화
+           FSelectedConflictPair = {0, 0};
+           
+           // ConflictListView의 선택 상태도 해제
+           for (int i = 0; i < ConflictListView->Items->Count; i++)
+           {
+               ConflictListView->Items->Item[i]->Selected = false;
+           }
+           ConflictListView->Invalidate(); // 화면 갱신
 		  }
 		 else
 		   {
@@ -2906,6 +2961,16 @@ void __fastcall TForm1::UpdateCloseControlPanel(TADS_B_Aircraft* ac, const Route
 // 항공기 선택(예: HookTrack에서 TrackHook.ICAO_CC가 확정될 때) 호출 예시:
 void __fastcall TForm1::OnAircraftSelected(uint32_t icao)
 {
+    // 우클릭으로 특정 항공기를 선택했을 때 충돌감지 상태창의 선택 정보 초기화
+    FSelectedConflictPair = {0, 0};
+    
+    // ConflictListView의 선택 상태도 해제
+    for (int i = 0; i < ConflictListView->Items->Count; i++)
+    {
+        ConflictListView->Items->Item[i]->Selected = false;
+    }
+    ConflictListView->Invalidate(); // 화면 갱신
+    
     // 항공기 객체 찾기
     TADS_B_Aircraft* ac = FAircraftModel->FindAircraftByICAO(icao);
     const RouteInfo* route = nullptr;
